@@ -268,6 +268,21 @@ class BrainDoorTests(TestCase):
             registry.call("brain.ping", ctx, {"brain": "consumer-owned"})["tier"], "private"
         )
 
+    def test_write_intake_rest_mcp_loopback_and_sdk_share_handler(self):
+        from core.models import BrainFeed
+        self.brain.grants.update(max_tier="agents-only", can_propose=True)
+        self.token.permissions = ["brain:read", "brain:write"]
+        self.token.brain_tier = "agents-only"
+        self.token.save()
+        params = {"content": "New source", "source_kind": "thought"}
+        for response in (self.rest("propose-feed", params), self.internal("propose-feed", params), self.rpc("propose-feed", params)):
+            self.assertEqual(response.status_code, 200, response.content)
+        sdk = BrainAPI("consumer", self.ws).get_brain("mind")
+        result = sdk.propose(**params)
+        self.assertEqual(BrainFeed.objects.get(pk=result["feed_id"]).channel, "plugin")
+        self.assertEqual(set(BrainFeed.objects.values_list("channel", flat=True)), {"api", "mcp", "script", "plugin"})
+        self.assertEqual(self.brain.revisions.count(), 1)
+
     def test_internal_auth_server_identity_and_payload_bounds(self):
         self.assertEqual(self.internal("ping", REMOTE_ADDR="203.0.113.5").status_code, 403)
         self.assertEqual(

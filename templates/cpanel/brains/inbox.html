@@ -1,0 +1,13 @@
+{% extends "cpanel/brains/base.html" %}
+{% block heading %}{{ brain.name }} · Inbox{% endblock %}
+{% block actions %}<a class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm" href="{% url 'cpanel:brain_feed_create' brain.pk %}">Add a source</a>{% endblock %}
+{% block brain_content %}
+<p class="text-sm text-muted">Sources become proposals. An owner or administrator reviews and approves each change.</p>
+<div class="space-y-3">
+{% for feed in page %}<a class="block rounded-xl border border-line bg-panel p-4 min-w-0" href="{% url 'cpanel:brain_feed' brain.pk feed.pk %}">
+<div class="flex flex-wrap justify-between gap-2"><span class="font-medium break-words">{{ feed.raw_payload.title|default:feed.source_id }}</span><span class="text-sm text-muted">{{ feed.get_status_display }}{% if feed.needs_review %} · Re-review{% endif %}</span></div>
+<p class="text-xs text-muted mt-2">{{ feed.created_at }} · {{ feed.channel }}{% if feed.proposal_edited %} · Edited{% endif %}</p>
+</a>{% empty %}<p class="text-muted text-sm">No sources captured yet.</p>{% endfor %}
+</div>
+<div class="flex gap-4 text-sm">{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}{% if page.has_next %}<a href="?page={{ page.next_page_number }}">Next</a>{% endif %}</div>
+{% endblock %}

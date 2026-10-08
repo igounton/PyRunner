@@ -7,16 +7,17 @@ from claude_agent_sdk import tool
 
 from core.api.errors import ApiError
 from core.api.registry import registry
-from .access import accessible_brains, principal_context
+from .access import accessible_brains, access_for, principal_context
 
 
 def build_tools(workspace, *, agent="pyai"):
     ctx = principal_context(workspace, "agent", agent)
     if not accessible_brains(ctx).exists():
         return []
+    can_propose = any(access_for(ctx, brain).can_propose for brain in accessible_brains(ctx))
 
-    def wrap(spec):
-        @tool(spec.mcp_name, spec.description or spec.title, spec.input)
+    def wrap(spec, name=None):
+        @tool(name or spec.mcp_name, spec.description or spec.title, spec.input)
         async def call(params):
             try:
                 current = principal_context(workspace, "agent", agent)
@@ -30,8 +31,11 @@ def build_tools(workspace, *, agent="pyai"):
 
         return call
 
-    return [
+    result = [
         wrap(spec)
         for spec in registry.visible(ctx)
-        if spec.slug.startswith("brain.") and spec.access == "read"
+        if spec.slug.startswith("brain.") and (spec.access == "read" or can_propose)
     ]
+    if can_propose:
+        result.append(wrap(registry.get("brain.propose-feed"), "remember"))
+    return result

@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
 from core.api.errors import ApiError
-from core.models import AIProvider, Brain, BrainBlob, BrainGrant, BrainRevision
+from core.models import AIProvider, Brain, BrainBlob, BrainFeed, BrainGrant, BrainRevision
 from .contract import validate_contract
 from .paths import validate_files
 from .service import BrainService
@@ -54,6 +54,7 @@ def export_brains():
                         "manifest": rev.manifest,
                         "message": rev.message,
                         "source": rev.source,
+                        "feed_id": str(rev.feed_id) if rev.feed_id else None,
                         "author_id": str(rev.author_id) if rev.author_id else None,
                         "created_at": rev.created_at.isoformat(),
                     }
@@ -75,6 +76,12 @@ def export_brains():
                 "grants": list(
                     brain.grants.values("subject_kind", "subject_id", "max_tier", "can_propose")
                 ),
+                "feeds": [
+                    {key: value.isoformat() if hasattr(value, "isoformat") else str(value)
+                     if value is not None and (key.endswith("_id") or key == "id" or isinstance(value, Decimal)) else value
+                     for key, value in data.items() if key not in {"brain_id", "claim_id", "claimed_at", "queued_at"}}
+                    for data in brain.feeds.values()
+                ],
             }
         )
     return rows
@@ -109,6 +116,22 @@ def validate_brain_backup(rows):
             parent = revision["id"]
         if row["head_revision_id"] != parent:
             raise ApiError("invalid_backup", "Brain head must be the latest revision.")
+        revisions = {rev["id"]: rev for rev in row["revisions"]}
+        feeds = {feed["id"]: feed for feed in row.get("feeds", [])}
+        if len(feeds) != len(row.get("feeds", [])):
+            raise ApiError("invalid_backup", "Duplicate feed in backup.")
+        applied = set()
+        for rev in revisions.values():
+            feed_id = rev.get("feed_id")
+            if feed_id:
+                if feed_id not in feeds or feed_id in applied or feeds[feed_id].get("revision_id") != rev["id"]:
+                    raise ApiError("invalid_backup", "Brain feed application link is invalid.")
+                applied.add(feed_id)
+        for feed in feeds.values():
+            if feed.get("base_revision_id") not in {None, *revisions} or feed.get("revision_id") not in {None, *revisions}:
+                raise ApiError("invalid_backup", "Brain feed references a foreign or missing revision.")
+            if feed.get("status") == "applied" and feed["id"] not in applied:
+                raise ApiError("invalid_backup", "Applied feed is missing its unique revision.")
 
 
 def import_brains(rows, *, workspace_for, user_map, script_map, current_user):
@@ -145,6 +168,17 @@ def import_brains(rows, *, workspace_for, user_map, script_map, current_user):
         brain.save()
         for blob in row["blobs"]:
             BrainBlob.objects.create(brain=brain, **blob)
+        for data in row.get("feeds", []):
+            values = {key: data[key] for key in ("source_id", "channel", "principal", "raw_payload", "proposal",
+                       "proposal_edited", "needs_review", "status", "decision_note", "retries", "error", "cost_usd") if key in data}
+            if values.get("status") in {"pending", "extracting", "approving"}:
+                values["status"] = "proposed" if values.get("proposal") is not None else "failed"
+                values["needs_review"] = True
+                values["error"] = "Restored feed. Review or retry extraction explicitly."
+            BrainFeed.objects.create(id=data["id"], brain=brain, **values,
+                                     decided_by=user_map.get(str(data.get("decided_by_id"))),
+                                     decided_at=parse_datetime(data["decided_at"]) if data.get("decided_at") else None,
+                                     created_at=parse_datetime(data["created_at"]))
         for data in row["revisions"]:
             revision = BrainRevision(
                 id=data["id"],
@@ -154,11 +188,17 @@ def import_brains(rows, *, workspace_for, user_map, script_map, current_user):
                 manifest=data["manifest"],
                 message=data["message"],
                 source=data["source"],
+                feed_id=data.get("feed_id"),
                 author=user_map.get(str(data.get("author_id"))),
                 created_at=parse_datetime(data["created_at"]),
             )
             revision.full_clean()
             revision.save(force_insert=True)
+        for data in row.get("feeds", []):
+            BrainFeed.objects.filter(pk=data["id"], brain=brain, brain__workspace=workspace).update(
+                base_revision_id=data.get("base_revision_id"), revision_id=data.get("revision_id"),
+                updated_at=parse_datetime(data["updated_at"]),
+            )
         brain.head_revision_id = row["head_revision_id"]
         brain.save(update_fields=["head_revision", "updated_at"])
         BrainService.rebuild_index(workspace, brain.pk)

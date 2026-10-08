@@ -94,6 +94,23 @@ def _pyai_handler(channel, msg):
     """Answer the message with Py AI (synchronous reply, counts against the cap)."""
     from core.services.pyai import PyAIError, PyAIService
 
+    agent = f"{channel.provider}:{channel.pk}"
+    if channel.provider == "telegram" and (msg.text or "").split(maxsplit=1)[0:1] == ["/remember"]:
+        from core.api.exceptions import ApiError
+        from core.api.registry import registry
+        from core.brain.access import principal_context
+
+        parts = msg.text.split(maxsplit=2)
+        if len(parts) < 3:
+            return OutboundMessage("Use /remember <brain-slug> <text to remember>.", reply_ref=msg.reply_ref)
+        try:
+            result = registry.call("brain.propose-feed", principal_context(channel.workspace, "agent", agent, transport="telegram"),
+                                   {"brain": parts[1], "content": parts[2], "source_kind": "thought"})
+            text = f"Captured for human review: {result['feed_id']}"
+        except ApiError as exc:
+            text = exc.message
+        return OutboundMessage(text, reply_ref=msg.reply_ref)
+
     if not PyAIService.is_available():
         return OutboundMessage("Py AI is not available right now.", reply_ref=msg.reply_ref)
     if not (msg.text or "").strip():
@@ -101,7 +118,7 @@ def _pyai_handler(channel, msg):
 
     try:
         result = PyAIService.respond(
-            msg.text, workspace=channel.workspace, history=_channel_history(channel, msg)
+            msg.text, workspace=channel.workspace, history=_channel_history(channel, msg), agent=agent
         )
     except PyAIError as e:
         return OutboundMessage(f"Sorry — {e}", reply_ref=msg.reply_ref)

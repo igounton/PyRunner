@@ -1,7 +1,7 @@
 """
 Claude usage tracking model.
 
-One row per Claude call (from a script via pyrunner_ai, or a connection test).
+One row per Claude call from a script, connection test, Py AI or Brain.
 Rows are written both by Django (test calls) and directly via sqlite3 from
 isolated script subprocesses (the pyrunner_ai helper), so attribution columns
 are plain UUID/char fields (no enforced FK) and survive script/run deletion.
@@ -17,6 +17,7 @@ class ClaudeUsage(models.Model):
         SCRIPT = "script", "Script"
         TEST = "test", "Test"
         PYAI = "pyai", "Py AI"
+        BRAIN = "brain", "Brain"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -24,6 +25,7 @@ class ClaudeUsage(models.Model):
     # Attribution (no DB FK constraint by design -- see module docstring).
     script_id = models.UUIDField(null=True, blank=True, db_index=True)
     run_id = models.UUIDField(null=True, blank=True)
+    brain_id = models.UUIDField(null=True, blank=True, db_index=True)
     script_name = models.CharField(max_length=255, blank=True)
     source = models.CharField(
         max_length=10, choices=Source.choices, default=Source.SCRIPT

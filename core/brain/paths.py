@@ -12,9 +12,17 @@ MAX_IMPORT_BYTES = 50 * MAX_NOTE_BYTES
 _WINDOWS_RESERVED = re.compile(r"^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)", re.I)
 
 
+def utf8_size(text):
+    try:
+        return len(text.encode("utf-8"))
+    except UnicodeEncodeError:
+        raise ApiError("invalid_input", "Brain content must be valid UTF-8 text.") from None
+
+
 def validate_path(path):
     if not isinstance(path, str) or not path or len(path) > 300:
         raise ApiError("invalid_path", "Paths must contain 1–300 characters.")
+    utf8_size(path)
     parts = path.split("/")
     if (
         "\\" in path
@@ -49,7 +57,7 @@ def validate_files(files):
             raise ApiError(
                 "invalid_input", "Brain files must contain UTF-8 text without NUL bytes."
             )
-        size = len(text.encode("utf-8"))
+        size = utf8_size(text)
         limit = MAX_RAW_BYTES if path.startswith("raw/") else MAX_NOTE_BYTES
         if size > limit:
             raise ApiError(

@@ -128,7 +128,9 @@ class BackupService:
     # 1.10.0 — Brain blobs, full revision history, derived index and grants.
     # Opted-out brains are omitted. API tokens and their grants are not restored.
     # Older backups without a brains key leave existing brains unchanged.
-    BACKUP_VERSION = "1.10.0"
+    # 1.11.0 — Brain feeds and unique applied-revision links. Restored queues
+    # require an explicit retry; restoring a backup never starts paid AI work.
+    BACKUP_VERSION = "1.11.0"
     MAX_BACKUP_SIZE_MB = 100
 
     # Backup format constants

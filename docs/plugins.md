@@ -577,6 +577,8 @@ brain.note("take-example")       # {tier, entity_id, path, content}
 brain.identity()                 # {tier, files}
 brain.lens("default")            # {tier, name, content}
 brain.raw("raw/archive.md")      # {tier, path, content}; visible linked raw only
+brain.propose(title="A thought", content="Source text", source_kind="thought")
+                                # {feed_id, source_id, status, message, error}
 
 brains.grant("knowledge", subject_kind="agent", subject_id="pyai",
              max_tier="agents-only")
@@ -599,6 +601,18 @@ They call the signed loopback API even on SQLite. SDK read errors raise
 helper. Above-tier, ungranted and missing notes all return the same unknown
 error. Py AI receives these tools only with an explicit `agent:pyai` grant;
 execution rechecks grants, so revocation takes effect without a restart.
+
+`propose(title="", url="", content="", notes="", source_kind="doc")` captures
+a source for the approval inbox. Owned brains permit proposals; shared brains
+require an agents-only/private grant with `can_propose=True`. REST/MCP tokens
+also need `brain:write`. A proposal never writes notes. The feeder runs through
+the brain's AI provider, then an owner/admin approves the validated diff.
+Payloads are bounded to 512 KB UTF-8; URL-only sources are fetched server-side
+with the network guard, a 15-second budget and at most three redirects.
+Fetch failures remain captured with an error for correction in the inbox.
+Py AI exposes `remember` only with proposal rights. Channel agents use
+`<provider>:<channel UUID>` instead of `pyai`; Telegram supports
+`/remember <brain-slug> <text>` with that channel-specific grant.
 
 Declare `"api": "2.7", "provisions": {"brains": 1}` in `plugin.json`.
 Uninstall with *remove data* deletes owned brains and their revision history;

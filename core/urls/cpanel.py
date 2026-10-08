@@ -227,6 +227,9 @@ urlpatterns = [
     path("brains/<uuid:brain_id>/grants/", brains.brain_grants_view, name="brain_grants"),
     path("brains/<uuid:brain_id>/grants/<uuid:grant_id>/delete/", brains.brain_grant_delete_view, name="brain_grant_delete"),
     path("brains/<uuid:brain_id>/export/", brains.brain_export_view, name="brain_export"),
+    path("brains/<uuid:brain_id>/inbox/", brains.brain_inbox_view, name="brain_inbox"),
+    path("brains/<uuid:brain_id>/inbox/add/", brains.brain_feed_create_view, name="brain_feed_create"),
+    path("brains/<uuid:brain_id>/inbox/<uuid:feed_id>/", brains.brain_feed_view, name="brain_feed"),
     path("connect/url-tokens/", url_tokens_toggle_view, name="mcp_url_tokens_toggle"),
     # Dashboard
     path("", dashboard_view, name="dashboard"),

@@ -1,4 +1,4 @@
-"""Grant-checked Brain reads for scripts. Python standard library only."""
+"""Grant-checked Brain reads and proposals. Python standard library only."""
 
 import json
 import os
@@ -74,6 +74,9 @@ class Brain:
 
     def raw(self, path):
         return self._call("get-raw", path=path)
+
+    def propose(self, *, title="", url="", content="", notes="", source_kind="doc"):
+        return self._call("propose-feed", title=title, url=url, content=content, notes=notes, source_kind=source_kind)
 
 
 def get_brain(slug):

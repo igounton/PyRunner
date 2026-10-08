@@ -1,8 +1,9 @@
-"""Brain read doors. Transports call these same grant-checked handlers."""
+"""Brain reads and source intake through shared grant-checked handlers."""
 
 from core.brain.access import accessible_brains, access_for, resolve
 from core.brain.reads import read
 from core.api.registry import endpoint
+from core.brain.intake import INTAKE_PROPERTIES, propose
 
 
 def string(max_length):
@@ -85,3 +86,10 @@ get_raw = register_read(
     {"path": string(300)},
     ("path",),
 )
+
+
+@endpoint("brain.propose-feed", title="Propose brain memory",
+          description="Capture a source for extraction and human approval. Does not change notes.",
+          input=brain_input(INTAKE_PROPERTIES), access="write", permission="brain:write", rate=(20, 60))
+def propose_feed(ctx, params):
+    return propose(ctx, params)

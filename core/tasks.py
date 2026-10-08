@@ -485,6 +485,12 @@ def worker_heartbeat_task() -> dict:
         except Exception:
             logger.exception("Stale package-operation reconciliation failed")
 
+        try:
+            from core.brain.feeder import reconcile
+            reconcile()
+        except Exception:
+            logger.exception("Brain feed reconciliation failed")
+
         logger.debug("Worker heartbeat updated")
         return {"success": True, "heartbeat_at": str(settings.worker_heartbeat_at)}
     except Exception as e:

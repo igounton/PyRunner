@@ -95,7 +95,7 @@ class PyAIService:
         )
 
     @classmethod
-    def respond(cls, message: str, *, workspace, history=None) -> PyAIResult:
+    def respond(cls, message: str, *, workspace, history=None, agent="pyai") -> PyAIResult:
         """Answer ``message`` about ``workspace``. Raises PyAIError on config/run failure."""
         s = GlobalSettings.get_settings()
         if not s.pyai_enabled:
@@ -117,9 +117,8 @@ class PyAIService:
         if s.pyai_system_prompt:
             system = f"{system}\n\n{s.pyai_system_prompt}"
 
-        result = _run(
-            cls._drive(cls._build_prompt(message, history), system, model, env, workspace)
-        )
+        args = (cls._build_prompt(message, history), system, model, env, workspace)
+        result = _run(cls._drive(*args) if agent == "pyai" else cls._drive(*args, agent=agent))
         cls._record_usage(result)
         if result.is_error and not result.text:
             raise PyAIError(result.error or "Py AI run failed.")
@@ -137,12 +136,14 @@ class PyAIService:
         return "\n".join(lines)
 
     @staticmethod
-    async def _drive(prompt, system, model, env, workspace) -> PyAIResult:
+    async def _drive(prompt, system, model, env, workspace, *, agent="pyai") -> PyAIResult:
         import claude_agent_sdk as sdk
 
         from asgiref.sync import sync_to_async
 
-        tools = await sync_to_async(build_tools)(workspace)
+        tools = await sync_to_async(build_tools)(workspace, agent=agent)
+        if any(t.name == "remember" for t in tools):
+            system += "\nYou also have explicit permission to propose brain memories with remember. Proposals await human approval; they never apply changes."
         server = sdk.create_sdk_mcp_server(name=SERVER_NAME, tools=tools)
         kwargs = {
             "mcp_servers": {SERVER_NAME: server},

@@ -1,11 +1,10 @@
 """
-Read-only introspection tools for Py AI — an in-process MCP server (claude-agent-sdk).
+Workspace introspection and granted Brain tools for Py AI's in-process MCP server.
 
-Every tool is a thin wrapper over an existing ORM read path, scoped to one
-workspace, and exposed to Claude as an SDK MCP tool. There are NO write/run/
-secret tools by construction: safety comes from what doesn't exist here, not from
-prompt wording. ORM access is wrapped in ``sync_to_async`` because tool handlers
-run inside the SDK's event loop.
+Introspection wraps existing workspace-scoped reads. Brain tools recheck grants;
+remember only captures a proposal for human approval. No tool runs scripts,
+reveals secrets or applies note changes. ORM access is wrapped in
+``sync_to_async`` because handlers run inside the SDK's event loop.
 """
 
 import json
@@ -126,8 +125,8 @@ _QUERY_SCHEMA = {
 }
 
 
-def build_tools(workspace):
-    """Return the workspace-scoped read-only tool list for Py AI."""
+def build_tools(workspace, *, agent="pyai"):
+    """Return introspection tools plus the agent's currently granted Brain tools."""
     from core.brain.tools import build_tools as brain_tools
 
     @tool("count_scripts", "Count the scripts in this workspace.", {})
@@ -163,7 +162,7 @@ def build_tools(workspace):
         )
 
     return [count_scripts, list_scripts, get_script, recent_runs,
-            list_schedules, list_datastores, query_datastore] + brain_tools(workspace)
+            list_schedules, list_datastores, query_datastore] + brain_tools(workspace, agent=agent)
 
 
 TOOL_NAMES = [

@@ -93,7 +93,7 @@ class BrainService:
 
     @staticmethod
     @transaction.atomic
-    def commit(workspace, brain_id, files, *, expected_head, message, author=None, source="edit"):
+    def commit(workspace, brain_id, files, *, expected_head, message, author=None, source="edit", feed=None):
         """Replace the manifest, with optimistic concurrency and one row lock."""
         validate_files(files)
         version = validate_contract(files)
@@ -102,6 +102,12 @@ class BrainService:
         if source not in {"seed", "import", "edit", "feed", "sync"}:
             raise ApiError("invalid_input", "Unknown revision source.")
         brain = BrainService.get(workspace, brain_id, lock=True)
+        if feed is not None:
+            if feed.brain_id != brain.pk:
+                raise ApiError("not_found", "Unknown feed.", 404)
+            applied = BrainRevision.objects.filter(brain=brain, brain__workspace=workspace, feed=feed).first()
+            if applied:
+                return applied
         if str(brain.head_revision_id or "") != str(expected_head or ""):
             raise ApiError("head_changed", "The brain changed. Reload and review your edit.", 409)
         parent = brain.head_revision
@@ -109,7 +115,7 @@ class BrainService:
         manifest = {
             path: hashlib.sha256(text.encode("utf-8")).hexdigest() for path, text in files.items()
         }
-        if parent and manifest == previous:
+        if parent and manifest == previous and feed is None:
             return parent
         existing = set(
             BrainBlob.objects.filter(brain=brain, brain__workspace=workspace).values_list(
@@ -132,6 +138,7 @@ class BrainService:
             message=message.strip(),
             author=author,
             source=source,
+            feed=feed,
         )
         changed = {
             path

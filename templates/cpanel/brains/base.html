@@ -17,6 +17,7 @@
             <nav class="flex flex-wrap gap-4 text-sm" aria-label="Brain navigation">
                 <a class="text-ok" href="{% url 'cpanel:brain_detail' brain.pk %}">Files</a>
                 <a class="text-ok" href="{% url 'cpanel:brain_revisions' brain.pk %}">Revisions</a>
+                <a class="text-ok" href="{% url 'cpanel:brain_inbox' brain.pk %}">Inbox</a>
                 {% if can_manage %}<a class="text-ok" href="{% url 'cpanel:brain_settings' brain.pk %}">Settings</a><a class="text-ok" href="{% url 'cpanel:brain_grants' brain.pk %}">Grants</a>{% endif %}
                 <a class="text-ok" href="{% url 'cpanel:brain_export' brain.pk %}">Export ZIP</a>
             </nav>

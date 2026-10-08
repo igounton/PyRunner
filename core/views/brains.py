@@ -20,6 +20,7 @@ from core.brain.paths import MAX_IMPORT_BYTES, MAX_NOTE_BYTES, MAX_RAW_BYTES, va
 from core.brain.service import BrainService
 from core.models import Brain, BrainGrant, WorkspaceMembership
 from core.views.workspaces import _require_manage
+from core.brain import approval, feeder, intake
 
 
 class StyledForm:
@@ -121,6 +122,35 @@ class BrainGrantForm(StyledForm, forms.ModelForm):
                 )
             except ValidationError as exc:
                 self.add_error(None, exc)
+        return data
+
+
+class BrainFeedForm(StyledForm, forms.Form):
+    source_kind = forms.ChoiceField(choices=[(value, value.title()) for value in intake.SOURCE_KINDS])
+    title = forms.CharField(max_length=500, required=False)
+    url = forms.URLField(max_length=2048, required=False, label="Source URL")
+    content = forms.CharField(max_length=intake.MAX_PAYLOAD, required=False, strip=False, widget=forms.Textarea(attrs={"rows": 9}))
+    notes = forms.CharField(max_length=intake.MAX_PAYLOAD, required=False, widget=forms.Textarea(attrs={"rows": 3}))
+
+
+class BrainProposalForm(StyledForm, forms.Form):
+    proposal = forms.JSONField(required=False, widget=forms.Textarea(attrs={"rows": 20}))
+    proposal_file = forms.FileField(required=False, label="Proposal JSON file (optional)",
+                                    help_text="Replaces the editor; at most 50 MB UTF-8 JSON.")
+    expected_digest = forms.CharField(widget=forms.HiddenInput)
+
+    def clean(self):
+        data = super().clean()
+        upload = data.get("proposal_file")
+        if upload:
+            from core.api.schema import loads
+            try:
+                raw = upload.read(MAX_IMPORT_BYTES + 1)
+                if len(raw) > MAX_IMPORT_BYTES:
+                    raise ApiError("too_large", "Proposal JSON exceeds 50 MB.")
+                data["proposal"] = loads(raw)
+            except ApiError as exc:
+                self.add_error("proposal_file", exc.message)
         return data
 
 
@@ -383,3 +413,83 @@ def brain_export_view(request, brain_id):
     response["Content-Disposition"] = f'attachment; filename="{brain.slug}.zip"'
     response["Cache-Control"] = "private, no-store"
     return response
+
+
+@login_required
+def brain_inbox_view(request, brain_id):
+    brain = _brain(request, brain_id)
+    page = Paginator(brain.feeds.filter(brain__workspace=request.workspace), 50).get_page(request.GET.get("page"))
+    return render(request, "cpanel/brains/inbox.html", _context(request, brain, page=page))
+
+
+@login_required
+def brain_feed_create_view(request, brain_id):
+    brain = _brain(request, brain_id)
+    form = BrainFeedForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            feed = intake.capture(request.workspace, brain.pk, form.cleaned_data,
+                                  channel="console", principal=f"user:{request.user.pk}")
+        except ApiError as exc:
+            _error(form, exc)
+        else:
+            messages.success(request, "Source captured for human review.")
+            return redirect("cpanel:brain_feed", brain_id=brain.pk, feed_id=feed.pk)
+    return render(request, "cpanel/brains/form.html", _context(request, brain, form=form,
+                  heading="Add a source", submit="Capture source"))
+
+
+@login_required
+def brain_feed_view(request, brain_id, feed_id):
+    import json
+
+    brain = _brain(request, brain_id)
+    try:
+        feed = approval.get_feed(request.workspace, brain.pk, feed_id)
+    except ApiError:
+        raise Http404 from None
+    form = BrainProposalForm(initial={"proposal": feed.proposal, "expected_digest": approval.digest(feed)})
+    if request.method == "POST":
+        action = request.POST.get("action")
+        try:
+            if action in {"approve", "reject"}:
+                _require_manage(request, request.workspace)
+                decision = approval.approve if action == "approve" else approval.reject
+                updated = decision(request.workspace, brain.pk, feed.pk,
+                                   expected_digest=request.POST.get("expected_digest", ""), user=request.user,
+                                   note=request.POST.get("note", ""))
+                if updated.needs_review:
+                    messages.warning(request, updated.error)
+                else:
+                    messages.success(request, f"Feed {updated.get_status_display().lower()}.")
+                return redirect("cpanel:brain_feed", brain_id=brain.pk, feed_id=feed.pk)
+            if action == "retry":
+                feeder.retry(request.workspace, brain.pk, feed.pk, content=request.POST.get("content"))
+                messages.success(request, "Extraction queued.")
+                return redirect("cpanel:brain_feed", brain_id=brain.pk, feed_id=feed.pk)
+            if action == "edit":
+                form = BrainProposalForm(request.POST, request.FILES)
+                if form.is_valid():
+                    approval.edit_proposal(request.workspace, brain.pk, feed.pk, form.cleaned_data["proposal"],
+                                           expected_digest=form.cleaned_data["expected_digest"])
+                    messages.success(request, "Proposal saved for review.")
+                    return redirect("cpanel:brain_feed", brain_id=brain.pk, feed_id=feed.pk)
+            elif action not in {"approve", "reject", "retry"}:
+                raise ApiError("invalid_input", "Unknown feed action.")
+        except ApiError as exc:
+            messages.error(request, exc.message)
+    current = None
+    if feed.proposal is not None:
+        try:
+            current = approval.review(request.workspace, brain.pk, feed.pk)
+        except ApiError as exc:
+            messages.error(request, exc.message)
+    proposal_text = json.dumps(feed.proposal, ensure_ascii=False, indent=2) if feed.proposal is not None else ""
+    if len(proposal_text.encode("utf-8")) > MAX_NOTE_BYTES:
+        # The bounded upload supports large proposals without a multi-MB textarea.
+        form.initial["proposal"] = None
+    return render(request, "cpanel/brains/feed.html", _context(request, brain, feed=feed,
+                  review=current, form=form, expected_digest=approval.digest(feed),
+                  editable=feed.status in {"pending", "failed", "proposed"},
+                  retryable=feed.status in {"pending", "failed"},
+                  decidable=feed.status not in {"applied", "rejected", "approving"}))

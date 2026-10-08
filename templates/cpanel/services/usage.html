@@ -164,6 +164,8 @@
                                 <td class="px-6 py-2.5">
                                     {% if row.source == 'test' %}
                                     <span class="px-2 py-0.5 rounded-md text-xs bg-warn/10 text-warn">test</span>
+                                    {% elif row.source == 'brain' %}
+                                    <span class="text-muted" title="{{ row.brain_id }}">Brain</span>
                                     {% elif row.script_name %}
                                     <a href="{% url 'cpanel:script_detail' pk=row.script_id %}" class="text-info hover:underline transition">{{ row.script_name }}</a>
                                     {% else %}

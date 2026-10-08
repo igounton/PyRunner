@@ -117,6 +117,9 @@ class BrainRevision(ImmutableRecord):
     source = models.CharField(
         max_length=16, choices=[(v, v) for v in ("seed", "import", "edit", "feed", "sync")]
     )
+    feed = models.OneToOneField(
+        "BrainFeed", null=True, blank=True, on_delete=models.SET_NULL, related_name="applied_revision"
+    )
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:
@@ -198,3 +201,53 @@ class BrainGrant(models.Model):
                 name="brain_grant_valid_subject",
             ),
         ]
+
+
+class BrainFeed(models.Model):
+    """Captured source and reviewed proposal; only approval creates a revision."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        EXTRACTING = "extracting", "Extracting"
+        PROPOSED = "proposed", "Ready for review"
+        APPROVING = "approving", "Applying"
+        APPLIED = "applied", "Applied"
+        REJECTED = "rejected", "Rejected"
+        FAILED = "failed", "Failed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    brain = models.ForeignKey(Brain, on_delete=models.CASCADE, related_name="feeds")
+    source_id = models.CharField(max_length=120)
+    channel = models.CharField(max_length=16, choices=[
+        (value, value) for value in ("console", "api", "mcp", "script", "plugin", "agent", "telegram")
+    ])
+    principal = models.CharField(max_length=256)
+    raw_payload = models.JSONField(default=dict)
+    base_revision = models.ForeignKey(
+        BrainRevision, null=True, blank=True, on_delete=models.SET_NULL, related_name="based_feeds"
+    )
+    proposal = models.JSONField(null=True, blank=True)
+    proposal_edited = models.BooleanField(default=False)
+    needs_review = models.BooleanField(default=False)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="brain_decisions"
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.TextField(blank=True)
+    revision = models.ForeignKey(
+        BrainRevision, null=True, blank=True, on_delete=models.SET_NULL, related_name="feeds_applied"
+    )
+    retries = models.PositiveSmallIntegerField(default=0)
+    error = models.TextField(blank=True)
+    cost_usd = models.DecimalField(max_digits=14, decimal_places=6, null=True, blank=True)
+    queued_at = models.DateTimeField(null=True, blank=True)
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    claim_id = models.UUIDField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "brain_feeds"
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["brain", "status", "created_at"], name="brain_feed_queue")]

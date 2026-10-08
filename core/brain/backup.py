@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
 from core.api.errors import ApiError
-from core.models import AIProvider, Brain, BrainBlob, BrainFeed, BrainGrant, BrainRevision
+from core.models import AIProvider, Brain, BrainBlob, BrainFeed, BrainGrant, BrainRevision, VectorCollection
 from .contract import validate_contract
 from .paths import validate_files
 from .service import BrainService
@@ -38,6 +38,7 @@ def export_brains():
                 "head_revision_id": str(brain.head_revision_id) if brain.head_revision_id else None,
                 "ai_provider_name": brain.ai_provider.name if brain.ai_provider else None,
                 "reader_model": brain.reader_model,
+                "vector_collection_name": brain.vector_collection.name if brain.vector_collection_id else None,
                 "feeder_model": brain.feeder_model,
                 "daily_cost_cap_usd": str(brain.daily_cost_cap_usd)
                 if brain.daily_cost_cap_usd is not None
@@ -144,6 +145,10 @@ def import_brains(rows, *, workspace_for, user_map, script_map, current_user):
             warnings.append(
                 f"Brain {row['slug']}: configure AI provider {provider_name!r}; using the active provider until then."
             )
+        collection_name = row.get("vector_collection_name")
+        collection = VectorCollection.objects.for_workspace(workspace).filter(name=collection_name).first() if collection_name else None
+        if collection_name and collection is None:
+            warnings.append(f"Brain {row['slug']}: vector collection missing; semantic recall disabled until configured.")
         brain = Brain(
             id=row["id"],
             workspace=workspace,
@@ -155,6 +160,8 @@ def import_brains(rows, *, workspace_for, user_map, script_map, current_user):
             contract_version=row.get("contract_version", ""),
             legacy_descriptions=row.get("legacy_descriptions", {}),
             ai_provider=provider,
+            vector_collection=collection,
+            vector_error="Restored brain. Save Brain settings to verify and rebuild semantic chunks." if collection else "",
             reader_model=row.get("reader_model", ""),
             feeder_model=row.get("feeder_model", ""),
             daily_cost_cap_usd=Decimal(row["daily_cost_cap_usd"])

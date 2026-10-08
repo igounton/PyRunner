@@ -577,6 +577,9 @@ brain.note("take-example")       # {tier, entity_id, path, content}
 brain.identity()                 # {tier, files}
 brain.lens("default")            # {tier, name, content}
 brain.raw("raw/archive.md")      # {tier, path, content}; visible linked raw only
+brain.search("Useful context", k=5)  # {tier, hits, index_current}; optional vectors
+brain.assemble_context(task="Draft a reply", lens="default")
+                                # context_pack, verified sources, entity_ids_used, gaps
 brain.propose(title="A thought", content="Source text", source_kind="thought")
                                 # {feed_id, source_id, status, message, error}
 
@@ -601,6 +604,20 @@ They call the signed loopback API even on SQLite. SDK read errors raise
 helper. Above-tier, ungranted and missing notes all return the same unknown
 error. Py AI receives these tools only with an explicit `agent:pyai` grant;
 execution rechecks grants, so revocation takes effect without a restart.
+
+`assemble_context(task, lens="")` uses the brain's AI profile and daily cap.
+Sources list only notes the confined reader actually opened. Changes to the
+brain or access during the call discard the result and require a retry. Console
+queries use Ask brain's background queue; scripts have a 45-second call budget.
+MCP uses the configured MCP call budget. No personal CLI settings are loaded.
+
+Semantic search is optional. Select a workspace vector collection with an
+embedding provider in Brain settings. New revisions queue indexing; search
+filters and verifies every hit against canonical tier text while it catches up.
+The collection contains separate public, agents-only and private chunks. Use
+a dedicated collection and a trusted provider: direct collection access is
+broader than a Brain grant. `index_current=False` reports pending indexing.
+Saving Brain settings retries indexing; canonical notes remain usable on errors.
 
 `propose(title="", url="", content="", notes="", source_kind="doc")` captures
 a source for the approval inbox. Owned brains permit proposals; shared brains

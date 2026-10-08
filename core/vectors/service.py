@@ -331,8 +331,11 @@ class VectorService:
         return store
 
     @classmethod
-    def handle(cls, collection) -> "CollectionHandle":
-        return CollectionHandle(collection, cls.store_for(collection))
+    def handle(cls, collection, *, session=None) -> "CollectionHandle":
+        store = cls.store_for(collection)
+        if session is not None and not collection.is_local:
+            store._session = session
+        return CollectionHandle(collection, store, session=session)
 
     @staticmethod
     def size_bytes(collection) -> int:
@@ -457,9 +460,10 @@ class VectorService:
 class CollectionHandle:
     """Every operation on one collection — the contract every door exposes."""
 
-    def __init__(self, collection: VectorCollection, store):
+    def __init__(self, collection: VectorCollection, store, *, session=None):
         self.collection = collection
         self.store = store
+        self.session = session
 
     # ------------------------------------------------------------- writes
 
@@ -593,7 +597,8 @@ class CollectionHandle:
         from core.vectors.embeddings import EmbeddingClient
 
         try:
-            result = EmbeddingClient(provider).embed(texts, input_type=input_type)
+            client = EmbeddingClient(provider, session=self.session) if self.session is not None else EmbeddingClient(provider)
+            result = client.embed(texts, input_type=input_type)
         except Exception as e:
             raise _translate(e) from e
         self._record_usage(provider, result)

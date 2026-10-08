@@ -157,6 +157,10 @@ class BrainService:
         brain.head_revision = revision
         brain.contract_version = version
         brain.save(update_fields=["head_revision", "contract_version", "updated_at"])
+        if brain.vector_collection_id:
+            from .recall import enqueue
+
+            transaction.on_commit(lambda: enqueue(workspace.pk, brain.pk))
         log.info(
             "brain_revision brain=%s workspace=%s revision=%s source=%s changed=%d",
             brain.pk,

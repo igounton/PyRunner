@@ -117,14 +117,15 @@ class EmbeddingClient:
         body = self._request_body(batch, input_type)
         headers = self._headers()
         last_error = None
-        for attempt in range(len(RETRY_BACKOFF) + 1):
+        attempts = 1 if getattr(self._session, "bounded", False) is True else len(RETRY_BACKOFF) + 1
+        for attempt in range(attempts):
             try:
                 response = self._session.post(
                     url, json=body, headers=headers, timeout=TIMEOUT_SECONDS
                 )
             except requests.RequestException as e:
                 last_error = EmbeddingError(f"could not reach {url}: {e}")
-                if attempt < len(RETRY_BACKOFF):
+                if attempt < attempts - 1:
                     time.sleep(RETRY_BACKOFF[attempt])
                     continue
                 raise last_error from e
@@ -134,7 +135,7 @@ class EmbeddingClient:
                     f"provider answered HTTP {response.status_code}: "
                     f"{_error_message(response) or response.reason}"
                 )
-                if attempt < len(RETRY_BACKOFF):
+                if attempt < attempts - 1:
                     time.sleep(RETRY_BACKOFF[attempt])
                     continue
                 raise last_error

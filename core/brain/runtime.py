@@ -172,6 +172,8 @@ def run_agent(
 ):
     import claude_agent_sdk as sdk
 
+    if cwd is not None and not (hooks or {}).get("PreToolUse"):
+        raise ApiError("snapshot_error", "The reader's file guard is unavailable.", 503)
     usage, env, model, budget = prepare(workspace, brain_id, kind)
     result, partial, started = AgentResult(model=model), PartialUsage(), time.monotonic()
     try:

@@ -8,9 +8,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from core.api.errors import ApiError
@@ -20,6 +19,7 @@ from core.brain.paths import MAX_IMPORT_BYTES, MAX_NOTE_BYTES, MAX_RAW_BYTES, va
 from core.brain.service import BrainService
 from core.models import Brain, BrainGrant, WorkspaceMembership
 from core.views.workspaces import _require_manage
+from core.templatetags.workspace_tags import ws_url
 from core.brain import approval, feeder, intake
 
 
@@ -88,6 +88,7 @@ class BrainSettingsForm(StyledForm, forms.ModelForm):
             "reader_model",
             "feeder_model",
             "daily_cost_cap_usd",
+            "vector_collection",
             "include_in_backup",
         ]
         widgets = {"description": forms.Textarea(attrs={"rows": 3})}
@@ -98,7 +99,19 @@ class BrainSettingsForm(StyledForm, forms.ModelForm):
             "feeder_model": "Blank uses the provider default.",
             "daily_cost_cap_usd": "Blank means no daily cap. Zero prevents AI runs.",
             "include_in_backup": "Include this brain and its complete revision history in portable backups.",
+            "vector_collection": "Optional: indexes all visibility tiers into this workspace collection. Anyone with direct collection access can read its private chunks. Use a dedicated collection and a trusted embedding provider. Save to rebuild missing chunks.",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from core.models import VectorCollection
+
+        self.fields["vector_collection"].queryset = VectorCollection.objects.for_workspace(self.instance.workspace).filter(embedding_provider__isnull=False)
+
+
+class BrainReaderForm(StyledForm, forms.Form):
+    task = forms.CharField(max_length=8000, widget=forms.Textarea(attrs={"rows": 5}))
+    lens = forms.CharField(max_length=100, required=False, help_text="Optional lens name, such as building-in-public.")
 
 
 class BrainGrantForm(StyledForm, forms.ModelForm):
@@ -160,6 +173,11 @@ def _brain(request, brain_id):
     )
 
 
+def _url(request, name, **kwargs):
+    return ws_url({"request": request, "show_workspace_switcher": request.resolver_match.namespace == "cpanel_ws"},
+                  f"cpanel:{name}", **kwargs)
+
+
 def _context(request, brain=None, **extra):
     membership = WorkspaceMembership.objects.filter(
         user=request.user, workspace=request.workspace
@@ -213,7 +231,7 @@ def brain_create_view(request):
             _error(form, exc)
         else:
             messages.success(request, "Brain created.")
-            return redirect("cpanel:brain_detail", brain_id=brain.pk)
+            return redirect(_url(request, "brain_detail", brain_id=brain.pk))
     return render(
         request,
         "cpanel/brains/form.html",
@@ -310,7 +328,7 @@ def brain_edit_view(request, brain_id):
         else:
             messages.success(request, f"Saved revision {revision.number}.")
             return redirect(
-                reverse("cpanel:brain_detail", kwargs={"brain_id": brain.pk})
+                _url(request, "brain_detail", brain_id=brain.pk)
                 + ("?" + urlencode({"path": data["path"]}) if not data["delete"] else "")
             )
     return render(
@@ -357,9 +375,18 @@ def brain_settings_view(request, brain_id):
     form = BrainSettingsForm(request.POST or None, instance=brain)
     if request.method == "POST" and form.is_valid():
         # Only configuration fields: a concurrent writer may advance HEAD.
-        brain.save(update_fields=list(form.changed_data) + ["updated_at"])
+        changed = list(form.changed_data)
+        if "vector_collection" in changed:
+            brain.vector_revision, brain.vector_claim, brain.vector_claimed_at = None, None, None
+            brain.vector_error = ""
+            changed += ["vector_revision", "vector_claim", "vector_claimed_at", "vector_error"]
+        brain.save(update_fields=changed + ["updated_at"])
+        if brain.vector_collection_id:
+            from core.brain.recall import enqueue
+
+            enqueue(request.workspace.pk, brain.pk)
         messages.success(request, "Brain settings saved.")
-        return redirect("cpanel:brain_settings", brain_id=brain.pk)
+        return redirect(_url(request, "brain_settings", brain_id=brain.pk))
     return render(
         request,
         "cpanel/brains/form.html",
@@ -381,7 +408,7 @@ def brain_grants_view(request, brain_id):
             defaults={key: form.cleaned_data[key] for key in ("max_tier", "can_propose")},
         )
         messages.success(request, "Grant saved.")
-        return redirect("cpanel:brain_grants", brain_id=brain.pk)
+        return redirect(_url(request, "brain_grants", brain_id=brain.pk))
     return render(
         request,
         "cpanel/brains/grants.html",
@@ -403,7 +430,7 @@ def brain_grant_delete_view(request, brain_id, grant_id):
     _require_manage(request, request.workspace)
     get_object_or_404(brain.grants.filter(brain__workspace=request.workspace), pk=grant_id).delete()
     messages.success(request, "Grant revoked.")
-    return redirect("cpanel:brain_grants", brain_id=brain.pk)
+    return redirect(_url(request, "brain_grants", brain_id=brain.pk))
 
 
 @login_required
@@ -423,6 +450,42 @@ def brain_inbox_view(request, brain_id):
 
 
 @login_required
+def brain_reader_view(request, brain_id):
+    from core.brain.jobs import submit
+    from uuid import UUID
+
+    brain = _brain(request, brain_id)
+    form = BrainReaderForm(request.POST or None)
+    job = None
+    if request.GET.get("job"):
+        try:
+            identifier = UUID(request.GET["job"])
+        except ValueError:
+            raise Http404 from None
+        job = get_object_or_404(brain.reader_jobs.filter(brain__workspace=request.workspace, user=request.user), pk=identifier)
+    if request.method == "POST" and form.is_valid():
+        try:
+            job = submit(request.workspace, brain, request.user, **form.cleaned_data)
+        except ApiError as exc:
+            _error(form, exc)
+        else:
+            return redirect(_url(request, "brain_reader", brain_id=brain.pk) + "?" + urlencode({"job": job.pk}))
+    return render(request, "cpanel/brains/reader.html", _context(request, brain, form=form, job=job))
+
+
+@login_required
+def brain_reader_status_view(request, brain_id, job_id):
+    brain = _brain(request, brain_id)
+    job = get_object_or_404(brain.reader_jobs.filter(brain__workspace=request.workspace, user=request.user), pk=job_id)
+    result, error, status = job.result, job.error, job.status
+    if status == "complete" and job.revision_id != brain.head_revision_id:
+        result, error, status = None, "The brain changed. Run the query again.", "failed"
+    response = JsonResponse({"status": status, "result": result, "error": error})
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@login_required
 def brain_feed_create_view(request, brain_id):
     brain = _brain(request, brain_id)
     form = BrainFeedForm(request.POST or None)
@@ -434,7 +497,7 @@ def brain_feed_create_view(request, brain_id):
             _error(form, exc)
         else:
             messages.success(request, "Source captured for human review.")
-            return redirect("cpanel:brain_feed", brain_id=brain.pk, feed_id=feed.pk)
+            return redirect(_url(request, "brain_feed", brain_id=brain.pk, feed_id=feed.pk))
     return render(request, "cpanel/brains/form.html", _context(request, brain, form=form,
                   heading="Add a source", submit="Capture source"))
 
@@ -462,18 +525,18 @@ def brain_feed_view(request, brain_id, feed_id):
                     messages.warning(request, updated.error)
                 else:
                     messages.success(request, f"Feed {updated.get_status_display().lower()}.")
-                return redirect("cpanel:brain_feed", brain_id=brain.pk, feed_id=feed.pk)
+                return redirect(_url(request, "brain_feed", brain_id=brain.pk, feed_id=feed.pk))
             if action == "retry":
                 feeder.retry(request.workspace, brain.pk, feed.pk, content=request.POST.get("content"))
                 messages.success(request, "Extraction queued.")
-                return redirect("cpanel:brain_feed", brain_id=brain.pk, feed_id=feed.pk)
+                return redirect(_url(request, "brain_feed", brain_id=brain.pk, feed_id=feed.pk))
             if action == "edit":
                 form = BrainProposalForm(request.POST, request.FILES)
                 if form.is_valid():
                     approval.edit_proposal(request.workspace, brain.pk, feed.pk, form.cleaned_data["proposal"],
                                            expected_digest=form.cleaned_data["expected_digest"])
                     messages.success(request, "Proposal saved for review.")
-                    return redirect("cpanel:brain_feed", brain_id=brain.pk, feed_id=feed.pk)
+                    return redirect(_url(request, "brain_feed", brain_id=brain.pk, feed_id=feed.pk))
             elif action not in {"approve", "reject", "retry"}:
                 raise ApiError("invalid_input", "Unknown feed action.")
         except ApiError as exc:

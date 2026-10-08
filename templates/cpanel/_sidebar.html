@@ -1,3 +1,4 @@
+{% load workspace_tags %}
 <!-- Sidebar Navigation Component -->
 <!-- Mobile drawer backdrop (before the drawer so the drawer stacks above it; dims the header too) -->
 <div id="sidebar-overlay" onclick="closeSidebar()" class="fixed inset-0 bg-black/60 z-50 hidden lg:hidden"></div>
@@ -42,7 +43,7 @@
             <span>Libraries</span>
         </a>
 
-        <a href="{% url 'cpanel:brain_list' %}" class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'brain' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+        <a href="{% ws_url 'cpanel:brain_list' %}" class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'brain' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4H5a2 2 0 00-2 2v14l9-4 9 4V6a2 2 0 00-2-2h-4M9 4v7l3-2 3 2V4M9 4h6"/></svg>
             <span>Brains</span>
         </a>

@@ -488,6 +488,8 @@ def worker_heartbeat_task() -> dict:
         try:
             from core.brain.feeder import reconcile
             reconcile()
+            from core.brain.jobs import reconcile as reconcile_readers
+            reconcile_readers()
         except Exception:
             logger.exception("Brain feed reconciliation failed")
 

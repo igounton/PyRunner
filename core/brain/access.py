@@ -6,6 +6,7 @@ import uuid
 
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.utils import timezone
 
 from core.api.context import CallContext
 from core.api.errors import ApiError
@@ -59,6 +60,20 @@ def access_for(ctx, brain):
         raise unknown()
     if ctx.resource is not None and ctx.resource.pk != brain.pk:
         raise unknown()
+    if ctx.principal == "user":
+        from core.models import User, WorkspaceMembership
+
+        user = User.objects.filter(pk=ctx.principal_id, is_active=True).first()
+        if user and (user.is_superuser or WorkspaceMembership.objects.filter(user=user, workspace=ctx.workspace).exists()):
+            return Access("private", True)
+        raise unknown()
+    token = None
+    if ctx.principal == "token":
+        token = APIToken.objects.filter(pk=ctx.principal_id, workspace=ctx.workspace, scope="api", is_active=True).first()
+        if (token is None or (token.expires_at and token.expires_at <= timezone.now())
+                or not ctx.permissions.issubset(token.permissions)
+                or (token.brain_id and token.brain_id != brain.pk)):
+            raise unknown()
     entries = list(grants(ctx).filter(brain=brain))
     owned = bool(brain.owner_plugin and ("plugin", brain.owner_plugin) in subjects(ctx))
     if not entries and not owned:
@@ -66,6 +81,8 @@ def access_for(ctx, brain):
     rank = 2 if owned else max(TIER_ORDER.get(g.max_tier, -1) for g in entries)
     if ctx.tier is not None:
         rank = min(rank, TIER_ORDER.get(ctx.tier, -1))
+    if token is not None:
+        rank = min(rank, TIER_ORDER.get(token.brain_tier, -1))
     if rank < 0:
         raise unknown()
     return Access(TIERS[rank], rank >= 1 and (owned or any(g.can_propose for g in entries)))

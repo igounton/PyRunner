@@ -192,10 +192,12 @@ class BrainDoorTests(TestCase):
         with self.assertRaises(ApiError):
             self.call("get-note", entity_id="take-agent")
         self.token.brain_tier = "agents-only"
+        self.token.save(update_fields=["brain_tier"])
         self.assertIn("take-agent", self.call("get-note", entity_id="take-agent")["content"])
         with self.assertRaises(ApiError):
             self.call("get-note", entity_id="take-private")
         self.token.brain_tier = "private"
+        self.token.save(update_fields=["brain_tier"])
         self.assertEqual(self.call("get-raw", path="raw/unlinked.md")["content"], "Private raw")
 
     def test_binding_and_workspace_hold_even_with_foreign_grant(self):
@@ -331,7 +333,7 @@ class BrainDoorTests(TestCase):
             )
 
     def test_pyai_tools_filtered_and_recheck_revoked_grants(self):
-        self.assertEqual(len(build_tools(self.ws)), 8)
+        self.assertEqual(len(build_tools(self.ws)), 10)
         self.assertEqual(build_tools(self.other), [])
         tool = next(t for t in build_tools(self.ws) if t.name == "brain-ping")
         self.brain.grants.filter(subject_kind="agent").delete()

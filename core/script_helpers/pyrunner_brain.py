@@ -75,6 +75,12 @@ class Brain:
     def raw(self, path):
         return self._call("get-raw", path=path)
 
+    def assemble_context(self, *, task, lens=""):
+        return self._call("assemble-context", task=task, lens=lens)
+
+    def search(self, query, *, k=5):
+        return self._call("search", query=query, k=k)
+
     def propose(self, *, title="", url="", content="", notes="", source_kind="doc"):
         return self._call("propose-feed", title=title, url=url, content=content, notes=notes, source_kind=source_kind)
 

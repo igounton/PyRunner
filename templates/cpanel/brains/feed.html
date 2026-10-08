@@ -1,9 +1,10 @@
 {% extends "cpanel/brains/base.html" %}
+{% load workspace_tags %}
 {% block heading %}{{ feed.raw_payload.title|default:feed.source_id }}{% endblock %}
 {% block brain_content %}
 <p class="text-sm text-muted">{{ feed.get_status_display }}{% if feed.needs_review %} · Re-review required{% endif %} · {{ feed.channel }} · {{ feed.created_at }}</p>
 {% if feed.error %}<p class="rounded-xl border border-warn/30 bg-warn/5 p-4 text-sm text-warn break-words">{{ feed.error }}</p>{% endif %}
-{% if feed.revision_id %}<a class="text-ok text-sm" href="{% url 'cpanel:brain_diff' brain.pk feed.revision_id %}">View applied revision</a>{% endif %}
+{% if feed.revision_id %}<a class="text-ok text-sm" href="{% ws_url 'cpanel:brain_diff' brain.pk feed.revision_id %}">View applied revision</a>{% endif %}
 <details class="rounded-xl border border-line bg-panel p-4"><summary class="cursor-pointer text-sm font-medium">Source content</summary><p class="text-xs text-muted break-all mt-3">{{ feed.raw_payload.source_url }}</p><pre class="whitespace-pre-wrap break-words text-sm mt-3">{{ feed.raw_payload.content }}</pre><p class="text-sm mt-3 break-words">{{ feed.raw_payload.notes }}</p></details>
 {% if review %}
 <section class="rounded-xl border border-line bg-panel p-4 space-y-3"><h2 class="font-semibold">Validation</h2>

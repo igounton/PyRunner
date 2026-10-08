@@ -387,7 +387,8 @@ class QdrantStore:
             headers["api-key"] = self._api_key
         url = f"{self.url}{path}"
         last_error = None
-        for attempt in range(len(RETRY_BACKOFF) + 1):
+        attempts = 1 if getattr(self._session, "bounded", False) is True else len(RETRY_BACKOFF) + 1
+        for attempt in range(attempts):
             try:
                 response = self._session.request(
                     method, url, params=params, json=json, headers=headers, timeout=TIMEOUT_SECONDS
@@ -403,7 +404,7 @@ class QdrantStore:
                     return self._parse(response, allow_404)
                 # Server/proxy error bodies can echo URLs or credentials.
                 last_error = BackendUnavailable(f"Qdrant answered HTTP {status}")
-            if attempt < len(RETRY_BACKOFF):
+            if attempt < attempts - 1:
                 time.sleep(RETRY_BACKOFF[attempt])
         raise last_error
 

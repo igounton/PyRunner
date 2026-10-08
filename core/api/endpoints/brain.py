@@ -93,3 +93,22 @@ get_raw = register_read(
           input=brain_input(INTAKE_PROPERTIES), access="write", permission="brain:write", rate=(20, 60))
 def propose_feed(ctx, params):
     return propose(ctx, params)
+
+
+@endpoint("brain.assemble-context", title="Assemble brain context",
+          description="Read a small set of visible notes and assemble a verified context pack.",
+          input=brain_input({"task": string(8000), "lens": string(100)}, ("task",)),
+          permission="brain:read", rate=(10, 60))
+def assemble_context(ctx, params):
+    from core.brain.reader import assemble
+
+    return assemble(ctx, params)
+
+
+@endpoint("brain.search", title="Search brain notes", description="Optional semantic recall at your visibility tier.",
+          input=brain_input({"query": string(8000), "k": {"type": "integer", "minimum": 1, "maximum": 20}}, ("query",)),
+          permission="brain:read", rate=(20, 60))
+def search(ctx, params):
+    from core.brain.recall import search as recall
+
+    return recall(ctx, params)

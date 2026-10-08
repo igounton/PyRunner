@@ -130,7 +130,8 @@ class BackupService:
     # Older backups without a brains key leave existing brains unchanged.
     # 1.11.0 — Brain feeds and unique applied-revision links. Restored queues
     # require an explicit retry; restoring a backup never starts paid AI work.
-    BACKUP_VERSION = "1.11.0"
+    # 1.12.0 — Optional Brain vector binding; transient reader jobs are omitted.
+    BACKUP_VERSION = "1.12.0"
     MAX_BACKUP_SIZE_MB = 100
 
     # Backup format constants

@@ -1,0 +1,52 @@
+{% extends "cpanel/brains/base.html" %}
+{% load workspace_tags %}
+{% block heading %}Ask {{ brain.name }}{% endblock %}
+{% block brain_content %}
+<div class="rounded-xl border border-line bg-panel p-5 space-y-4">
+    <p class="text-sm text-muted">Assemble context from your brain's current notes. Your query runs in the background. Results and verified sources appear here when ready.</p>
+    <form method="post" class="space-y-4">{% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="rounded-lg bg-ok px-4 py-2 text-ink text-sm font-medium">Assemble context</button>
+    </form>
+</div>
+{% if job %}
+<section id="reader-result" class="rounded-xl border border-line bg-panel p-5 space-y-4" data-poll="{% ws_url 'cpanel:brain_reader_status' brain.pk job.pk %}" data-note="{% ws_url 'cpanel:brain_detail' brain.pk %}">
+    <p id="reader-status" role="status">Queued. Waiting for the worker…</p>
+    <div id="reader-pack" class="whitespace-pre-wrap break-words text-sm"></div>
+    <ul id="reader-sources" class="space-y-2 text-sm"></ul>
+    <div id="reader-gaps" class="text-sm text-muted whitespace-pre-wrap break-words"></div>
+</section>
+<script>
+(() => {
+    const panel = document.getElementById('reader-result');
+    const status = document.getElementById('reader-status');
+    const started = Date.now();
+    async function poll() {
+        try {
+            const response = await fetch(panel.dataset.poll, {headers: {'Accept': 'application/json'}, cache: 'no-store'});
+            if (!response.ok) throw new Error('Query unavailable. Refresh the page and retry.');
+            const data = await response.json();
+            if (data.status === 'failed') { status.textContent = data.error; return; }
+            if (data.status === 'complete') {
+                status.textContent = 'Context ready. Sources below were opened by the reader.';
+                document.getElementById('reader-pack').textContent = data.result.context_pack;
+                document.getElementById('reader-gaps').textContent = data.result.gaps.join('\n');
+                for (const source of data.result.sources) {
+                    const item = document.createElement('li'), link = document.createElement('a');
+                    link.textContent = source.title || source.entity_id;
+                    link.href = panel.dataset.note + '?path=' + encodeURIComponent(source.path);
+                    link.className = 'text-ok break-words';
+                    item.appendChild(link); document.getElementById('reader-sources').appendChild(item);
+                }
+                return;
+            }
+            status.textContent = data.status === 'running' ? 'Reading your notes…' : 'Queued. Waiting for the worker…';
+            if (Date.now() - started > 600000) { status.textContent = 'The worker has not finished. Submit a new query after checking its status.'; return; }
+            setTimeout(poll, 1500);
+        } catch (error) { status.textContent = error.message; }
+    }
+    poll();
+})();
+</script>
+{% endif %}
+{% endblock %}

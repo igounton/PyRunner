@@ -1,5 +1,6 @@
 {% extends "cpanel/brains/base.html" %}
-{% block actions %}{% if can_manage %}<a class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm font-medium" href="{% url 'cpanel:brain_edit' brain.pk %}{% if path %}?path={{ path|urlencode }}{% endif %}">{% if path %}Edit file{% else %}Add file{% endif %}</a>{% endif %}{% endblock %}
+{% load workspace_tags %}
+{% block actions %}{% if can_manage %}<a class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm font-medium" href="{% ws_url 'cpanel:brain_edit' brain.pk %}{% if path %}?path={{ path|urlencode }}{% endif %}">{% if path %}Edit file{% else %}Add file{% endif %}</a>{% endif %}{% endblock %}
 {% block brain_content %}
 <div class="grid lg:grid-cols-3 gap-5">
     <section class="rounded-2xl border border-line bg-panel p-5 min-w-0 space-y-3" aria-label="File tree">

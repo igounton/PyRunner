@@ -29,6 +29,11 @@ class Brain(models.Model):
     reader_model = models.CharField(max_length=100, blank=True)
     feeder_model = models.CharField(max_length=100, blank=True)
     daily_cost_cap_usd = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    vector_collection = models.ForeignKey("VectorCollection", null=True, blank=True, on_delete=models.SET_NULL)
+    vector_revision = models.ForeignKey("BrainRevision", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    vector_error = models.CharField(max_length=500, blank=True)
+    vector_claim = models.UUIDField(null=True, blank=True)
+    vector_claimed_at = models.DateTimeField(null=True, blank=True)
     include_in_backup = models.BooleanField(default=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
@@ -54,6 +59,31 @@ class Brain(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        super().clean()
+        if self.vector_collection_id and self.vector_collection.workspace_id != self.workspace_id:
+            raise ValidationError({"vector_collection": "Choose a collection in this workspace."})
+
+
+class BrainReaderJob(models.Model):
+    """Transient console jobs; results expire and are never portable backup data."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    brain = models.ForeignKey(Brain, on_delete=models.CASCADE, related_name="reader_jobs")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    revision = models.ForeignKey("BrainRevision", null=True, on_delete=models.SET_NULL)
+    task = models.TextField()
+    lens = models.CharField(max_length=100, blank=True)
+    status = models.CharField(max_length=16, default="queued", choices=[(s, s) for s in ("queued", "running", "complete", "failed")])
+    result = models.JSONField(null=True)
+    error = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "brain_reader_jobs"
+        indexes = [models.Index(fields=["status", "updated_at"], name="brain_reader_cleanup")]
 
 
 class ImmutableQuerySet(models.QuerySet):

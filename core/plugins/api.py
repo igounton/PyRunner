@@ -64,6 +64,26 @@ from core.api.exceptions import ApiError as BrainError  # noqa: F401 — SDK sur
 API_VERSION = "2.7"
 
 
+class AIProviderAPI:
+    """Bounded, tool-free text calls through configured API-key profiles.
+
+    Credentials stay in core. Subscription profiles require the agent runtime
+    and are deliberately excluded from this direct Messages API surface.
+    """
+
+    @staticmethod
+    def list():
+        from core.models import AIProvider
+
+        return list(AIProvider.objects.exclude(auth_method="subscription").order_by("name").values_list("name", flat=True))
+
+    @staticmethod
+    def complete(provider_name, *, system, prompt, timeout=25):
+        from core.plugins.completion import complete
+
+        return complete(provider_name, system=system, prompt=prompt, timeout=timeout)
+
+
 # --------------------------------------------------------------------------- #
 # Shared helpers (all lazy)
 # --------------------------------------------------------------------------- #
@@ -1108,10 +1128,18 @@ class VectorCollectionHandle:
         """Upsert ``[{"id", "vector", "payload"?, "text"?}]`` as given → ``{"added"}``."""
         return self._handle().add_vectors(items)
 
-    def search(self, query, k=5, filter=None):  # noqa: A002 — the contract's name
+    def search(self, query, k=5, filter=None, *, timeout=None):  # noqa: A002 — the contract's name
         """The ``k`` points nearest to ``query`` (embedded with the collection's
         provider), best first: ``[{"id", "score", "payload", "text"}]``."""
-        return self._handle().search(query, k=k, filter=filter)
+        handle = self._handle()
+        if timeout is None:
+            return handle.search(query, k=k, filter=filter)
+        import time
+        from core.vectors.budget import BudgetSession
+        from core.vectors.service import VectorService
+
+        with BudgetSession(time.monotonic() + min(30, max(1, float(timeout)))) as session:
+            return VectorService.handle(self._collection, session=session).search(query, k=k, filter=filter)
 
     def search_vector(self, vector, k=5, filter=None):  # noqa: A002
         return self._handle().search_vector(vector, k=k, filter=filter)
@@ -1190,6 +1218,16 @@ class VectorAPI:
         from core.services import VectorService
 
         return VectorService.is_available()
+
+    @staticmethod
+    def choices():
+        """Enabled instance providers/stores, as names only (never credentials)."""
+        from core.models import EmbeddingProvider, VectorConnection
+
+        return {
+            "providers": list(EmbeddingProvider.objects.filter(enabled=True).order_by("name").values_list("name", flat=True)),
+            "connections": list(VectorConnection.objects.filter(enabled=True).order_by("name").values_list("name", flat=True)),
+        }
 
     @staticmethod
     def _by_name(model, value, label):
@@ -1308,20 +1346,23 @@ class BrainAPI:
     write method exists: content changes go through the human-reviewed feed door.
     """
 
-    def __init__(self, owner, workspace=None):
+    def __init__(self, owner, workspace=None, *, tier=None):
         from core.plugins import is_valid_plugin_slug
 
         if not is_valid_plugin_slug(owner):
             raise ValueError("BrainAPI requires a plugin owner slug.")
-        self.owner, self._workspace = owner, workspace
+        if tier not in {None, "public", "agents-only", "private"}:
+            raise ValueError("Unknown Brain tier.")
+        self.owner, self._workspace, self.tier = owner, workspace, tier
 
     def _ws(self):
         return _resolve_workspace(self._workspace)
 
     def _context(self):
+        from dataclasses import replace
         from core.brain.access import principal_context
 
-        return principal_context(self._ws(), "plugin", self.owner)
+        return replace(principal_context(self._ws(), "plugin", self.owner), tier=self.tier)
 
     def _call(self, slug, operation, params):
         from core.api.registry import registry
@@ -1659,6 +1700,24 @@ class PublicPageAPI:
         return PluginPublicPage.objects.filter(
             plugin_slug=self.owner, workspace=self._ws()
         )
+
+    def resolve_token(self, token, *, page_name):
+        """Resolve this plugin's live capability to its workspace, or None.
+
+        For plugin-owned interactive routes: the workspace comes exclusively
+        from the capability. This does not change the script-free /p/ renderer.
+        Call again before returning a slow result to honor revocation.
+        """
+        from core.models import PluginPublicPage
+
+        row = PluginPublicPage.objects.select_related("workspace").filter(
+            plugin_slug=self.owner, page=page_name, token=token, is_active=True,
+        ).first()
+        if row is None or row.is_expired or row.workspace is None:
+            return None
+        if self._workspace is not None and row.workspace_id != self._workspace.pk:
+            return None
+        return PageRequest(workspace=row.workspace, page=row.page, params={})
 
     # Sentinel: distinguishes "share() called without expires_at" (keep the
     # row's current expiry) from an explicit expires_at=None (clear it).

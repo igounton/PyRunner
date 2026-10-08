@@ -47,11 +47,16 @@ def _request(slug, operation, params):
 class Brain:
     """All methods return the same data object as REST and MCP."""
 
-    def __init__(self, slug, *, _call=None):
+    def __init__(self, slug, *, tier=None, _call=None):
+        if tier not in {None, "public", "agents-only", "private"}:
+            raise ValueError("Unknown Brain tier.")
         self.slug = slug
+        self.tier = tier
         self._caller = _call or _request
 
     def _call(self, operation, **params):
+        if self.tier is not None:
+            params["_tier"] = self.tier
         return self._caller(self.slug, operation, params)
 
     def ping(self):
@@ -85,8 +90,8 @@ class Brain:
         return self._call("propose-feed", title=title, url=url, content=content, notes=notes, source_kind=source_kind)
 
 
-def get_brain(slug):
-    brain = Brain(slug)
+def get_brain(slug, *, tier=None):
+    brain = Brain(slug, tier=tier)
     brain.ping()
     return brain
 

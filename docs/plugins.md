@@ -924,3 +924,39 @@ site still boots. Last resort: `PYRUNNER_DISABLE_PLUGINS=1` boots with zero plug
 A complete sample lives in [`examples/example_plugin/`](../examples/example_plugin/);
 the `qdrant-backup-plugin/` is a full SDK-based reference (config in an owned
 DataStore, owner-scoped secrets, an idempotent managed script + schedule).
+
+## Retrieval consumers (SDK 2.7)
+
+`BrainAPI(owner, workspace, tier="public")` applies an additional visibility
+ceiling to the plugin's existing grant; it cannot grant or elevate access.
+Isolated scripts can use `pyrunner_brain.get_brain(slug, tier="public")` for
+the same ceiling. Omitting the tier preserves the granted tier.
+
+`VectorAPI.choices()` returns enabled provider and connection names for setup
+forms, without credentials. A collection handle's `search(..., timeout=8)`
+opts into a bounded HTTP budget (up to 30 seconds, no retries); omitting it
+preserves the normal vector client behavior.
+
+`AIProviderAPI.list()` returns configured API-key profile names.
+`AIProviderAPI.complete(name, system=..., prompt=..., timeout=25)` makes a
+tool-free, bounded Messages API call and returns `text`, `model`, and input/output
+token `usage`. AI must be enabled and the profile must have a default model.
+Credentials remain in core; provider errors are generic and redirects are
+rejected. Subscription profiles require the agent runtime and are excluded.
+The consumer must validate answers/citations, enforce its own rate and spend
+limits, and persist returned usage if needed. This facade does not guess costs.
+
+`PublicPageAPI(owner).resolve_token(token, page_name="chat")` resolves a live,
+unexpired capability belonging to that plugin/page into a `PageRequest`, or
+returns `None`. Its workspace comes from the capability; never substitute an
+anonymous caller's query parameter. Passing a workspace to the API adds an
+exact workspace check. Use this for plugin-owned interactive routes, recheck
+after slow work to honor revocation, and enforce a separate per-token rate limit
+with the shared `core.ratelimit` helper. The shared `/p/` renderer remains
+script-free and GET-only.
+
+Scripts that fetch URLs can import the stdlib `pyrunner_netguard` helper. It is
+the same policy behind `core.netguard`, with the operator's private-network flag
+injected by the executor. Check each redirect, restrict schemes, and bound
+response sizes and total time in the consumer; the policy function only checks
+whether an endpoint is allowed.

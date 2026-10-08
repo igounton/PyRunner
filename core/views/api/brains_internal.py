@@ -1,6 +1,7 @@
 """Signed worker loopback door into the shared Brain endpoint registry."""
 
 import time
+from dataclasses import replace
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -38,6 +39,10 @@ def brain_op(request, slug, op):
         if run is None or run.workspace_id is None or run.script_id is None:
             raise unknown()
         ctx = principal_context(run.workspace, "script", run.script_id, transport="loopback", deadline=time.monotonic() + 45)
+        tier = params.pop("_tier", None)
+        if tier is not None and (not isinstance(tier, str) or tier not in {"public", "agents-only", "private"}):
+            raise ApiError("invalid_input", "Unknown Brain tier.")
+        ctx = replace(ctx, tier=tier)
         if slug is not None:
             params = {**params, "brain": slug}
         result = registry.call(f"brain.{op}", ctx, params)

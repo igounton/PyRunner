@@ -45,6 +45,7 @@ class DockerignoreTests(SimpleTestCase):
         "token.json",
         "plugins/gmail_agent/",
         "plugins/youtube_scout/",
+        "plugins/rag_chatbot/",
         # Docker's ignore grammar only matches bare patterns at the context
         # root; caches need the recursive form.
         "**/__pycache__",

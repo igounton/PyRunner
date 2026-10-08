@@ -249,6 +249,9 @@ def _build_script_environment(
     # then this run's materialized libraries. Order is the fence: helpers resolve
     # first, so an attached library always loses a name clash with them.
     helpers_path = str(Path(settings.BASE_DIR) / "core" / "script_helpers")
+    # The shared stdlib URL guard uses the operator's policy, never a secret
+    # or inherited shell value with the same name.
+    env["PYRUNNER_ALLOW_PRIVATE_NETWORK"] = "true" if settings.PYRUNNER_ALLOW_PRIVATE_NETWORK else "false"
     path_entries = [helpers_path]
     if library_root:
         path_entries.append(str(library_root))

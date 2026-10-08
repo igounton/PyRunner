@@ -12,6 +12,7 @@ from core.views.api.decorators import add_cors_headers, cors_preflight_response
 from .context import token_context
 from .errors import ApiError, authenticate, error_response, rate_limited, touch_last_used
 from .registry import registry
+from .openapi import document
 from .schema import loads, query_params
 
 logger = logging.getLogger(__name__)
@@ -39,12 +40,13 @@ def dispatch(request, slug):
         touch_last_used(token)
         if request.method == "GET" and request.body:
             raise ApiError("invalid_input", "GET requests cannot carry a body.")
-        if slug in {"_catalog", "_health"}:
+        if slug in {"_catalog", "_health", "_openapi.json"}:
             if request.GET or (request.body and loads(request.body) != {}):
                 raise ApiError("invalid_input", "This endpoint takes no parameters.")
             if rate_limit_exceeded(f"api_meta_{token.pk}", 60, 60):
                 return cors(rate_limited("Rate limit exceeded.", unified=True))
             data = (
+                document(ctx) if slug == "_openapi.json" else
                 {"endpoints": [e.catalog_entry() for e in registry.visible(ctx)]}
                 if slug == "_catalog"
                 else {"status": "ok"}
@@ -64,7 +66,7 @@ def dispatch(request, slug):
                     raise ApiError("invalid_input", "POST parameters belong in the JSON body.")
                 params = loads(request.body)
             data = registry.call(slug, ctx, params)
-        response = JsonResponse({"ok": True, "data": data})
+        response = JsonResponse(data if slug == "_openapi.json" else {"ok": True, "data": data})
     except RequestDataTooBig:
         response = error_response(413, "too_large", "Request body is too large.", unified=True)
     except ApiError as exc:
@@ -72,7 +74,7 @@ def dispatch(request, slug):
             exc.status, exc.code, exc.message, retry_after=exc.retry_after, unified=True
         )
     response["X-Request-ID"] = ctx.request_id
-    if slug in {"_catalog", "_health"}:
+    if slug in {"_catalog", "_health", "_openapi.json"}:
         logger.info(
             "api.call slug=%s principal=token:%s ms=%d ok=%s request_id=%s",
             slug,

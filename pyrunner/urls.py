@@ -18,6 +18,7 @@ from django.shortcuts import redirect
 from core.views.webhooks import webhook_trigger_view
 from core.views.channel_webhooks import channel_webhook_view
 from core.views.public_pages import plugin_public_page_view
+from core.api.mcp import dispatch as mcp_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,9 @@ urlpatterns = [
     ),
     # REST API endpoints (token auth required)
     path("api/v1/", include("core.urls.api")),
+    path("mcp", mcp_dispatch, name="mcp"),
+    path("mcp/", mcp_dispatch),
+    path("mcp/k/<str:url_token>/", mcp_dispatch, name="mcp_url_token"),
     # Internal loopback-only datastore API. Signed per-run token auth; exempt
     # from SSL redirect + setup gate (see settings). Live path: the datastore
     # helper calls it over loopback on no-DB-file/Postgres deploys (idle on

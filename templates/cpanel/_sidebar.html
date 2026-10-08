@@ -68,6 +68,11 @@
 
         <div class="eyebrow text-faint px-3 pb-2 pt-5">Configure</div>
 
+        <a href="{% url 'cpanel:connect' %}" class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if request.resolver_match.url_name == 'connect' %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+            <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-2 2m3 6a5 5 0 00-7 0l-3 3a5 5 0 007 7l2-2"/></svg>
+            <span>Connect</span>
+        </a>
+
         <!-- Environments -->
         <a href="{% url 'cpanel:environment_list' %}"
            class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'environment' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">

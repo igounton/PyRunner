@@ -39,6 +39,11 @@ class GlobalSettings(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True)
 
+    mcp_url_tokens_enabled = models.BooleanField(
+        default=False,
+        help_text="Allow expiring, read-only MCP credentials in connector URLs.",
+    )
+
     # Email notification settings
     email_backend = models.CharField(
         max_length=20,

@@ -9,6 +9,11 @@ begins tracking at the current release; earlier history is in the git log.
 ## [Unreleased]
 
 ### Added
+- **MCP and Connect** — stateless Streamable HTTP at `/mcp`, shared API
+  handlers, permission-filtered OpenAPI, and workspace connector instructions.
+  Expiring read-only URL tokens are opt-in. Supports current per-request
+  protocol metadata and older clients' initialization handshake; no sessions
+  or streaming worker connections.
 - **Unified API registry and REST** — permission-scoped, hashed API tokens;
   one schema and handler per tool-call endpoint, GET for reads, a filtered
   `/api/v1/_catalog`, and `/api/v1/_health`. Existing datastore and plugin token

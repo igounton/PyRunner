@@ -687,6 +687,20 @@ CONTENT_SECURITY_POLICY = (
 API_RATE_LIMIT = int(os.environ.get("API_RATE_LIMIT", "60"))
 API_AUTHFAIL_RATE_LIMIT = int(os.environ.get("API_AUTHFAIL_RATE_LIMIT", "20"))
 
+# MCP calls occupy the same gthread pool as console requests. Leave time for
+# serializing the reply before the process-level gunicorn timeout.
+MCP_CALL_BUDGET_SECONDS = max(1, min(
+    int(os.environ.get("MCP_CALL_BUDGET_SECONDS", "60")),
+    int(os.environ.get("GUNICORN_TIMEOUT", "120")) - 5,
+))
+MCP_PARALLEL_CALLS = max(1, int(os.environ.get("GUNICORN_WORKERS", "2"))) * max(
+    1, int(os.environ.get("GUNICORN_THREADS", "4"))
+)
+MCP_ALLOWED_ORIGINS = [
+    value.strip().rstrip("/") for value in os.environ.get("MCP_ALLOWED_ORIGINS", "").split(",")
+    if value.strip()
+]
+
 # CORS settings for API endpoints
 # Set to "*" to allow all origins (suitable for self-hosted), or comma-separated origins
 API_CORS_ORIGINS = os.environ.get("API_CORS_ORIGINS", "*")

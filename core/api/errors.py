@@ -104,6 +104,11 @@ def authenticate(request, *, scope="plugin", raw=None, kind="bearer"):
         )
     if unified and token.brain_id and token.brain.workspace_id != token.workspace_id:
         return fail("Invalid API token")
+    if unified and kind == "url" and (
+        not token.expires_at or not token.permissions
+        or any(not isinstance(p, str) or not p.endswith(":read") for p in token.permissions)
+    ):
+        return fail("Invalid API token")
     return token, None
 
 

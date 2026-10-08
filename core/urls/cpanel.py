@@ -2,6 +2,7 @@
 URL patterns for control panel.
 """
 from django.urls import path
+from core.views.connect import connect_view, url_tokens_toggle_view
 from core.views.services import (
     embedding_provider_delete_view,
     embedding_provider_save_view,
@@ -214,6 +215,8 @@ from core.views.workspaces import (
 app_name = "cpanel"
 
 urlpatterns = [
+    path("connect/", connect_view, name="connect"),
+    path("connect/url-tokens/", url_tokens_toggle_view, name="mcp_url_tokens_toggle"),
     # Dashboard
     path("", dashboard_view, name="dashboard"),
     path("api/system-resources/", system_resources_api, name="system_resources_api"),

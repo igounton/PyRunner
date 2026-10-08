@@ -61,8 +61,14 @@
                     <div class="space-y-3">
                         {% if token_obj.scope == "api" %}
                         <div>
+                            {% if token_obj.kind == "url" %}
+                            <p class="text-xs text-faint mb-1">MCP connector URL (replace YOUR_URL_TOKEN with the token above)</p>
+                            <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">{{ request.scheme }}://{{ request.get_host }}/mcp/k/YOUR_URL_TOKEN/</code>
+                            {% else %}
                             <p class="text-xs text-faint mb-1">List available endpoints</p>
                             <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer YOUR_TOKEN" {{ request.scheme }}://{{ request.get_host }}/api/v1/_catalog</code>
+                            {% endif %}
+                            <a href="{% url 'cpanel:connect' %}" class="block text-sm text-ok mt-3">Connector setup instructions</a>
                         </div>
                         {% else %}
                         <div>

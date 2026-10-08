@@ -184,11 +184,16 @@ class VectorService:
                 created_by=created_by,
                 include_in_backup=include_in_backup,
             )
+            # Write before reading: on SQLite (WAL) a transaction that reads first
+            # and then writes fails at once with "database is locked" when another
+            # connection commits in between; one that writes first waits for the
+            # lock. The Qdrant name check then runs under that lock.
+            collection.save()
             if connection.is_local:
                 collection.backend_ref = VectorCollection.local_backend_ref(collection.id)
             else:
                 collection.backend_ref = cls._unique_qdrant_ref(collection)
-            collection.save()
+            collection.save(update_fields=["backend_ref"])
 
         # The store is created after the row is committed: a rolled-back row must
         # never leave an orphan file (or server collection) behind, and a failed

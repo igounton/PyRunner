@@ -824,6 +824,20 @@ class QdrantServiceTests(_QdrantServer, TestCase):
         VectorService.delete_collection(col)
         self.assertNotIn(col.backend_ref, self.server.collections)
 
+    def test_create_writes_first_inside_its_transaction(self):
+        # Found in the live pass: the Qdrant name check read inside the atomic
+        # block before the INSERT, so a concurrent commit (django-q, the database
+        # cache) made SQLite fail the create at once with "database is locked"
+        # (148 of 150 creates under write load). Writing first waits for the lock.
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        with CaptureQueriesContext(connection) as ctx:
+            self._create(name="docs", embedding_provider=None, dimension=3)
+        sqls = [q["sql"] for q in ctx.captured_queries]
+        insert = next(i for i, s in enumerate(sqls) if s.startswith(f'INSERT INTO "{VectorCollection._meta.db_table}"'))
+        self.assertTrue(sqls[insert - 1].startswith("SAVEPOINT"), sqls[max(0, insert - 3) : insert + 1])
+
     def test_owned_names_and_ref_clashes(self):
         owned = self._create(name="demo:idx", owner_plugin="demo", owner_key="idx", embedding_provider=None, dimension=3)
         self.assertTrue(owned.backend_ref.endswith("_demo__idx"))

@@ -92,13 +92,20 @@ class Review:
 def review(workspace, brain_id, feed_id):
     feed = get_feed(workspace, brain_id, feed_id)
     before = BrainService.files(workspace, brain_id, feed.base_revision_id)
-    ctx = context_from_files(before, source_kind=feed.raw_payload.get("source_kind", ""))
-    verdict = validate(feed.proposal, ctx)
-    after = before
-    if verdict.valid:
-        after = proposed_files(before, feed.proposal, ctx)
+    verdict, after = _evaluate(feed, before)
     changes = [item for item in diff_module_maps(before, after) if item["status"] != "unchanged"]
     return Review(feed, verdict, after, changes, digest(feed))
+
+
+def _evaluate(feed, before):
+    if feed.channel == "sync":
+        from . import sync_proposal
+
+        verdict = sync_proposal.validate(before, feed.proposal)
+        return verdict, sync_proposal.materialize(before, feed.proposal) if verdict.valid else before
+    ctx = context_from_files(before, source_kind=feed.raw_payload.get("source_kind", ""))
+    verdict = validate(feed.proposal, ctx)
+    return verdict, proposed_files(before, feed.proposal, ctx) if verdict.valid else before
 
 
 @transaction.atomic
@@ -107,7 +114,11 @@ def edit_proposal(workspace, brain_id, feed_id, proposal, *, expected_digest):
     feed = get_feed(workspace, brain_id, feed_id, lock=True)
     if feed.status not in {"pending", "proposed", "failed"} or digest(feed) != expected_digest:
         raise ApiError("feed_changed", "The feed changed. Reload before editing.", 409)
-    validate_shape(proposal)
+    if feed.channel == "sync":
+        from .sync_proposal import shape
+        shape(proposal)
+    else:
+        validate_shape(proposal)
     feed.proposal, feed.proposal_edited = proposal, True
     feed.status, feed.error = "proposed", ""
     feed.save()
@@ -143,14 +154,15 @@ def approve(workspace, brain_id, feed_id, *, expected_digest, user, note=""):
         feed.error = "The reviewed files changed. Review the updated diff before approving again."
         feed.save()
         return feed
-    ctx = context_from_files(head, source_kind=feed.raw_payload.get("source_kind", ""))
-    verdict = validate(feed.proposal, ctx)
+    verdict, files = _evaluate(feed, head)
     if not verdict.valid:
         feed.base_revision, feed.needs_review = brain.head_revision, True
         feed.error = "The brain's rules or notes changed. Review and fix the new validation errors."
         feed.save()
         return feed
-    files = proposed_files(head, feed.proposal, ctx)
+    if feed.channel == "sync":
+        from .sync import accept
+        accept(workspace, brain_id, feed)
     feed.status = "approving"
     feed.save(update_fields=["status", "updated_at"])
     revision = BrainService.commit(
@@ -160,7 +172,7 @@ def approve(workspace, brain_id, feed_id, *, expected_digest, user, note=""):
         expected_head=brain.head_revision_id,
         message=f"Feed: {feed.source_id}"[:500],
         author=user,
-        source="feed",
+        source="sync" if feed.channel == "sync" else "feed",
         feed=feed,
     )
     feed.status, feed.revision = "applied", revision

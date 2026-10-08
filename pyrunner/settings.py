@@ -775,3 +775,6 @@ PYRUNNER_RUN_RLIMIT_NPROC = int(os.environ.get("PYRUNNER_RUN_RLIMIT_NPROC", "0")
 PYRUNNER_ALLOW_PRIVATE_NETWORK = (
     os.environ.get("PYRUNNER_ALLOW_PRIVATE_NETWORK", "False").lower() == "true"
 )
+
+# Operator-only origin override for isolated GitHub sync integration testing.
+PYRUNNER_GITHUB_API_URL = os.environ.get("PYRUNNER_GITHUB_API_URL", "https://api.github.com")

@@ -9,9 +9,11 @@ from urllib3.util import Timeout
 class BudgetSession(requests.Session):
     bounded = True
 
-    def __init__(self, deadline):
+    def __init__(self, deadline, *, max_response_bytes=8 * 1024 * 1024, reject_redirects=True):
         super().__init__()
         self.deadline = deadline
+        self.max_response_bytes = max_response_bytes
+        self.reject_redirects = reject_redirects
 
     def remaining(self):
         value = self.deadline - time.monotonic()
@@ -28,7 +30,7 @@ class BudgetSession(requests.Session):
         )
         response = super().request(method, url, **kwargs)
         try:
-            if 300 <= response.status_code < 400:
+            if self.reject_redirects and 300 <= response.status_code < 400:
                 raise requests.RequestException("Provider redirects are not supported")
             chunks, size = [], 0
             while True:
@@ -41,8 +43,8 @@ class BudgetSession(requests.Session):
                 if not chunk:
                     break
                 size += len(chunk)
-                if size > 8 * 1024 * 1024:
-                    raise requests.RequestException("Provider response exceeds 8 MB")
+                if size > self.max_response_bytes:
+                    raise requests.RequestException("Provider response exceeds its size limit")
                 chunks.append(chunk)
             self.remaining()
             response._content = b"".join(chunks)

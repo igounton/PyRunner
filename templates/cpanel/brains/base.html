@@ -22,6 +22,7 @@
                 <a class="text-ok" href="{% ws_url 'cpanel:brain_reader' brain.pk %}">Ask brain</a>
                 {% if can_manage %}<a class="text-ok" href="{% ws_url 'cpanel:brain_settings' brain.pk %}">Settings</a><a class="text-ok" href="{% ws_url 'cpanel:brain_grants' brain.pk %}">Grants</a>{% endif %}
                 <a class="text-ok" href="{% ws_url 'cpanel:brain_export' brain.pk %}">Export ZIP</a>
+                {% if can_manage %}<a class="text-ok" href="{% ws_url 'cpanel:brain_sync' brain.pk %}">GitHub sync</a>{% endif %}
             </nav>
             {% endif %}
             {% if contract_warning %}<p class="rounded-xl border border-warn/30 bg-warn/5 p-4 text-sm text-warn">{{ contract_warning }}</p>{% endif %}

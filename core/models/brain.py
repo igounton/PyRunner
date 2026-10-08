@@ -86,6 +86,35 @@ class BrainReaderJob(models.Model):
         indexes = [models.Index(fields=["status", "updated_at"], name="brain_reader_cleanup")]
 
 
+class BrainSync(models.Model):
+    """Optional GitHub mirror; the database remains canonical."""
+
+    brain = models.OneToOneField(Brain, primary_key=True, on_delete=models.CASCADE, related_name="github_sync")
+    repository = models.CharField(max_length=200)
+    branch = models.CharField(max_length=200, default="main")
+    secret = models.ForeignKey("Secret", null=True, blank=True, on_delete=models.SET_NULL)
+    generation = models.UUIDField(default=uuid.uuid4)
+    poll_enabled = models.BooleanField(default=False)
+    remote_sha = models.CharField(max_length=64, blank=True)
+    remote_manifest = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=16, default="idle")
+    operation = models.CharField(max_length=16, blank=True)
+    job = models.JSONField(default=dict, blank=True)
+    claim = models.UUIDField(null=True, blank=True)
+    last_polled_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    error = models.CharField(max_length=500, blank=True)
+    result_feed = models.ForeignKey("BrainFeed", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+
+    class Meta:
+        db_table = "brain_sync"
+
+    def clean(self):
+        super().clean()
+        if self.secret_id and (self.secret.workspace_id != self.brain.workspace_id or self.secret.owner_plugin):
+            raise ValidationError({"secret": "Choose a user Secret in this workspace."})
+
+
 class ImmutableQuerySet(models.QuerySet):
     def update(self, **kwargs):
         # User deletion may anonymize a revision without changing its content.
@@ -249,7 +278,7 @@ class BrainFeed(models.Model):
     brain = models.ForeignKey(Brain, on_delete=models.CASCADE, related_name="feeds")
     source_id = models.CharField(max_length=120)
     channel = models.CharField(max_length=16, choices=[
-        (value, value) for value in ("console", "api", "mcp", "script", "plugin", "agent", "telegram")
+        (value, value) for value in ("console", "api", "mcp", "script", "plugin", "agent", "telegram", "sync")
     ])
     principal = models.CharField(max_length=256)
     raw_payload = models.JSONField(default=dict)

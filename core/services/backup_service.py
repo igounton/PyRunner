@@ -131,7 +131,8 @@ class BackupService:
     # 1.11.0 — Brain feeds and unique applied-revision links. Restored queues
     # require an explicit retry; restoring a backup never starts paid AI work.
     # 1.12.0 — Optional Brain vector binding; transient reader jobs are omitted.
-    BACKUP_VERSION = "1.12.0"
+    # 1.13.0 — GitHub Brain sync configuration/baseline; jobs omitted, polling paused.
+    BACKUP_VERSION = "1.13.0"
     MAX_BACKUP_SIZE_MB = 100
 
     # Backup format constants

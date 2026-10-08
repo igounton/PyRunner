@@ -66,7 +66,7 @@ def extract(workspace_id, feed_id):
     with transaction.atomic():
         brain = BrainService.get(workspace, initial.brain_id, lock=True)
         feed = get_feed(workspace, brain.pk, feed_id, lock=True)
-        if feed.status != "pending" or feed.retries >= MAX_ATTEMPTS:
+        if feed.channel == "sync" or feed.status != "pending" or feed.retries >= MAX_ATTEMPTS:
             return
         if not feed.raw_payload.get("content", "").strip():
             feed.status, feed.error = "failed", "Paste source content before retrying extraction."
@@ -143,6 +143,8 @@ def extract(workspace_id, feed_id):
 def retry(workspace, brain_id, feed_id, *, content=None):
     BrainService.get(workspace, brain_id, lock=True)
     feed = get_feed(workspace, brain_id, feed_id, lock=True)
+    if feed.channel == "sync":
+        raise ApiError("invalid_input", "Sync proposals come from GitHub. Pull again from GitHub sync.")
     if feed.status not in {"pending", "failed"} or feed.claim_id:
         raise ApiError("feed_changed", "This feed is already processing or reviewed.", 409)
     if content is not None:

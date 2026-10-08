@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
 from core.api.errors import ApiError
-from core.models import AIProvider, Brain, BrainBlob, BrainFeed, BrainGrant, BrainRevision, VectorCollection
+from core.models import AIProvider, Brain, BrainBlob, BrainFeed, BrainGrant, BrainRevision, BrainSync, Secret, VectorCollection
 from .contract import validate_contract
 from .paths import validate_files
 from .service import BrainService
@@ -83,9 +83,20 @@ def export_brains():
                      for key, value in data.items() if key not in {"brain_id", "claim_id", "claimed_at", "queued_at"}}
                     for data in brain.feeds.values()
                 ],
+                "github_sync": export_sync(brain),
             }
         )
     return rows
+
+
+def export_sync(brain):
+    value = BrainSync.objects.filter(brain=brain, brain__workspace=brain.workspace).select_related("secret").first()
+    if value is None:
+        return None
+    return {"repository": value.repository, "branch": value.branch, "generation": str(value.generation),
+            "secret_key": value.secret.key if value.secret_id else None,
+            "poll_enabled": value.poll_enabled, "remote_sha": value.remote_sha,
+            "remote_manifest": value.remote_manifest}
 
 
 def validate_brain_backup(rows):
@@ -94,6 +105,24 @@ def validate_brain_backup(rows):
         raise ApiError("invalid_backup", "Brain backup data must be a list.")
     ids = set()
     for row in rows:
+        sync = row.get("github_sync")
+        if sync:
+            import re
+            import uuid
+            from .github import validate_repository, sha
+            from .paths import MAX_FILES, validate_path
+
+            validate_repository(sync["repository"], sync["branch"])
+            uuid.UUID(sync["generation"])
+            if sync.get("remote_sha"):
+                sha(sync["remote_sha"])
+            manifest = sync.get("remote_manifest", {})
+            if not isinstance(manifest, dict) or len(manifest) > MAX_FILES:
+                raise ApiError("invalid_backup", "Invalid GitHub sync manifest.")
+            for path, digest in manifest.items():
+                validate_path(path)
+                if not isinstance(digest, str) or not re.fullmatch("[0-9a-f]{64}", digest):
+                    raise ApiError("invalid_backup", "Invalid GitHub sync content digest.")
         if row["id"] in ids:
             raise ApiError("invalid_backup", "Duplicate brain in backup.")
         ids.add(row["id"])
@@ -136,6 +165,11 @@ def validate_brain_backup(rows):
 
 
 def import_brains(rows, *, workspace_for, user_map, script_map, current_user):
+    def restored_user(identifier):
+        # Platform restores map backed-up users to the restoring account. Keep
+        # anonymous history anonymous; retain explicit id maps for service callers.
+        return (user_map.get(str(identifier)) or current_user) if identifier is not None else None
+
     warnings = []
     for row in rows:
         workspace = workspace_for(row.get("workspace_id"))
@@ -183,7 +217,7 @@ def import_brains(rows, *, workspace_for, user_map, script_map, current_user):
                 values["needs_review"] = True
                 values["error"] = "Restored feed. Review or retry extraction explicitly."
             BrainFeed.objects.create(id=data["id"], brain=brain, **values,
-                                     decided_by=user_map.get(str(data.get("decided_by_id"))),
+                                     decided_by=restored_user(data.get("decided_by_id")),
                                      decided_at=parse_datetime(data["decided_at"]) if data.get("decided_at") else None,
                                      created_at=parse_datetime(data["created_at"]))
         for data in row["revisions"]:
@@ -196,7 +230,7 @@ def import_brains(rows, *, workspace_for, user_map, script_map, current_user):
                 message=data["message"],
                 source=data["source"],
                 feed_id=data.get("feed_id"),
-                author=user_map.get(str(data.get("author_id"))),
+                author=restored_user(data.get("author_id")),
                 created_at=parse_datetime(data["created_at"]),
             )
             revision.full_clean()
@@ -209,6 +243,14 @@ def import_brains(rows, *, workspace_for, user_map, script_map, current_user):
         brain.head_revision_id = row["head_revision_id"]
         brain.save(update_fields=["head_revision", "updated_at"])
         BrainService.rebuild_index(workspace, brain.pk)
+        sync = row.get("github_sync")
+        if sync:
+            secret = Secret.objects.for_workspace(workspace).filter(key=sync.get("secret_key"), owner_plugin__isnull=True).first()
+            BrainSync.objects.create(brain=brain, secret=secret, repository=sync["repository"], branch=sync["branch"],
+                                     generation=sync["generation"], remote_sha=sync.get("remote_sha", ""),
+                                     remote_manifest=sync.get("remote_manifest", {}), poll_enabled=False,
+                                     error="Restored sync. Verify the Secret and pull before exporting; polling is disabled.")
+            warnings.append(f"Brain {brain.slug}: GitHub polling disabled after restore; verify the Secret and pull before exporting.")
         for data in row.get("grants", []):
             data = dict(data)
             if data["subject_kind"] == "token":

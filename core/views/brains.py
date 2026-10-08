@@ -531,6 +531,8 @@ def brain_feed_view(request, brain_id, feed_id):
                 messages.success(request, "Extraction queued.")
                 return redirect(_url(request, "brain_feed", brain_id=brain.pk, feed_id=feed.pk))
             if action == "edit":
+                if feed.channel == "sync":
+                    _require_manage(request, request.workspace)
                 form = BrainProposalForm(request.POST, request.FILES)
                 if form.is_valid():
                     approval.edit_proposal(request.workspace, brain.pk, feed.pk, form.cleaned_data["proposal"],
@@ -553,6 +555,6 @@ def brain_feed_view(request, brain_id, feed_id):
         form.initial["proposal"] = None
     return render(request, "cpanel/brains/feed.html", _context(request, brain, feed=feed,
                   review=current, form=form, expected_digest=approval.digest(feed),
-                  editable=feed.status in {"pending", "failed", "proposed"},
-                  retryable=feed.status in {"pending", "failed"},
+                  editable=feed.status in {"pending", "failed", "proposed"} and (feed.channel != "sync" or _context(request)["can_manage"]),
+                  retryable=feed.channel != "sync" and feed.status in {"pending", "failed"},
                   decidable=feed.status not in {"applied", "rejected", "approving"}))

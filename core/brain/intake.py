@@ -169,7 +169,7 @@ def capture(workspace, brain_id, params, *, channel, principal, deadline=None, c
     content, notes = params.get("content", ""), params.get("notes", "")
     if not content.strip() and not url:
         raise ApiError("invalid_input", "Provide source content or a URL.")
-    if channel not in dict(BrainFeed._meta.get_field("channel").choices) or len(principal) > 256:
+    if channel == "sync" or channel not in dict(BrainFeed._meta.get_field("channel").choices) or len(principal) > 256:
         raise ApiError("invalid_input", "Unknown intake channel or principal.")
     error = ""
     if url:

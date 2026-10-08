@@ -1,0 +1,24 @@
+{% extends "cpanel/brains/base.html" %}
+{% load workspace_tags %}
+{% block heading %}GitHub sync{% endblock %}
+{% block brain_content %}
+<p class="text-sm text-muted">The database is your Brain's source of truth. Incoming GitHub changes enter the inbox for your approval. Exports copy an immutable revision to a dedicated repository branch.</p>
+<form method="post" class="rounded-xl border border-line bg-panel p-5 space-y-4" data-sync-settings>{% csrf_token %}{% include "cpanel/brains/fields.html" %}<button name="action" value="save" class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm">Save sync settings</button></form>
+{% if sync %}
+<section class="rounded-xl border border-line bg-panel p-5 space-y-4">
+<h2 class="font-semibold">Sync status: {{ sync.status }}</h2>
+{% if sync.error %}<p class="text-sm text-warn break-words">{{ sync.error }}</p>{% endif %}
+<p class="text-sm text-muted break-all">Last accepted or exported commit: {{ sync.remote_sha|default:"Not connected yet" }}</p>
+{% if sync.result_feed_id %}<a class="text-ok text-sm" href="{% ws_url 'cpanel:brain_feed' brain.pk sync.result_feed_id %}">Review incoming changes</a>{% endif %}
+<p class="text-xs text-muted">Jobs run through Workers. Refresh to check progress. A failed or interrupted export requires a pull before retrying. Rejected remote changes must be corrected on GitHub before they can be proposed again.</p>
+<form method="post">{% csrf_token %}<button name="action" value="pull" class="px-3.5 py-2 rounded-lg border border-line text-sm">Pull for review</button></form>
+</section>
+<form method="post" class="rounded-xl border border-warn/30 bg-panel p-5 space-y-4" data-sync-export>{% csrf_token %}
+<h2 class="font-semibold">Export current revision</h2>
+<p class="text-sm text-muted">This replaces the complete destination branch tree, including deletions, with all Brain files. GitHub permissions control access to this copy. Remote changes must be pulled and reviewed first.</p>
+{% if not sync.remote_sha %}<label class="block text-sm" for="initial-sha">Current GitHub branch commit SHA</label><input id="initial-sha" name="initial_sha" maxlength="64" required class="w-full bg-ink border border-line rounded-lg p-2 text-sm"><p class="text-xs text-muted">For the first export, copy the full SHA of the existing destination branch after reviewing its files. Export stops if the branch moves.</p>{% endif %}
+<label class="flex items-start gap-3 text-sm"><input type="checkbox" name="acknowledge" required class="mt-1"><span>I intend to copy every visibility tier, including private notes and the contract, to this repository branch.</span></label>
+<button name="action" value="export" class="px-3.5 py-2 rounded-lg border border-line text-sm">Queue export</button>
+</form>
+{% endif %}
+{% endblock %}

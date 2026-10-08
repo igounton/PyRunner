@@ -3,6 +3,7 @@ URL patterns for control panel.
 """
 from django.urls import path
 from core.views import brains
+from core.views.brain_sync import brain_sync_view
 from core.views.connect import connect_view, url_tokens_toggle_view
 from core.views.services import (
     embedding_provider_delete_view,
@@ -224,6 +225,7 @@ urlpatterns = [
     path("brains/<uuid:brain_id>/revisions/", brains.brain_revisions_view, name="brain_revisions"),
     path("brains/<uuid:brain_id>/revisions/<uuid:revision_id>/", brains.brain_diff_view, name="brain_diff"),
     path("brains/<uuid:brain_id>/settings/", brains.brain_settings_view, name="brain_settings"),
+    path("brains/<uuid:brain_id>/sync/", brain_sync_view, name="brain_sync"),
     path("brains/<uuid:brain_id>/grants/", brains.brain_grants_view, name="brain_grants"),
     path("brains/<uuid:brain_id>/grants/<uuid:grant_id>/delete/", brains.brain_grant_delete_view, name="brain_grant_delete"),
     path("brains/<uuid:brain_id>/export/", brains.brain_export_view, name="brain_export"),

@@ -9,6 +9,10 @@ begins tracking at the current release; earlier history is in the git log.
 ## [Unreleased]
 
 ### Added
+- **Unified API registry and REST** — permission-scoped, hashed API tokens;
+  one schema and handler per tool-call endpoint, GET for reads, a filtered
+  `/api/v1/_catalog`, and `/api/v1/_health`. Existing datastore and plugin token
+  scopes retain their reach. Brain endpoints will register on this surface.
 - **Vectors: embedding providers, vector stores and collections** — the first
   piece of the 2.0 train. Services gains two cards: *Embedding Providers*
   (OpenAI, Voyage, Jina, Z.AI, a local Ollama, or any OpenAI-compatible

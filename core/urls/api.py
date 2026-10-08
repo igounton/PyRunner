@@ -15,6 +15,7 @@ from core.views.api.plugins import (
     plugin_api_index,
     plugin_api_dispatch,
 )
+from core.api.rest import dispatch
 
 app_name = "api"
 
@@ -38,4 +39,6 @@ urlpatterns = [
         plugin_api_dispatch,
         name="plugin_api_dispatch_item",
     ),
+    path("<str:slug>", dispatch, name="endpoint"),
+    path("<str:slug>/", dispatch),
 ]

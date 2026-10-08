@@ -18,7 +18,7 @@
                         <span class="text-muted">API Tokens</span>
                     </nav>
                     <h1 class="text-[22px] font-semibold tracking-tight">API Tokens</h1>
-                    <p class="text-sm text-muted mt-1">Manage API tokens for external access to datastores and plugin APIs</p>
+                <p class="text-sm text-muted mt-1">Manage API tokens for datastores, plugins and unified API endpoints</p>
                 </div>
                 <a href="{% url 'cpanel:api_token_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
@@ -54,6 +54,9 @@
                                 {% endif %}
                                 {% elif token.datastore %}
                                 <span class="px-2 py-0.5 rounded-md text-xs bg-info/10 text-info">{{ token.datastore.name }}</span>
+                                {% elif token.scope == "api" %}
+                                <span class="px-2 py-0.5 rounded-md text-xs bg-info/10 text-info">{{ token.scope_display }}</span>
+                                <span class="block text-xs text-muted mt-1">{{ token.get_kind_display }} · {{ token.get_brain_tier_display }}</span>
                                 {% else %}
                                 <span class="px-2 py-0.5 rounded-md text-xs bg-accent/10 text-accent">All datastores</span>
                                 {% endif %}
@@ -91,6 +94,7 @@
             <!-- Usage info -->
             <div class="rounded-2xl border border-line bg-panel p-5">
                 <h3 class="text-sm font-medium text-text mb-2">Using the API</h3>
+                <p class="text-sm text-muted mb-3">Unified API tokens discover their permitted endpoints at <code>/api/v1/_catalog</code>. They do not grant datastore or plugin API access.</p>
                 <p class="text-sm text-muted mb-3">Use your API token to access datastore data from external applications:</p>
                 <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer YOUR_TOKEN" {{ request.scheme }}://{{ request.get_host }}/api/v1/datastores/</code>
             </div>

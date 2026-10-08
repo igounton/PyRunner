@@ -26,6 +26,7 @@ class CoreConfig(AppConfig):
 
         # System checks (manage.py check / runserver / test): vector-store prerequisites.
         from core import checks  # noqa: F401
+        from core.api import endpoints  # noqa: F401 — register the shared API handlers
 
     def _on_post_migrate(self, sender, **kwargs):
         """Run after migrations are complete to set up recurring schedules."""

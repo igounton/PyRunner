@@ -30,7 +30,7 @@
                     </div>
                     <div>
                         <h2 class="font-semibold text-text">Token "{{ token_obj.name }}" created successfully</h2>
-                        <p class="text-sm text-muted">{% if token_obj.datastore %}Access: {{ token_obj.datastore.name }} datastore{% else %}Access: all datastores{% endif %}</p>
+                        <p class="text-sm text-muted">{% if token_obj.scope == "api" %}{{ token_obj.scope_display }}{% elif token_obj.datastore %}Access: {{ token_obj.datastore.name }} datastore{% else %}Access: all datastores{% endif %}</p>
                     </div>
                 </div>
 
@@ -59,6 +59,12 @@
                     <h3 class="text-sm font-medium text-text mb-3">Quick start</h3>
                     <p class="text-sm text-muted mb-3">Use your token to access the API:</p>
                     <div class="space-y-3">
+                        {% if token_obj.scope == "api" %}
+                        <div>
+                            <p class="text-xs text-faint mb-1">List available endpoints</p>
+                            <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer YOUR_TOKEN" {{ request.scheme }}://{{ request.get_host }}/api/v1/_catalog</code>
+                        </div>
+                        {% else %}
                         <div>
                             <p class="text-xs text-faint mb-1">List datastores</p>
                             <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer {{ token_value }}" {{ request.scheme }}://{{ request.get_host }}/api/v1/datastores/</code>
@@ -67,6 +73,7 @@
                             <p class="text-xs text-faint mb-1">Get entries from a datastore</p>
                             <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer {{ token_value }}" {{ request.scheme }}://{{ request.get_host }}/api/v1/datastores/YOUR_STORE/entries/</code>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
 

@@ -41,20 +41,18 @@ from pathlib import Path
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from core.models import APIToken
+from core.api.errors import (
+    authenticate as _authenticate, error_response as _error,
+    rate_limited as _rate_limited, touch_last_used as _touch_last_used,
+)
 from core.plugins import is_valid_plugin_slug
 from core.plugins.api import API_PAGE_ATTR, API_RESOURCE_ATTR, APIError, APIRequest
 from core.ratelimit import (
-    client_ip,
     rate_limit_exceeded,
-    rate_limit_over,
-    seconds_to_window_reset,
 )
 from core.views.api.decorators import (
-    _extract_token,
     add_cors_headers,
     cors_preflight_response,
 )
@@ -74,29 +72,10 @@ _handlers_cache: dict = {}
 # Response helpers
 # --------------------------------------------------------------------------- #
 
-def _error(status, code, message, *, retry_after=None):
-    """Uniform error envelope + CORS on every error (the datastore API's
-    CORS-only-on-success is exactly what broke its browser story)."""
-    response = JsonResponse({"error": {"code": code, "message": message}}, status=status)
-    if retry_after is not None:
-        response["Retry-After"] = str(retry_after)
-    return add_cors_headers(response)
-
-
 def _preflight():
     """Answer a CORS preflight pre-auth (a browser preflight carries no token)."""
     return cors_preflight_response()
 
-
-def _rate_limited(message):
-    return _error(
-        429, "RATE_LIMITED", message, retry_after=seconds_to_window_reset(RATE_WINDOW)
-    )
-
-
-# --------------------------------------------------------------------------- #
-# Manifest + handler resolution (disk is the truth for the code that's loaded)
-# --------------------------------------------------------------------------- #
 
 def _plugin_loaded(slug):
     return f"plugins.{slug}" in getattr(settings, "INSTALLED_PLUGINS", [])
@@ -209,65 +188,6 @@ def _plugin_pages(slug):
 # Auth + limits (shared by discovery and dispatch)
 # --------------------------------------------------------------------------- #
 
-def _authfail_limit():
-    return getattr(settings, "PLUGIN_API_AUTHFAIL_RATE_LIMIT", 20)
-
-
-def _authenticate(request):
-    """Resolve the request's plugin-API token, or an error response.
-
-    Returns ``(token, None)`` on success, ``(None, response)`` on failure.
-    Only auth happens here — scope belongs to the caller (discovery accepts
-    any plugin-scoped token; dispatch additionally pins the slug).
-    """
-    ip = client_ip(request)
-    authfail_key = f"plugin_api_authfail_{ip}"
-
-    # An IP over its auth-fail budget is cut off BEFORE the DB lookup (peek —
-    # successful callers never consume this budget).
-    if rate_limit_over(authfail_key, _authfail_limit(), RATE_WINDOW):
-        return None, _rate_limited("Too many failed authentication attempts.")
-
-    def _authfail(message):
-        if rate_limit_exceeded(authfail_key, _authfail_limit(), RATE_WINDOW):
-            return _rate_limited("Too many failed authentication attempts.")
-        return _error(401, "UNAUTHORIZED", message)
-
-    raw = _extract_token(request)
-    if not raw:
-        return None, _authfail("API token required")
-
-    try:
-        token = APIToken.objects.select_related("workspace").get(
-            token=raw, is_active=True
-        )
-    except APIToken.DoesNotExist:
-        logger.warning("Plugin API request with invalid token: %s...", raw[:8])
-        return None, _authfail("Invalid API token")
-
-    if token.expires_at and token.expires_at < timezone.now():
-        logger.info("Plugin API request with expired token: %s", token.name)
-        return None, _authfail("API token has expired")
-
-    if token.scope != APIToken.Scope.PLUGIN:
-        # Legacy datastore tokens must never gain plugin API access — that
-        # would be silent scope expansion. (Doesn't count as an auth failure:
-        # the credential is real, just not for this surface.)
-        return None, _error(
-            403, "SCOPE_MISMATCH", "This token is not scoped to a plugin API"
-        )
-
-    if token.workspace_id is None:
-        # Fail-closed: the token's workspace was deleted. Falling back to the
-        # default workspace would silently redirect external consumers to
-        # another tenant's plugin data.
-        return None, _error(
-            403, "SCOPE_MISMATCH", "This token's workspace no longer exists"
-        )
-
-    return token, None
-
-
 def _enforce_token_limit(token):
     """Per-token budget — same setting/key family as the datastore API."""
     limit = getattr(settings, "API_RATE_LIMIT", 60)
@@ -284,10 +204,6 @@ def _enforce_plugin_limit(slug):
         logger.warning("Plugin API per-plugin rate limit exceeded: %s", slug)
         return _rate_limited("Plugin rate limit exceeded. Try again later.")
     return None
-
-
-def _touch_last_used(token):
-    APIToken.objects.filter(id=token.id).update(last_used_at=timezone.now())
 
 
 def _resource_descriptor(entry):

@@ -20,7 +20,7 @@ def _token_scope(request):
     instance is byte-for-byte; once a token is created post-Stage-3 it carries a
     workspace and is no longer visible cross-workspace.
     """
-    return Q(workspace=request.workspace) | Q(workspace__isnull=True)
+    return Q(workspace=request.workspace) | (Q(workspace__isnull=True) & ~Q(scope="api"))
 
 
 @login_required
@@ -60,7 +60,8 @@ def api_token_create_view(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             token = form.save(commit=False)
             # Generate the token value
-            token.token = APIToken.generate_token()
+            raw_token = APIToken.generate_token(scope=token.scope, kind=token.kind)
+            token.token = raw_token
             token.created_by = request.user
             # Stamp the active workspace (tenancy Stage 3) so the token only
             # resolves this workspace's datastores.
@@ -68,7 +69,7 @@ def api_token_create_view(request: HttpRequest) -> HttpResponse:
             token.save()
 
             # Store the token in session for one-time display
-            request.session["new_api_token"] = token.token
+            request.session["new_api_token"] = raw_token
             request.session["new_api_token_id"] = str(token.id)
 
             messages.success(request, f'API token "{token.name}" created successfully.')

@@ -19,11 +19,12 @@
                     <span class="text-muted">Create</span>
                 </nav>
                 <h1 class="text-[22px] font-semibold tracking-tight">Create API token</h1>
-                <p class="text-sm text-muted mt-1">Generate a new token for API access to datastores or plugin APIs</p>
+                <p class="text-sm text-muted mt-1">Generate a token for datastores, plugins or the unified API</p>
             </div>
 
             <form method="post" autocomplete="off" class="rounded-2xl border border-line bg-panel p-6 space-y-5">
                 {% csrf_token %}
+                {{ form.non_field_errors }}
 
                 <div>
                     <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
@@ -53,6 +54,29 @@
                     {% if form.plugin_slug.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.plugin_slug.errors.0 }}</p>{% endif %}
                 </div>
 
+                <div id="api-fields" class="space-y-5">
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">Permissions</label>
+                        {% for checkbox in form.permissions %}
+                        <label class="flex items-center gap-2 text-sm text-text">{{ checkbox.tag }}<span>{{ checkbox.choice_label }}</span></label>
+                        {% endfor %}
+                        {{ form.permissions.errors }}
+                    </div>
+                    <div>
+                        <label for="id_kind" class="block text-[13px] font-medium text-text mb-1.5">Token kind</label>
+                        {{ form.kind }}{{ form.kind.errors }}
+                    </div>
+                    <div>
+                        <label for="id_brain" class="block text-[13px] font-medium text-text mb-1.5">Bind to one brain (optional)</label>
+                        {{ form.brain }}{{ form.brain.errors }}
+                    </div>
+                    <div>
+                        <label for="id_brain_tier" class="block text-[13px] font-medium text-text mb-1.5">Maximum brain tier</label>
+                        {{ form.brain_tier }}{{ form.brain_tier.errors }}
+                        <p class="mt-1.5 text-xs text-faint">A brain grant is also required. The token never grants access by itself.</p>
+                    </div>
+                </div>
+
                 <script>
                     (function () {
                         var scope = document.getElementById("id_scope");
@@ -61,6 +85,7 @@
                         function sync() {
                             dsField.style.display = scope.value === "datastore" ? "" : "none";
                             plField.style.display = scope.value === "plugin" ? "" : "none";
+                            document.getElementById("api-fields").style.display = scope.value === "api" ? "" : "none";
                         }
                         scope.addEventListener("change", sync);
                         sync();
@@ -81,7 +106,7 @@
                         <ul class="mt-2 space-y-1 list-disc list-inside text-xs">
                             <li>The token will only be shown once after creation</li>
                             <li>Store it securely — you won't be able to see it again</li>
-                            <li>Tokens provide read-only access to datastore or plugin API data</li>
+                            <li>Datastore and plugin tokens are read-only; unified API tokens use the selected permissions</li>
                         </ul>
                     </div>
                 </div>

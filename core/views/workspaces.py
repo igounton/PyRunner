@@ -31,7 +31,7 @@ MAX_NAME_LEN = 100
 # Scoped models a workspace "owns" — used by the delete-block so SET_NULL never
 # silently orphans tenant data (reverse accessors of the workspace FK).
 # Environments are SHARED infra, excluded here.
-_OWNED_RELATIONS = ("scripts", "secrets", "runs", "datastores", "schedules")
+_OWNED_RELATIONS = ("scripts", "secrets", "runs", "datastores", "schedules", "brains")
 
 
 def _membership(user, workspace):

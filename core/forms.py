@@ -1914,11 +1914,19 @@ class APITokenForm(forms.ModelForm):
         help_text="The plugin whose API this token can call",
         widget=forms.Select(attrs={"class": INPUT_CLASS}),
     )
+    permissions = forms.MultipleChoiceField(
+        choices=APIToken.API_PERMISSIONS, required=False, widget=forms.CheckboxSelectMultiple,
+    )
+    kind = forms.ChoiceField(choices=APIToken.Kind.choices, required=False,
+                             widget=forms.Select(attrs={"class": INPUT_CLASS}))
 
     class Meta:
         model = APIToken
-        fields = ["name", "scope", "datastore", "plugin_slug", "expires_at"]
+        fields = ["name", "scope", "datastore", "plugin_slug", "expires_at",
+                  "permissions", "kind", "brain", "brain_tier"]
         widgets = {
+            "brain": forms.Select(attrs={"class": INPUT_CLASS}),
+            "brain_tier": forms.Select(attrs={"class": INPUT_CLASS}),
             "name": forms.TextInput(
                 attrs={
                     "class": INPUT_CLASS,
@@ -1958,6 +1966,11 @@ class APITokenForm(forms.ModelForm):
 
     def __init__(self, *args, workspace=None, **kwargs):
         super().__init__(*args, **kwargs)
+        from core.models import Brain
+
+        self.instance.workspace = workspace
+        self.fields["brain"].queryset = Brain.objects.for_workspace(workspace)
+        self.fields["brain_tier"].required = False
         # Make datastore optional with a clear empty choice
         self.fields["datastore"].required = False
         self.fields["datastore"].empty_label = "Select a datastore…"
@@ -1989,6 +2002,21 @@ class APITokenForm(forms.ModelForm):
             cleaned["datastore"] = None
         if scope != APIToken.Scope.PLUGIN:
             cleaned["plugin_slug"] = ""
+        cleaned["kind"] = cleaned.get("kind") or "bearer"
+        cleaned["brain_tier"] = cleaned.get("brain_tier") or "public"
+        if scope != APIToken.Scope.API:
+            cleaned.update(permissions=[], kind="bearer", brain=None, brain_tier="public")
+        elif cleaned["kind"] == "url":
+            from core.models import GlobalSettings
+
+            # URL transport is enabled explicitly by the operator with MCP.
+            if not getattr(GlobalSettings.get_settings(), "mcp_url_tokens_enabled", False):
+                self.add_error("kind", "MCP URL tokens are disabled in Connect settings.")
+            if not cleaned.get("expires_at"):
+                from datetime import timedelta
+                from django.utils import timezone
+
+                cleaned["expires_at"] = timezone.now() + timedelta(days=90)
         return cleaned
 
 

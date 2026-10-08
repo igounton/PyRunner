@@ -685,6 +685,7 @@ CONTENT_SECURITY_POLICY = (
 
 # Rate limiting for API requests (requests per minute per token)
 API_RATE_LIMIT = int(os.environ.get("API_RATE_LIMIT", "60"))
+API_AUTHFAIL_RATE_LIMIT = int(os.environ.get("API_AUTHFAIL_RATE_LIMIT", "20"))
 
 # CORS settings for API endpoints
 # Set to "*" to allow all origins (suitable for self-hosted), or comma-separated origins

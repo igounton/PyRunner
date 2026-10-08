@@ -73,7 +73,7 @@ def api_token_required(view_func):
         # Plugin-scoped tokens are for /api/v1/plugins/… only — least privilege,
         # never datastore reach. (Such tokens didn't exist before the scope
         # field, so nothing previously working changes here.)
-        if api_token.scope == APIToken.Scope.PLUGIN:
+        if api_token.scope not in (APIToken.Scope.DATASTORE, APIToken.Scope.DATASTORES):
             logger.info(f"Plugin-scoped token rejected on datastore API: {api_token.name}")
             return add_cors_headers(JsonResponse(
                 {

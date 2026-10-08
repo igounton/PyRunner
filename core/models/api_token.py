@@ -1,11 +1,14 @@
 """
-API Token model for external HTTP API access (datastores + plugin APIs).
+API tokens for datastore, plugin and registry endpoints.
 """
 
+import hashlib
+import re
 import secrets
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -17,6 +20,7 @@ class APIToken(models.Model):
     - ``datastore``  — a single datastore (the FK).
     - ``datastores`` — all datastores in the token's workspace (legacy "global").
     - ``plugin``     — one plugin's declared API resources (``plugin_slug``).
+    - ``api``        — registry permissions, with an optional brain binding.
 
     Historically named ``DataStoreAPIToken`` (the alias survives in
     ``core.models``); the table name is pinned so the rename touched no SQL.
@@ -26,10 +30,18 @@ class APIToken(models.Model):
         DATASTORE = "datastore", "Single datastore"
         DATASTORES = "datastores", "All datastores"
         PLUGIN = "plugin", "Plugin API"
+        API = "api", "Unified API / MCP"
+
+    class Kind(models.TextChoices):
+        BEARER = "bearer", "Authorization header"
+        URL = "url", "MCP URL (read-only)"
+
+    API_PERMISSIONS = (("brain:read", "Read brains"), ("brain:write", "Propose brain updates"))
+    TIERS = (("public", "Public"), ("agents-only", "Agents only"), ("private", "Private"))
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # The actual token value (64-char URL-safe string)
+    # Legacy scopes keep their token; API scope stores only its SHA-256 digest.
     token = models.CharField(
         max_length=64,
         unique=True,
@@ -73,6 +85,13 @@ class APIToken(models.Model):
         db_index=True,
         help_text="Plugin this token is scoped to (scope=plugin only)",
     )
+
+    permissions = models.JSONField(default=list, blank=True)
+    kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.BEARER)
+    token_hint = models.CharField(max_length=16, blank=True, default="")
+    brain = models.ForeignKey("Brain", on_delete=models.CASCADE, null=True, blank=True,
+                              related_name="api_tokens")
+    brain_tier = models.CharField(max_length=16, choices=TIERS, default="public")
 
     # Tenancy Stage 3: the workspace this token acts in. A global (no-datastore)
     # token lists/resolves only this workspace's datastores; NULL falls back to
@@ -122,6 +141,19 @@ class APIToken(models.Model):
         verbose_name_plural = "API tokens"
         ordering = ["-created_at"]
         constraints = [
+            models.CheckConstraint(
+                condition=(models.Q(scope="api") & ~models.Q(permissions=[]))
+                | (~models.Q(scope="api") & models.Q(permissions=[])),
+                name="apitoken_api_permissions",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(kind="url") | models.Q(scope="api", expires_at__isnull=False),
+                name="apitoken_url_expiry",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(scope="api") | models.Q(brain__isnull=True, kind="bearer"),
+                name="apitoken_api_binding",
+            ),
             # scope="datastore" ⇔ datastore FK set (integrity, not just form
             # validation — a plugin/global token must never carry a store FK).
             models.CheckConstraint(
@@ -142,6 +174,8 @@ class APIToken(models.Model):
         ]
 
     def __str__(self):
+        if self.scope == self.Scope.API:
+            return f"{self.name} ({self.scope_display})"
         if self.scope == self.Scope.PLUGIN:
             return f"{self.name} (plugin: {self.plugin_slug})"
         if self.datastore:
@@ -154,15 +188,49 @@ class APIToken(models.Model):
         # An explicit plugin scope with an FK still hits the CheckConstraint.
         if self.datastore_id and self.scope == self.Scope.DATASTORES:
             self.scope = self.Scope.DATASTORE
+        if self.scope == self.Scope.API:
+            self.clean()
+            if self.token.startswith(("pyrun_", "mcpurl_")):
+                self.token_hint = self.token[:14]
+                self.token = self.digest(self.token)
+                if kwargs.get("update_fields") is not None:
+                    kwargs["update_fields"] = set(kwargs["update_fields"]) | {"token", "token_hint"}
+            elif not re.fullmatch(r"[a-f0-9]{64}", self.token):
+                raise ValidationError("Generate API tokens with scope='api'.")
         super().save(*args, **kwargs)
 
+    def clean(self):
+        super().clean()
+        if self.scope != self.Scope.API:
+            return
+        allowed = {p[0] for p in self.API_PERMISSIONS}
+        if self.kind not in self.Kind.values or self.brain_tier not in dict(self.TIERS):
+            raise ValidationError("Unknown token kind or brain tier.")
+        if (not isinstance(self.permissions, list) or not self.permissions
+                or any(not isinstance(p, str) or p not in allowed for p in self.permissions)):
+            raise ValidationError({"permissions": "Select at least one supported permission."})
+        if self.kind == self.Kind.URL:
+            if not self.expires_at:
+                raise ValidationError({"expires_at": "URL tokens require an expiry."})
+            if any(not p.endswith(":read") for p in self.permissions):
+                raise ValidationError({"permissions": "URL tokens allow read permissions only."})
+        if self.brain_id and self.workspace_id != self.brain.workspace_id:
+            raise ValidationError({"brain": "Unknown brain."})
+
     @staticmethod
-    def generate_token() -> str:
-        """Generate a secure random API token (64 chars, URL-safe)."""
-        return secrets.token_urlsafe(48)
+    def digest(raw):
+        return hashlib.sha256(raw.encode()).hexdigest()
+
+    @staticmethod
+    def generate_token(*, scope="datastores", kind="bearer") -> str:
+        """Generate a URL-safe credential; unified API tokens include a kind prefix."""
+        prefix = ("mcpurl_" if kind == "url" else "pyrun_") if scope == "api" else ""
+        return prefix + secrets.token_urlsafe(48)
 
     def get_masked_token(self) -> str:
         """Return a masked version of the token for display."""
+        if self.scope == self.Scope.API:
+            return f"{self.token_hint or 'pyrun'}..."
         if len(self.token) <= 12:
             return "*" * len(self.token)
         return f"{self.token[:8]}...{self.token[-4:]}"
@@ -170,11 +238,13 @@ class APIToken(models.Model):
     @property
     def is_global(self) -> bool:
         """Return True if this is a global token (not scoped to a datastore)."""
-        return self.datastore is None
+        return self.scope != self.Scope.API and self.datastore is None
 
     @property
     def scope_display(self) -> str:
         """Return a human-readable scope description."""
+        if self.scope == self.Scope.API:
+            return "API: " + ", ".join(self.permissions)
         if self.scope == self.Scope.PLUGIN:
             return f"Plugin: {self.plugin_slug}"
         if self.datastore:

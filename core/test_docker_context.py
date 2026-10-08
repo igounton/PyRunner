@@ -37,6 +37,7 @@ class DockerignoreTests(SimpleTestCase):
         "private.sh",
         ".claude/",
         ".env",
+        ".env.*",
         "data/",
         "docs/",
         "dist/",

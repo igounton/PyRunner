@@ -121,9 +121,10 @@ resuming. A Brain excluded from backups excludes its sync configuration too.
    `brain:write`, `can_propose`, and agents-only or higher access.
 4. Replace the connector URL with this instance's `/mcp`, and replace the old
    credential with the new token. For URL-only clients use an explicitly enabled,
-   expiring `/mcp/k/<url-token>/` credential. Discover tools again: PyRun registry
-   names are `brain.get-note`, `brain.get-index`, etc.; update any hard-coded
-   unprefixed calls. The operation names and note semantics are retained.
+   expiring `/mcp/k/<url-token>/` credential. Discover tools again: PyRun MCP
+   names are `brain-get-note`, `brain-get-index`, etc. REST uses `brain.get-note`,
+   `brain.get-index`, etc.; update hard-coded calls to match the chosen transport.
+   Note semantics are retained.
 5. Verify discovery, one public read, one forbidden read, a proposal appearing in
    the inbox, and revocation. Configure GitHub sync separately if wanted. No old
    consumers, PATs, deploy keys or login sessions are transferred automatically.

@@ -13,8 +13,18 @@ begins tracking at the current release; earlier history is in the git log.
   a file browser with visibility and freshness badges, owner/admin edits,
   revision diffs, access grants, template creation, and ZIP or public GitHub
   import/export. Existing BrainOutside 1.0 content is preserved. Backup format
-  1.10.0 includes opted-in brains and their full history; token grants must be
+  1.13.0 includes opted-in brains and their full history; token grants must be
   recreated after restore.
+- **Brain read and write tools** — shared REST/MCP, signed script loopback,
+  plugin `BrainAPI` (SDK 2.7) and grant-filtered agent tools. Captures produce
+  validated proposals for owner/admin review, with diffs, conflict re-review,
+  idempotent approval and cost caps. The confined reader assembles cited context;
+  console requests run asynchronously. Optional vector search verifies results
+  against canonical notes and the caller's current tier.
+- **GitHub Brain sync** — HTTP Git Data exports with explicit all-tier consent,
+  a reviewed initial SHA and non-force updates. Pulls create reviewable proposals;
+  optional polling never approves or exports. Credentials use workspace Secrets.
+  Restore pauses polling and drops transient jobs while preserving history.
 - **MCP and Connect** — stateless Streamable HTTP at `/mcp`, shared API
   handlers, permission-filtered OpenAPI, and workspace connector instructions.
   Expiring read-only URL tokens are opt-in. Supports current per-request
@@ -23,9 +33,10 @@ begins tracking at the current release; earlier history is in the git log.
 - **Unified API registry and REST** — permission-scoped, hashed API tokens;
   one schema and handler per tool-call endpoint, GET for reads, a filtered
   `/api/v1/_catalog`, and `/api/v1/_health`. Existing datastore and plugin token
-  scopes retain their reach. Brain endpoints will register on this surface.
-- **Vectors: embedding providers, vector stores and collections** — the first
-  piece of the 2.0 train. Services gains two cards: *Embedding Providers*
+  scopes retain their reach. Brain endpoints share these handlers; REST names
+  use dots (`brain.get-note`), MCP names hyphens (`brain-get-note`).
+- **Vectors: embedding providers, vector stores and collections** — Services
+  gains two cards: *Embedding Providers*
   (OpenAI, Voyage, Jina, Z.AI, a local Ollama, or any OpenAI-compatible
   `/v1/embeddings` endpoint; Test records the vector dimension) and *Vector
   Stores*: the built-in **Local** store (one SQLite file per collection on the
@@ -42,7 +53,7 @@ begins tracking at the current release; earlier history is in the git log.
     scripts only; every other collection to any script in its workspace. Each
     run is braked at 2 000 embedding calls, 20 MB of embedded text and 200 000
     points written or deleted, so a runaway loop can't run up a provider bill.
-  - **Plugins** get `VectorAPI` (plugin SDK 2.6): `provision("docs",
+  - **Plugins** get `VectorAPI` (plugin SDK 2.7): `provision("docs",
     embedding_provider=..., dimension=..., metric=...)` is idempotent and
     refuses to silently change a collection's model or dimension; `get`,
     `list`, `delete` and the same operations as the helper. Manifests declare
@@ -56,7 +67,7 @@ begins tracking at the current release; earlier history is in the git log.
     credentials with runs* on the connection; then a script's
     `credentials()` returns the URL, API key and physical collection name for
     `qdrant-client`.
-  - Backup format 1.9.0 carries providers and connections (upserted by name,
+  - Backup format 1.13.0 carries providers and connections (upserted by name,
     credentials encrypted as stored) and Local collections with their points
     inline, up to `PYRUNNER_VECTOR_BACKUP_MAX_MB` (default 50) each; Qdrant
     collections are carried as settings and reattach to the server on restore.
@@ -192,6 +203,8 @@ begins tracking at the current release; earlier history is in the git log.
   three named volumes explicitly and refuses to continue if any survive.
 
 ### Security
+- Docker builds exclude every root `.env.*` variant, including local test
+  credentials, in addition to `.env` and the existing private artifact rules.
 - **The login lockout now actually locks** — the limit of 5 failed sign-ins
   (15-minute cool-off) recorded every failure against no account, so the
   correct password still signed in after any number of wrong guesses and

@@ -5,7 +5,7 @@
 
 # Environment files (should be passed as env vars)
 .env
-.env.example
+.env.*
 
 # IDE
 .vscode

@@ -46,7 +46,7 @@ field. Keep `X-Request-ID` for debugging; never include tokens in bug reports.
 Pass `brain` as a workspace-local slug, or omit it when the token is bound to one
 Brain. The [Brain guide](brain.md) explains grants, tiers and human review.
 
-| Endpoint / MCP tool | Parameters beyond `brain` | Permission |
+| REST endpoint | Parameters beyond `brain` | Permission |
 |---|---|---|
 | `brain.list` | Optional `offset`, `limit`; no `brain` parameter | `brain:read` |
 | `brain.ping` | None | `brain:read` |
@@ -77,9 +77,11 @@ claude mcp add --transport http pyrun https://pyrun.example/mcp \
 ```
 
 Use your client's private configuration for credentials. Reconnect and discover
-tools after changing permissions or migrating from BrainOutside. Tools use the
-registry names from the table above. The endpoint is stateless Streamable HTTP
-with JSON responses; it does not open SSE streams or allocate session IDs.
+tools after changing permissions or migrating from BrainOutside. MCP tool names
+replace dots in REST names with hyphens: `brain.get-note` becomes
+`brain-get-note`, and `brain.assemble-context` becomes `brain-assemble-context`.
+The catalog includes both `slug` and `mcp_name`. The endpoint is stateless
+Streamable HTTP with JSON responses; it does not open SSE streams or allocate session IDs.
 `GET /mcp` returns 405. JSON-RPC batches are rejected; accepted notifications return
 202 without a body. Tool failures use `isError: true` with the same application
 error code/message as REST. Protocol errors use JSON-RPC errors.

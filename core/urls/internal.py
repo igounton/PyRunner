@@ -12,6 +12,7 @@ and SetupWizardMiddleware.STATIC_ALLOWED_PREFIXES) so a loopback call is never
 from django.urls import path
 
 from core.views.api.channels_internal import send as channels_send
+from core.views.api.brains_internal import brain_op
 from core.views.api.databases_internal import list_databases, resolve_dsn
 from core.views.api.datastore_internal import (
     entries,
@@ -31,6 +32,8 @@ from core.views.api.vectors_internal import collection_op as vectors_op
 app_name = "internal"
 
 urlpatterns = [
+    path("brains", brain_op, {"slug": None, "op": "list"}, name="brains_list"),
+    path("brains/<slug:slug>/<str:op>", brain_op, name="brain_op"),
     path("datastores/<str:name>", resolve_store, name="resolve_store"),
     path("datastores/<str:name>/entries", entries, name="entries"),
     path("datastores/<str:name>/entry", entry, name="entry"),

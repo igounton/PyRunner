@@ -187,6 +187,7 @@ class OwnedCountsTests(_LoggedIn):
                 "datastores": 1,
                 "libraries": 0,
                 "vector_collections": 0,
+                "brains": 0,
                 "total": 3,
             },
         )

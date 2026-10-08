@@ -128,6 +128,7 @@ _QUERY_SCHEMA = {
 
 def build_tools(workspace):
     """Return the workspace-scoped read-only tool list for Py AI."""
+    from core.brain.tools import build_tools as brain_tools
 
     @tool("count_scripts", "Count the scripts in this workspace.", {})
     async def count_scripts(args):
@@ -162,7 +163,7 @@ def build_tools(workspace):
         )
 
     return [count_scripts, list_scripts, get_script, recent_runs,
-            list_schedules, list_datastores, query_datastore]
+            list_schedules, list_datastores, query_datastore] + brain_tools(workspace)
 
 
 TOOL_NAMES = [

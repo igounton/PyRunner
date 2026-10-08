@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from core.models import GlobalSettings
 from core.services.claude_service import ClaudeService
 
-from .tools import ALLOWED_TOOLS, SERVER_NAME, build_tools
+from .tools import SERVER_NAME, build_tools
 
 logger = logging.getLogger(__name__)
 
@@ -140,10 +140,13 @@ class PyAIService:
     async def _drive(prompt, system, model, env, workspace) -> PyAIResult:
         import claude_agent_sdk as sdk
 
-        server = sdk.create_sdk_mcp_server(name=SERVER_NAME, tools=build_tools(workspace))
+        from asgiref.sync import sync_to_async
+
+        tools = await sync_to_async(build_tools)(workspace)
+        server = sdk.create_sdk_mcp_server(name=SERVER_NAME, tools=tools)
         kwargs = {
             "mcp_servers": {SERVER_NAME: server},
-            "allowed_tools": list(ALLOWED_TOOLS),
+            "allowed_tools": [f"mcp__{SERVER_NAME}__{t.name}" for t in tools],
             "system_prompt": system,
             "permission_mode": "dontAsk",
             "setting_sources": [],

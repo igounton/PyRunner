@@ -4,6 +4,8 @@ The plugin API retains its existing envelope and auth messages. Unified API
 tokens use constant-shape auth failures and the same pre-auth throttle machinery.
 """
 
+from .exceptions import ApiError  # noqa: F401 - compatibility export
+
 from django.conf import settings
 from django.http import JsonResponse
 from django.db.models import Q
@@ -14,19 +16,6 @@ from core.ratelimit import client_ip, rate_limit_exceeded, rate_limit_over, seco
 from core.views.api.decorators import _extract_token, add_cors_headers
 
 RATE_WINDOW = 60
-
-
-class ApiError(Exception):
-    def __init__(self, code, message, status=400, *, retry_after=None):
-        super().__init__(message)
-        self.code, self.message, self.status = code, message, status
-        self.retry_after = retry_after
-
-    def as_dict(self):
-        data = {"code": self.code, "message": self.message}
-        if self.retry_after is not None:
-            data["retry_after"] = self.retry_after
-        return data
 
 
 def error_response(status, code, message, *, retry_after=None, unified=False):

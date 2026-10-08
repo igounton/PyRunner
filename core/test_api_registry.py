@@ -119,6 +119,7 @@ class RESTTests(TestCase):
         )
         saved = dict(registry._endpoints)
         self.addCleanup(lambda: setattr(registry, "_endpoints", saved))
+        registry._endpoints = {}
 
         @endpoint("test.echo", title="Echo", input=INPUT, permission="brain:read")
         def echo(ctx, params):

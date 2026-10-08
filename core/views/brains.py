@@ -1,7 +1,5 @@
 """Workspace Brain console: browsing for members, writes for owners/admins."""
 
-import re
-import uuid
 from urllib.parse import urlencode
 
 from django import forms
@@ -20,7 +18,7 @@ from core.brain.contract import version_warning
 from core.brain.imports import export_zip, import_github, import_zip
 from core.brain.paths import MAX_IMPORT_BYTES, MAX_NOTE_BYTES, MAX_RAW_BYTES, validate_path
 from core.brain.service import BrainService
-from core.models import APIToken, Brain, BrainGrant, Script, WorkspaceMembership
+from core.models import Brain, BrainGrant, WorkspaceMembership
 from core.views.workspaces import _require_manage
 
 
@@ -113,28 +111,16 @@ class BrainGrantForm(StyledForm, forms.ModelForm):
 
     def clean(self):
         data = super().clean()
-        kind, subject = data.get("subject_kind"), data.get("subject_id")
-        workspace = self.instance.brain.workspace
-        if kind in {"script", "token"} and subject:
+        from core.brain.access import validate_subject
+
+        if all(data.get(field) for field in ("subject_kind", "subject_id", "max_tier")):
             try:
-                subject_id = uuid.UUID(subject)
-            except ValueError:
-                self.add_error("subject_id", "Enter a valid UUID.")
-            else:
-                query = (
-                    Script.objects.filter(workspace=workspace)
-                    if kind == "script"
-                    else APIToken.objects.filter(workspace=workspace, scope="api")
+                data["subject_id"] = validate_subject(
+                    self.instance.brain.workspace, data["subject_kind"], data["subject_id"],
+                    data["max_tier"], data.get("can_propose", False),
                 )
-                if not query.filter(pk=subject_id).exists():
-                    self.add_error("subject_id", "Unknown subject in this workspace.")
-                data["subject_id"] = str(subject_id)
-        elif subject and not re.fullmatch(
-            r"[a-z][a-z0-9_]*" if kind == "plugin" else r"[a-zA-Z0-9_.:-]+", subject
-        ):
-            self.add_error("subject_id", "Enter a valid subject identifier.")
-        if data.get("can_propose") and data.get("max_tier") == "public":
-            self.add_error("max_tier", "Proposals require agents-only or private tier.")
+            except ValidationError as exc:
+                self.add_error(None, exc)
         return data
 
 

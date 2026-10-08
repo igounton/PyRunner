@@ -63,6 +63,7 @@ _API_NETWORK_IMPORT_ROOTS = {"requests", "httpx", "urllib"}
 _API_RESOURCES_MIN_SDK = (2, 3)
 # VectorAPI shipped in SDK 2.6.
 _VECTORS_MIN_SDK = (2, 6)
+_BRAINS_MIN_SDK = (2, 7)
 
 
 @dataclass
@@ -269,6 +270,11 @@ def _check_metadata(folder: Path, report: DoctorReport):
                     'manifest "api" must be >= "2.6" to provision vector_collections '
                     f"(found {manifest.get('api')!r})."
                 )
+            brains = provisions.get("brains")
+            if (isinstance(brains, int) and not isinstance(brains, bool) and brains > 0
+                    and not _version_at_least(manifest.get("api"), _BRAINS_MIN_SDK)):
+                failures.append('manifest "api" must be >= "2.7" to provision brains '
+                                f"(found {manifest.get('api')!r}).")
             if "secret_keys" in provisions:
                 sk = provisions["secret_keys"]
                 if not isinstance(sk, list) or not all(isinstance(v, str) for v in sk):

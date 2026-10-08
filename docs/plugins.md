@@ -560,6 +560,50 @@ page, cursor = docs.scroll(limit=100)
 
 ---
 
+## Brains (SDK 2.7)
+
+Use `BrainAPI` for owned brains or shared brains granted to your plugin. Every
+read uses the same handler as REST, MCP and the worker helper. No grant means
+unknown, including at the public tier.
+
+```python
+from core.plugins.api import BrainAPI, BrainError
+
+brains = BrainAPI(OWNER, workspace=workspace)
+brain = brains.provision("knowledge", name="Site knowledge")
+brain.index()                    # {tier, index}: generated from current notes
+brain.notes(kind="take")         # {tier, count, notes}
+brain.note("take-example")       # {tier, entity_id, path, content}
+brain.identity()                 # {tier, files}
+brain.lens("default")            # {tier, name, content}
+brain.raw("raw/archive.md")      # {tier, path, content}; visible linked raw only
+
+brains.grant("knowledge", subject_kind="agent", subject_id="pyai",
+             max_tier="agents-only")
+shared = brains.get_brain("team-mind")  # requires BrainGrant(plugin, OWNER)
+```
+
+`provision(key, slug=None, name=None, created_by=None)` is idempotent by owner
+and key; the default slug is `<owner>-<key>` (at most 64 slug characters). It
+never reseeds existing content. An explicit conflicting slug is refused.
+`list(offset=0, limit=1000)` returns accessible brains and `next_offset`; the
+public `brain.list` endpoint accepts the same pagination. Grant management is
+restricted to brains owned by this plugin; script/token subjects must belong to
+the same workspace. Plugin-owned brains grant their owner private access.
+Owned scripts inherit that access and the plugin's explicit grants.
+
+Scripts use `from pyrunner_brain import get_brain`, then the same read methods.
+The helper's `list_brains(offset=0, limit=1000)` discovers granted brains.
+They call the signed loopback API even on SQLite. SDK read errors raise
+`BrainError` with `code`/`status`; scripts import their `BrainError` from the
+helper. Above-tier, ungranted and missing notes all return the same unknown
+error. Py AI receives these tools only with an explicit `agent:pyai` grant;
+execution rechecks grants, so revocation takes effect without a restart.
+
+Declare `"api": "2.7", "provisions": {"brains": 1}` in `plugin.json`.
+Uninstall with *remove data* deletes owned brains and their revision history;
+the delete preview includes them. Shared user brains are retained.
+
 ## Ownership & scoped secrets
 
 Every resource the SDK creates carries your `owner_plugin` slug (a string, not an

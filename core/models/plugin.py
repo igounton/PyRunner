@@ -35,6 +35,7 @@ RESOURCE_LABELS = (
     ("databases", "database", "databases"),
     ("libraries", "library", "libraries"),
     ("vector_collections", "vector collection", "vector collections"),
+    ("brains", "brain", "brains"),
     ("schedules", "schedule", "schedules"),
 )
 

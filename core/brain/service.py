@@ -28,7 +28,7 @@ class BrainService:
         return brain
 
     @staticmethod
-    def files(workspace, brain_id, revision_id=None):
+    def files(workspace, brain_id, revision_id=None, *, paths=None):
         brain = BrainService.get(workspace, brain_id)
         revision = BrainRevision.objects.filter(
             brain=brain, brain__workspace=workspace, pk=revision_id or brain.head_revision_id
@@ -37,16 +37,20 @@ class BrainService:
             if revision_id is None and brain.head_revision_id is None:
                 return {}
             raise ApiError("not_found", "Unknown revision.", 404)
+        manifest = revision.manifest
+        if paths is not None:
+            selected = set(paths)
+            manifest = {path: sha for path, sha in manifest.items() if path in selected}
         blobs = dict(
             BrainBlob.objects.filter(
-                brain=brain, brain__workspace=workspace, sha256__in=set(revision.manifest.values())
+                brain=brain, brain__workspace=workspace, sha256__in=set(manifest.values())
             ).values_list("sha256", "content")
         )
-        if set(revision.manifest.values()) - set(blobs):
+        if set(manifest.values()) - set(blobs):
             raise ApiError(
                 "corrupt_revision", "Revision content is missing. Restore a complete backup.", 500
             )
-        return {path: blobs[sha] for path, sha in revision.manifest.items()}
+        return {path: blobs[sha] for path, sha in manifest.items()}
 
     @staticmethod
     @transaction.atomic

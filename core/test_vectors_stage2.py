@@ -1290,7 +1290,7 @@ class VectorAPITests(TestCase):
     def test_version_and_exports(self):
         from core.plugins import api as sdk
 
-        self.assertEqual(sdk.API_VERSION, "2.6")
+        self.assertGreaterEqual(tuple(map(int, sdk.API_VERSION.split("."))), (2, 6))
         self.assertIs(sdk.VectorError, VectorError)
 
     def test_provision_is_idempotent_and_pins_the_shape(self):

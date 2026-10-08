@@ -35,9 +35,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-# The one module-level core import: a dependency-free exception module (no
-# models, no app registry), re-exported so plugins can catch it.
+# Import-light exception modules (no models or app registry), re-exported so
+# plugins can catch service errors through the SDK.
 from core.vectors.errors import VectorError  # noqa: F401 — part of the SDK surface
+from core.api.exceptions import ApiError as BrainError  # noqa: F401 — SDK surface
 
 # Plugins declare the SDK version they target in plugin.json (e.g. "2.0"); bump
 # on a breaking change to the facade. The wrapped CORE services stay stable.
@@ -59,7 +60,8 @@ from core.vectors.errors import VectorError  # noqa: F401 — part of the SDK su
 # similarity search with a portable payload filter) on the Local store or
 # Qdrant; worker scripts reach the same collections through the
 # pyrunner_vectors helper (docs/PLAN_vector_db.md).
-API_VERSION = "2.6"
+# 2.7 (additive): BrainAPI — owned brains and grant-checked shared read handlers.
+API_VERSION = "2.7"
 
 
 # --------------------------------------------------------------------------- #
@@ -1292,6 +1294,90 @@ class VectorAPI:
             return False
         VectorService.delete_collection(collection)
         return True
+
+
+# --------------------------------------------------------------------------- #
+# Brains
+# --------------------------------------------------------------------------- #
+
+class BrainAPI:
+    """Provision plugin-owned brains, grant access, and read through the registry.
+
+    A plugin owns ``<owner>-<key>`` by default. ``get_brain(slug)`` also opens a
+    user brain when its owner has granted this plugin access. No direct content
+    write method exists: content changes go through the human-reviewed feed door.
+    """
+
+    def __init__(self, owner, workspace=None):
+        from core.plugins import is_valid_plugin_slug
+
+        if not is_valid_plugin_slug(owner):
+            raise ValueError("BrainAPI requires a plugin owner slug.")
+        self.owner, self._workspace = owner, workspace
+
+    def _ws(self):
+        return _resolve_workspace(self._workspace)
+
+    def _context(self):
+        from core.brain.access import principal_context
+
+        return principal_context(self._ws(), "plugin", self.owner)
+
+    def _call(self, slug, operation, params):
+        from core.api.registry import registry
+
+        return registry.call(f"brain.{operation}", self._context(), {**params, "brain": slug})
+
+    def get_brain(self, slug):
+        from core.script_helpers.pyrunner_brain import Brain
+
+        brain = Brain(slug, _call=self._call)
+        brain.ping()
+        return brain
+
+    def list(self, *, offset=0, limit=1000):
+        from core.api.registry import registry
+
+        return registry.call("brain.list", self._context(), {"offset": offset, "limit": limit})
+
+    def provision(self, key, *, slug=None, name=None, created_by=None):
+        from django.db import transaction
+        from core.api.errors import ApiError
+        from core.brain.service import BrainService
+        from core.models import Brain, Workspace
+
+        if not isinstance(key, str) or not key or len(key) > 100:
+            raise ValueError("Brain key must contain 1–100 characters.")
+        workspace = self._ws()
+        with transaction.atomic():
+            # Serializes first provisioning as well as the idempotent path.
+            Workspace.objects.select_for_update().get(pk=workspace.pk)
+            brain = Brain.objects.for_workspace(workspace).filter(
+                owner_plugin=self.owner, owner_key=key,
+            ).first()
+            if brain is None:
+                brain = BrainService.create(workspace, slug or f"{self.owner}-{key}",
+                                            name=name, author=created_by,
+                                            owner_plugin=self.owner, owner_key=key)
+            elif slug is not None and slug != brain.slug:
+                raise ApiError("invalid_input", "This key already has a different brain slug.")
+        return self.get_brain(brain.slug)
+
+    def grant(self, key, *, subject_kind, subject_id, max_tier="public", can_propose=False):
+        from core.brain.access import unknown, validate_subject
+        from core.models import Brain, BrainGrant
+
+        brain = Brain.objects.for_workspace(self._ws()).filter(
+            owner_plugin=self.owner, owner_key=key,
+        ).first()
+        if brain is None:
+            raise unknown()
+        identifier = validate_subject(self._ws(), subject_kind, subject_id, max_tier, can_propose)
+        grant, _ = BrainGrant.objects.update_or_create(
+            brain=brain, subject_kind=subject_kind, subject_id=identifier,
+            defaults={"max_tier": max_tier, "can_propose": can_propose},
+        )
+        return grant
 
 
 # --------------------------------------------------------------------------- #

@@ -433,7 +433,7 @@ class PluginService:
         page. The delete dialog names them in prose instead, so the promise is
         still kept — just not as a number.
         """
-        from core.models import DataStore, Library, Script, Secret, VectorCollection
+        from core.models import Brain, DataStore, Library, Script, Secret, VectorCollection
 
         counts = {}
         for model, label in (
@@ -442,6 +442,7 @@ class PluginService:
             (DataStore, "datastores"),
             (Library, "libraries"),
             (VectorCollection, "vector_collections"),
+            (Brain, "brains"),
         ):
             try:
                 model._meta.get_field("owner_plugin")
@@ -477,7 +478,7 @@ class PluginService:
         attachments, including to a USER script that had attached it — which is
         the point of remove_data.
         """
-        from core.models import DataStore, Library, Script, Secret
+        from core.models import Brain, DataStore, Library, Script, Secret
 
         counts = {}
         for model, label in (
@@ -485,6 +486,7 @@ class PluginService:
             (Secret, "secrets"),
             (DataStore, "datastores"),
             (Library, "libraries"),
+            (Brain, "brains"),
         ):
             try:
                 model._meta.get_field("owner_plugin")  # raises if column absent

@@ -22,6 +22,7 @@ import logging
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
@@ -295,6 +296,7 @@ class VectorService:
             collection.dimension,
             collection.metric,
             api_key=connection.get_credentials().get("api_key", ""),
+            connection_id=connection.pk,
         )
 
     @classmethod
@@ -411,12 +413,16 @@ class VectorService:
             api_key = connection.get_credentials().get("api_key")
             if api_key:
                 headers["api-key"] = api_key
-            response = requests.get(f"{url}/collections", headers=headers, timeout=10)
+            from core.vectors.qdrant_store import TIMEOUT_SECONDS, outage_cache_key
+
+            # Deliberately bypass the outage window so an operator can test recovery.
+            response = requests.get(f"{url}/collections", headers=headers, timeout=TIMEOUT_SECONDS)
             if response.status_code in (401, 403):
                 return False, "Qdrant rejected the API key."
             if response.status_code >= 400:
                 return False, f"Qdrant answered HTTP {response.status_code}."
             count = len((response.json().get("result") or {}).get("collections") or [])
+            cache.delete(outage_cache_key(url, api_key, connection.pk))
             return True, f"Qdrant reachable — {count} collection(s) on the server."
         except requests.RequestException as e:
             return False, f"Could not reach the server: {e}"

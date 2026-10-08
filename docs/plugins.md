@@ -549,6 +549,11 @@ page, cursor = docs.scroll(limit=100)
 - **Errors** are `VectorError` with a stable `code`: `invalid`,
   `unsupported_filter`, `dimension_mismatch`, `model_mismatch`,
   `collection_full`, `embedding_failed`, `backend_unavailable`, `not_ready`.
+- **Qdrant outages** retain `503 backend_unavailable`. After a backend failure,
+  subsequent calls on that connection fail immediately for 30 seconds across
+  workers. Retry after the pause, or ask an admin to use Services Test; a
+  successful test clears it. Requests use 3-second connect / 10-second read
+  timeouts and retain the three retries for transient failures.
 - **Uninstall cleans up.** Deleting your plugin with *remove data* deletes the
   collections it owns, points included. Declare them in `plugin.json` as
   `"provisions": {"vector_collections": 1}` (needs `"api": "2.6"`).

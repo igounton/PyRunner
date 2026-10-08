@@ -29,18 +29,21 @@ cases against both:
   until it has ``k`` exact hits — the top-k stays exact, at the cost of more
   server work for those filters.
 - **Writes** use ``wait=true`` so a read straight after a write sees it.
-- **Every request**: 10 s timeout, 3 retries on 429 / 5xx / connection errors
-  with a short backoff. The URL is netguard-checked when the store is built.
+- **Every request**: 3 s connect / 10 s read timeout, 3 retries on 429 / 5xx /
+  connection errors. A shared-cache 30 s pause follows backend failures;
+  Services Test bypasses it. The URL is netguard-checked when the store is built.
   Error messages never carry the server URL: they reach scripts, the URL is the
   operator's.
 """
 
+import hashlib
 import logging
 import time
 import uuid
 from urllib.parse import quote
 
 import requests
+from django.core.cache import cache
 
 from core.netguard import is_safe_endpoint_url
 from core.vectors import filters
@@ -55,7 +58,8 @@ from core.vectors.points import (
 
 logger = logging.getLogger(__name__)
 
-TIMEOUT_SECONDS = 10
+TIMEOUT_SECONDS = (3, 10)
+FAIL_FAST_SECONDS = 30
 RETRY_BACKOFF = (0.5, 1.0, 2.0)
 UPSERT_BATCH = 256
 ID_BATCH = 1000
@@ -87,24 +91,25 @@ def _chunks(items, size):
         yield items[start : start + size]
 
 
-def _error_message(response) -> str:
-    try:
-        data = response.json()
-    except ValueError:
-        return (response.text or "")[:200]
-    status = data.get("status") if isinstance(data, dict) else None
-    if isinstance(status, dict) and status.get("error"):
-        return str(status["error"])[:200]
-    return ""
+def outage_cache_key(url, api_key="", connection_id=None):
+    """One window per connection configuration, shared by all its collections.
+
+    Including configuration makes corrected credentials/URLs usable immediately.
+    Only a digest enters the cache; neither the URL nor the key is stored there.
+    """
+    config = f"{connection_id or ''}\0{url.rstrip('/')}\0{api_key or ''}"
+    return "qdrant_outage_" + hashlib.sha256(config.encode()).hexdigest()
 
 
 class QdrantStore:
     """One Qdrant collection. Cheap to construct; one HTTP session per instance."""
 
-    def __init__(self, url, name, dim, metric, *, api_key="", session=None):
+    def __init__(self, url, name, dim, metric, *, api_key="", session=None, connection_id=None):
         url = (url or "").rstrip("/")
         if not url:
             raise BackendUnavailable("the Qdrant connection has no URL")
+        self._outage_key = outage_cache_key(url, api_key, connection_id)
+        self._check_outage()
         ok, why = is_safe_endpoint_url(url)
         if not ok:
             raise BackendUnavailable(f"the Qdrant URL is not allowed: {why}")
@@ -360,7 +365,23 @@ class QdrantStore:
         params = {"wait": "true"} if wait else None
         return self._request("POST", f"{self._base}/{op}", params=params, json=body)
 
+    def _check_outage(self):
+        if cache.get(self._outage_key):
+            raise BackendUnavailable(
+                "Qdrant is temporarily unavailable; retry in 30 seconds "
+                "or use Services Test to check recovery"
+            )
+
     def _request(self, method, path, *, params=None, json=None, allow_404=False):
+        self._check_outage()
+        try:
+            return self._send(method, path, params=params, json=json, allow_404=allow_404)
+        except BackendUnavailable:
+            # add() keeps the original expiry even if an in-flight peer fails too.
+            cache.add(self._outage_key, True, timeout=FAIL_FAST_SECONDS)
+            raise
+
+    def _send(self, method, path, *, params=None, json=None, allow_404=False):
         headers = {"Accept": "application/json"}
         if self._api_key:
             headers["api-key"] = self._api_key
@@ -380,9 +401,8 @@ class QdrantStore:
                 status = response.status_code
                 if status != 429 and status < 500:
                     return self._parse(response, allow_404)
-                last_error = BackendUnavailable(
-                    f"Qdrant answered HTTP {status}: {_error_message(response) or 'server error'}"
-                )
+                # Server/proxy error bodies can echo URLs or credentials.
+                last_error = BackendUnavailable(f"Qdrant answered HTTP {status}")
             if attempt < len(RETRY_BACKOFF):
                 time.sleep(RETRY_BACKOFF[attempt])
         raise last_error
@@ -400,8 +420,7 @@ class QdrantStore:
             raise BackendUnavailable("Qdrant rejected the API key")
         if status >= 400:
             raise QdrantRejected(
-                f"Qdrant rejected the request (HTTP {status}): "
-                f"{_error_message(response) or 'bad request'}"
+                f"Qdrant rejected the request (HTTP {status})"
             )
         try:
             body = response.json()

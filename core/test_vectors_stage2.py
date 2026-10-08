@@ -41,6 +41,7 @@ from unittest import mock, skipUnless
 from urllib.parse import unquote, urlparse
 
 import numpy as np
+from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
@@ -569,7 +570,9 @@ class LocalContractTests(_ContractCases, SimpleTestCase):
         return LocalStore.create(self.dir / f"{uuid.uuid4().hex}.sqlite", dim, metric)
 
 
-@override_settings(PYRUNNER_ALLOW_PRIVATE_NETWORK=True)
+@override_settings(PYRUNNER_ALLOW_PRIVATE_NETWORK=True, CACHES={"default": {
+    "BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "qdrant-contract",
+}})
 class QdrantContractTests(_ContractCases, _QdrantSemanticsCases, SimpleTestCase):
     def setUp(self):
         super().setUp()
@@ -580,7 +583,9 @@ class QdrantContractTests(_ContractCases, _QdrantSemanticsCases, SimpleTestCase)
 
 
 @skipUnless(LIVE_QDRANT_URL, "set PYRUNNER_TEST_QDRANT_URL to run the contract against a real Qdrant")
-@override_settings(PYRUNNER_ALLOW_PRIVATE_NETWORK=True)
+@override_settings(PYRUNNER_ALLOW_PRIVATE_NETWORK=True, CACHES={"default": {
+    "BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "qdrant-live",
+}})
 class LiveQdrantContractTests(_ContractCases, _QdrantSemanticsCases, SimpleTestCase):  # pragma: no cover — live pass
     def make_store(self, dim, metric):
         store = QdrantStore(
@@ -664,9 +669,12 @@ class QdrantFilterCompilerTests(SimpleTestCase):
 # The adapter on the wire
 # =============================================================================
 
-@override_settings(PYRUNNER_ALLOW_PRIVATE_NETWORK=True)
+@override_settings(PYRUNNER_ALLOW_PRIVATE_NETWORK=True, CACHES={"default": {
+    "BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "qdrant-adapter",
+}})
 class QdrantAdapterTests(SimpleTestCase):
     def setUp(self):
+        cache.clear()
         self.server = FakeQdrant()
         sleep = mock.patch.object(qdrant_store.time, "sleep")
         sleep.start()
@@ -740,12 +748,14 @@ class QdrantAdapterTests(SimpleTestCase):
         store = self._store()
         with self.assertRaisesRegex(BackendUnavailable, "does not exist on the server"):
             store.count()
+        cache.clear()  # each injected error exercises a separate recovered connection
         store.create()
         self.server.fail_next = [401]
         with self.assertRaisesRegex(BackendUnavailable, "API key"):
             store.count()
+        cache.clear()
         self.server.fail_next = [400]
-        with self.assertRaisesRegex(QdrantRejected, "injected failure"):
+        with self.assertRaisesRegex(QdrantRejected, "HTTP 400"):
             store.count()
         store.drop()
         store.drop()  # already gone: fine

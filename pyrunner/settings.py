@@ -149,6 +149,7 @@ else:
             "NAME": BASE_DIR / "data" / "db.sqlite3",
             "OPTIONS": {
                 "timeout": 30,  # Wait up to 30 seconds for database lock
+                "transaction_mode": "IMMEDIATE",  # Queue writers before a read can stale the snapshot
             },
         }
     }

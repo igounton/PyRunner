@@ -112,6 +112,12 @@ begins tracking at the current release; earlier history is in the git log.
   Settings → General instead of a hardcoded brand.
 
 ### Fixed
+- SQLite transactions acquire their write lock at the start, avoiding immediate
+  read-then-write failures while workers update the database.
+- Qdrant uses separate 3-second connect and 10-second read timeouts. After a
+  backend failure, collections on that connection fail quickly for 30 seconds
+  across workers. Services Test bypasses the pause and clears it on recovery;
+  server error bodies are no longer exposed to scripts.
 - **Weekly and monthly schedules survive a backup/restore** — the export
   omitted `weekly_days`/`weekly_times`/`monthly_days`/`monthly_times`, so a
   restored weekly or monthly schedule came back with no days or times. (#5)

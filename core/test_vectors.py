@@ -24,6 +24,7 @@ its HTTP seam):
 """
 
 import base64
+import io
 import json
 import sqlite3
 import tempfile
@@ -1055,6 +1056,31 @@ class BackupTests(TestCase):
         self.assertEqual(col.points_count, 0)
         self.assertTrue(col.is_ready)
         self.assertTrue(any("re-embed" in w for w in result["warnings"]), result["warnings"])
+
+    # BASE_DIR: the view writes its automatic pre-restore backup under it.
+    @override_settings(PYRUNNER_VECTOR_BACKUP_MAX_MB=0, BASE_DIR=_TMP / "base")
+    def test_the_restore_view_and_the_cli_show_the_warnings(self):
+        # Found in the live Qdrant pass: both dropped result["warnings"], so the
+        # operator never learned which collections came back empty.
+        from django.contrib.messages import get_messages
+        from django.core.management import call_command
+
+        data = BackupService.create_backup(include_runs=False)
+        _setup_wizard_off(self)
+        self.client.force_login(self.user)
+        session = self.client.session
+        session["pending_backup"] = data
+        session.save()
+        resp = self.client.post(reverse("cpanel:backup_restore"), {"confirm_delete": "on"})
+        self.assertEqual(resp.status_code, 302)
+        warnings = [str(m) for m in get_messages(resp.wsgi_request) if m.level_tag == "warning"]
+        self.assertTrue(any("'docs'" in w and "re-embed" in w for w in warnings), warnings)
+
+        path = _TMP / "backup" / "cli-backup.json"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        out = io.StringIO()
+        call_command("restore_backup", str(path), "--yes", "--no-runs", stdout=out)
+        self.assertIn("Warning: Vector collection 'docs'", out.getvalue())
 
     def test_opt_out_and_missing_provider(self):
         self.col.include_in_backup = False

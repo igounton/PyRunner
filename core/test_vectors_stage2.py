@@ -2,9 +2,12 @@
 Vector seam Stage 2 — the Qdrant adapter, the loopback door, the helper and VectorAPI.
 
 - ``FakeQdrant``: an in-memory server for the REST calls the adapter makes, with
-  Qdrant's documented filter semantics (match value / any / text, range,
-  is_empty, is_null, has_id, nested must / should / must_not, any-element on
-  arrays). It is the adapter's HTTP session in every test here.
+  the filter semantics a real Qdrant 1.19 showed in the live pass (match value /
+  any, range, is_empty, is_null, has_id, nested must / should / must_not,
+  any-element on arrays). It refuses ``match.text``, whose meaning without a
+  full-text index differs between Qdrant versions. It is the adapter's HTTP
+  session in every test here, and ``_QdrantSemanticsCases`` checks its answers
+  against the live server's.
 - **Contract suite** (``_ContractCases``): the same cases against the Local store
   and the Qdrant adapter — same results, same shapes, higher-is-better scores
   for every metric, every filter of the grammar (including the ones Qdrant can
@@ -28,6 +31,7 @@ Vector seam Stage 2 — the Qdrant adapter, the loopback door, the helper and Ve
 
 import io
 import json
+import operator
 import os
 import tempfile
 import urllib.error
@@ -98,8 +102,9 @@ def _same(element, target):
 def _in_range(element, bounds):
     if isinstance(element, bool) or not isinstance(element, (int, float)):
         return False
-    checks = {"gt": element.__gt__, "gte": element.__ge__, "lt": element.__lt__, "lte": element.__le__}
-    return all(checks[op](value) for op, value in bounds.items() if value is not None)
+    # operator, not element.__ge__: int.__ge__(2.5) is NotImplemented, which is truthy.
+    checks = {"gt": operator.gt, "gte": operator.ge, "lt": operator.lt, "lte": operator.le}
+    return all(checks[op](element, value) for op, value in bounds.items() if value is not None)
 
 
 def qdrant_condition(point_id, payload, cond):
@@ -112,8 +117,9 @@ def qdrant_condition(point_id, payload, cond):
         value = payload.get(cond["is_empty"]["key"], _MISSING)
         return value is _MISSING or value is None or value == []
     if "is_null" in cond:
-        key = cond["is_null"]["key"]
-        return key in payload and payload[key] is None
+        # 1.19 also matches an array holding a null (1.10 / 1.12 did not).
+        value = payload.get(cond["is_null"]["key"], _MISSING)
+        return value is None or (isinstance(value, list) and None in value)
     value = payload.get(cond["key"], _MISSING)
     if value is _MISSING:
         return False
@@ -125,7 +131,9 @@ def qdrant_condition(point_id, payload, cond):
         if "any" in match:
             return any(_same(e, t) for e in elements for t in match["any"])
         if "text" in match:
-            return any(isinstance(e, str) and match["text"] in e for e in elements)
+            # Without a full-text index: a case-sensitive substring on 1.10 / 1.12,
+            # lower-cased whole words on 1.19 — nothing the adapter may lean on.
+            raise AssertionError("FakeQdrant: match.text is not portable across Qdrant versions")
     if "range" in cond:
         return any(_in_range(e, cond["range"]) for e in elements)
     raise AssertionError(f"FakeQdrant: unknown condition {cond!r}")
@@ -309,6 +317,10 @@ def _contract_points(n, dim, rng):
             payload["opt"] = None
         elif i % 7 == 0:
             payload["opt"] = "set"
+        # Arrays holding a null are no null: Qdrant 1.19's is_null says otherwise.
+        maybe = ([None], [None, "x"], [], ["x"], None, _MISSING)[i % 6]
+        if maybe is not _MISSING:
+            payload["maybe"] = maybe
         points.append(
             {
                 "id": f"p{i:03d}",
@@ -325,6 +337,7 @@ CONTRACT_FILTERS = [
     None,
     {"tier": "public"},
     {"n": {"$gte": 10, "$lt": 40}},
+    {"n": {"$gt": 9.5, "$lt": 12.5}},
     {"half": 5.5},
     {"n": 7},
     {"flag": True},
@@ -332,6 +345,7 @@ CONTRACT_FILTERS = [
     {"url": {"$prefix": "https://a."}},
     {"url": {"$gt": "https://b.example/030"}},
     {"case": {"$prefix": "al"}},
+    {"must_not": [{"case": {"$prefix": "al"}}]},
     {"case": {"$lt": "a"}},
     {"opt": None},
     {"opt": {"$in": [None, "set"]}},
@@ -346,6 +360,11 @@ CONTRACT_FILTERS = [
     {"mixed": True},
     {"mixed": {"$in": ["1", None]}},
     {"mixed": {"$gte": 1}},
+    {"maybe": None},
+    {"must_not": [{"maybe": None}]},
+    {"maybe": "x"},
+    {"maybe": {"$in": [None, "x"]}},
+    {"must_not": [{"maybe": {"$in": [None, "x"]}}]},
 ]
 
 
@@ -415,7 +434,13 @@ class _ContractCases:
 
     def test_scroll_visits_every_matching_point_once(self):
         store, points = self._loaded()
-        for flt in (None, {"tier": "public"}, {"url": {"$prefix": "https://a."}}, {"opt": None}):
+        for flt in (
+            None,
+            {"tier": "public"},
+            {"url": {"$prefix": "https://a."}},
+            {"opt": None},
+            {"must_not": [{"maybe": None}]},
+        ):
             expected = {p["id"] for p in points if filters.matches(p["payload"], flt)}
             seen, cursor, pages = [], None, 0
             while True:
@@ -491,6 +516,49 @@ class _ContractCases:
         self.assertIsNone(hits[0]["text"])
 
 
+# The raw server answers the adapter's filter compiler relies on. They held on
+# Qdrant 1.10.1, 1.12.4 and 1.19.2 in the live pass; ``is_null`` alone and
+# ``match.text`` did not (see FakeQdrant) and stay out of this table.
+_PROBE_VALUES = {
+    "str": "alpha", "Str": "Alpha", "str1": "1", "int1": 1, "float1": 1.0, "float25": 2.5,
+    "true": True, "null": None, "missing": _MISSING, "empty": [], "arr_null": [None],
+    "arr_mixed": [None, "x"], "arr_int": [1, 2], "arr_bool": [True], "arr_str": ["agents", "alpha"],
+}
+_PROBE_FACTS = [
+    ({"key": "f", "match": {"value": "alpha"}}, {"str", "arr_str"}),
+    ({"key": "f", "match": {"value": "x"}}, {"arr_mixed"}),
+    ({"key": "f", "match": {"value": "1"}}, {"str1"}),
+    ({"key": "f", "match": {"value": True}}, {"true", "arr_bool"}),
+    ({"key": "f", "range": {"gte": 1, "lte": 1}}, {"int1", "float1", "arr_int"}),
+    ({"key": "f", "range": {"gte": 2.5, "lte": 2.5}}, {"float25"}),
+    ({"key": "f", "range": {"gt": 1}}, {"float25", "arr_int"}),
+    ({"is_empty": {"key": "f"}}, {"null", "missing", "empty"}),
+    ({"must": [{"is_null": {"key": "f"}}, {"is_empty": {"key": "f"}}]}, {"null"}),
+]
+
+
+class _QdrantSemanticsCases:
+    """FakeQdrant and a real server give the same raw answers (``_PROBE_FACTS``)."""
+
+    def test_raw_conditions_the_compiler_relies_on(self):
+        store = self.make_store(2, "dot")
+        points = []
+        for label, value in _PROBE_VALUES.items():
+            payload = {"label": label} if value is _MISSING else {"label": label, "f": value}
+            points.append({"id": label, "vector": [1.0, 0.0], "payload": payload})
+        store.upsert(points)
+        for cond, expected in _PROBE_FACTS:
+            got = {raw["payload"]["label"] for raw in store._scan({"must": [cond]})}
+            self.assertEqual(got, expected, cond)
+
+    def test_scroll_offsets_are_inclusive(self):
+        store = self.make_store(2, "dot")
+        store.upsert([{"id": f"p{i}", "vector": [1.0, float(i)]} for i in range(5)])
+        first = store._post("points/scroll", {"limit": 2})["result"]
+        second = store._post("points/scroll", {"limit": 2, "offset": first["next_page_offset"]})["result"]
+        self.assertEqual(second["points"][0]["id"], first["next_page_offset"])
+
+
 class LocalContractTests(_ContractCases, SimpleTestCase):
     def setUp(self):
         super().setUp()
@@ -502,7 +570,7 @@ class LocalContractTests(_ContractCases, SimpleTestCase):
 
 
 @override_settings(PYRUNNER_ALLOW_PRIVATE_NETWORK=True)
-class QdrantContractTests(_ContractCases, SimpleTestCase):
+class QdrantContractTests(_ContractCases, _QdrantSemanticsCases, SimpleTestCase):
     def setUp(self):
         super().setUp()
         self.server = FakeQdrant()
@@ -513,7 +581,7 @@ class QdrantContractTests(_ContractCases, SimpleTestCase):
 
 @skipUnless(LIVE_QDRANT_URL, "set PYRUNNER_TEST_QDRANT_URL to run the contract against a real Qdrant")
 @override_settings(PYRUNNER_ALLOW_PRIVATE_NETWORK=True)
-class LiveQdrantContractTests(_ContractCases, SimpleTestCase):  # pragma: no cover — Hasan's live pass
+class LiveQdrantContractTests(_ContractCases, _QdrantSemanticsCases, SimpleTestCase):  # pragma: no cover — live pass
     def make_store(self, dim, metric):
         store = QdrantStore(
             LIVE_QDRANT_URL,
@@ -551,15 +619,19 @@ class QdrantFilterCompilerTests(SimpleTestCase):
         self.assertEqual(filters.to_qdrant(None), filters.QdrantFilter(None, True))
 
     def test_relaxed_forms_flip_with_polarity(self):
-        prefix = filters.to_qdrant({"u": {"$prefix": "ab"}})
+        # No server-side prefix: every point is a candidate, re-checked in PyRun.
+        prefix = filters.to_qdrant({"u": {"$prefix": "ab"}, "tier": "a"})
         self.assertFalse(prefix.exact)
-        self.assertEqual(prefix.filter, {"must": [{"key": "u", "match": {"text": "ab"}}]})
+        self.assertEqual(prefix.filter, {"must": [{"key": "tier", "match": {"value": "a"}}]})
+        self.assertEqual(filters.to_qdrant({"u": {"$prefix": "ab"}}), filters.QdrantFilter(None, False))
         not_prefix = filters.to_qdrant({"must_not": [{"u": {"$prefix": "ab"}}]})
         self.assertEqual(not_prefix.filter, {"must_not": [{"key": "u", "match": {"value": "ab"}}]})
         null = filters.to_qdrant({"o": None})
         self.assertEqual(null.filter, {"must": [{"is_empty": {"key": "o"}}]})
         not_null = filters.to_qdrant({"must_not": [{"o": None}]})
-        self.assertEqual(not_null.filter, {"must_not": [{"is_null": {"key": "o"}}]})
+        self.assertEqual(not_null.filter, {"must_not": [
+            {"must": [{"is_null": {"key": "o"}}, {"is_empty": {"key": "o"}}]},
+        ]})
         string_range = filters.to_qdrant({"s": {"$gt": "m"}, "tier": "a"})
         self.assertFalse(string_range.exact)
         self.assertEqual(string_range.filter, {"must": [{"key": "tier", "match": {"value": "a"}}]})
@@ -688,7 +760,7 @@ class QdrantAdapterTests(SimpleTestCase):
 
     def test_relaxed_search_pages_until_k_exact_hits(self):
         store = self._store(dim=2).create()
-        # 300 points whose url merely CONTAINS "/a"; only the last 3 START with it.
+        # 300 points whose url merely CONTAINS "/a" outrank the 3 that START with it.
         points = [{"id": f"x{i:03d}", "vector": [1.0, i / 300], "payload": {"u": f"z/a{i}"}} for i in range(300)]
         points += [{"id": f"a{i}", "vector": [0.0, 1.0], "payload": {"u": f"/a{i}"}} for i in range(3)]
         store.upsert(points)

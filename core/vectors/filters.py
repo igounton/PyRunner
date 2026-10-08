@@ -322,13 +322,12 @@ def _q_op(field, op, arg, positive):
     if op == "$eq":
         return _q_eq(field, arg, positive)
     if op == "$prefix":
-        if arg == "":
-            # Every string starts with "": no native condition says that.
+        if positive or arg == "":
+            # Qdrant has no prefix condition, and match.text on a field without a
+            # full-text index changed meaning across versions (a case-sensitive
+            # substring up to 1.12, lower-cased whole words by 1.19), so it is no
+            # superset to rely on: the prefix is checked in PyRun only.
             return (MATCH_ALL if positive else MATCH_NONE), False
-        if positive:
-            # On a field without a full-text index Qdrant's text match is an exact
-            # substring match — a superset of "starts with".
-            return {"key": field, "match": {"text": arg}}, False
         # A value equal to the prefix certainly starts with it: a safe subset.
         return {"key": field, "match": {"value": arg}}, False
     if isinstance(arg, str):
@@ -339,9 +338,12 @@ def _q_op(field, op, arg, positive):
 
 def _q_eq(field, value, positive):
     if value is None:
-        # Missing-or-null: is_empty also matches [] (a superset); is_null only an
-        # existing null (a subset).
-        return ({"is_empty": {"key": field}} if positive else {"is_null": {"key": field}}), False
+        # Missing-or-null. is_empty (missing, null or []) is a superset. is_null
+        # alone is no subset: 1.19 (unlike 1.12) also matches an array holding a
+        # null. Both together match only a plain null, on every version.
+        if positive:
+            return {"is_empty": {"key": field}}, False
+        return {"must": [{"is_null": {"key": field}}, {"is_empty": {"key": field}}]}, False
     if isinstance(value, (bool, str)):
         return {"key": field, "match": {"value": value}}, True
     # match takes integers only; a closed range matches ints and floats alike.

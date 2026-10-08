@@ -232,6 +232,10 @@ def backup_restore_view(request):
                 f"{counts.get('runs', 0)} runs. "
                 f"Next: Recreate virtual environments from the Environments page."
             )
+            # What the restore could not bring back (external vector points,
+            # skipped store images, database rows): the operator has to act on it.
+            for warning in result.get("warnings") or []:
+                messages.warning(request, warning)
         else:
             error_msg = "; ".join(result["errors"])
             messages.error(request, f"Restore failed: {error_msg}")

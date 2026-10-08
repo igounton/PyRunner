@@ -535,7 +535,9 @@ page, cursor = docs.scroll(limit=100)
   Types are strict (`1` never matches `true` or `"1"`), an array field matches
   when any element does, and `{"field": None}` means missing or null. Scores are
   always "higher is better", whatever the metric. Payload keys and filter
-  fields starting with `_pyrun_` are reserved.
+  fields starting with `_pyrun_` are reserved. On a Qdrant store, `$prefix`
+  and string ranges are checked by PyRun, not the server, so on a large
+  collection pair them with an equality or `$in` the server can narrow on.
 - **Where it lives.** `provision()` uses the instance's default vector store
   (the built-in Local one unless an admin changed it) or `connection="name"`.
   Local is one SQLite file per collection — comfortable to ~50 000 points,

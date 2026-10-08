@@ -79,6 +79,8 @@ class Command(BaseCommand):
             raise CommandError(f"Restore failed: {result.get('errors')}")
 
         scoped = assign_default_workspace()
+        for warning in result.get("warnings") or []:
+            self.stdout.write(self.style.WARNING(f"Warning: {warning}"))
         self.stdout.write(
             self.style.SUCCESS(
                 f"Restore complete: {result['counts']}; workspace-assigned {scoped} rows"

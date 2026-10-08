@@ -926,6 +926,14 @@ class QdrantConsoleTests(_QdrantServer, TestCase):
         self.assertNotIn(QDRANT_URL, page)
         listing = self.client.get(reverse("cpanel:vector_list")).content.decode()
         self.assertIn("on the server", listing)
+        # Found in the live pass: Stage 1's usage card (helper "ships in the next
+        # stage") was left next to Stage 2's, and list/create still said so.
+        self.assertEqual(page.count("Using this collection in a script"), 1)
+        create = self.client.get(reverse("cpanel:vector_create")).content.decode()
+        VectorCollection.objects.all().delete()
+        empty_listing = self.client.get(reverse("cpanel:vector_list")).content.decode()
+        for html in (page, listing, empty_listing, create):
+            self.assertNotIn("next stage", html)
 
     def test_services_form_saves_the_credentials_flag_and_guards_the_backend(self):
         resp = self.client.post(

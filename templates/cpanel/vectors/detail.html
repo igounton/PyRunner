@@ -192,17 +192,6 @@
                 <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text whitespace-pre overflow-x-auto">from pyrunner_vectors import get_collection
 
 col = get_collection("{{ collection.name }}")
-col.add_texts([{"id": "p1", "text": "How do I schedule a script?", "payload": {"tier": "public"}}])
-hits = col.search("scheduling", k=5, filter={"tier": "public"})</code>
-                <p class="text-xs text-faint mt-2">The <code class="font-mono">pyrunner_vectors</code> helper and the plugin SDK's <code class="font-mono">VectorAPI</code> ship in the seam's next stage; this page already runs the same operations.</p>
-            </section>
-
-            <!-- Usage -->
-            <section class="rounded-2xl border border-line bg-panel p-5">
-                <h2 class="text-sm font-medium text-text mb-2">Using this collection in a script</h2>
-                <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text whitespace-pre overflow-x-auto">from pyrunner_vectors import get_collection
-
-col = get_collection("{{ collection.name }}")
 {% if collection.embedding_provider %}col.add_texts([{"id": "doc-1", "text": "Some text to index", "payload": {"tier": "public"}}])
 hits = col.search("what am I looking for?", k=5, filter={"tier": "public"})
 {% else %}col.add_vectors([{"id": "doc-1", "vector": [...], "payload": {"tier": "public"}}])

@@ -102,7 +102,7 @@
 
             <div class="rounded-2xl border border-line bg-panel p-5">
                 <h3 class="text-sm font-medium text-text mb-2">Using collections</h3>
-                <p class="text-sm text-muted">Each collection is a named set of points (a vector, a JSON payload and optionally the source text) with a pinned embedding model and dimension. The Local store keeps one SQLite file per collection on the data volume and searches it exactly — comfortable up to ~{{ soft_limit }} points. Scripts and plugins open collections by name through the <code class="font-mono text-info">pyrunner_vectors</code> helper and the plugin SDK (arriving in the next stage); the Brain and the RAG plugin build on the same seam.</p>
+                <p class="text-sm text-muted">Each collection is a named set of points (a vector, a JSON payload and optionally the source text) with a pinned embedding model and dimension. The Local store keeps one SQLite file per collection on the data volume and searches it exactly — comfortable up to ~{{ soft_limit }} points; a Qdrant connection keeps them on your Qdrant server. Scripts and plugins open collections by name through the <code class="font-mono text-info">pyrunner_vectors</code> helper and the plugin SDK; the Brain and the RAG plugin build on the same seam.</p>
             </div>
             {% elif available %}
             <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">

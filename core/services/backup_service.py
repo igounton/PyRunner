@@ -15,6 +15,7 @@ from django.db import models, transaction
 from django.utils import timezone
 
 from core.models import (
+    Brain,
     Database,
     DatabaseGrant,
     DataStore,
@@ -123,9 +124,11 @@ class BackupService:
     # larger ones carry ``file_skipped_reason`` and restore empty with a warning.
     # Qdrant contents are never carried (the store is the operator's). Backward
     # compatible: a pre-1.9.0 backup has none of the three keys → no-op; the
-    # seeded Local connection stays. Brain's sections join under this same
-    # version (nothing ships in between).
-    BACKUP_VERSION = "1.9.0"
+    # seeded Local connection stays.
+    # 1.10.0 — Brain blobs, full revision history, derived index and grants.
+    # Opted-out brains are omitted. API tokens and their grants are not restored.
+    # Older backups without a brains key leave existing brains unchanged.
+    BACKUP_VERSION = "1.10.0"
     MAX_BACKUP_SIZE_MB = 100
 
     # Backup format constants
@@ -197,6 +200,8 @@ class BackupService:
         backup_data["embedding_providers"] = cls._export_embedding_providers()
         backup_data["vector_connections"] = cls._export_vector_connections()
         backup_data["vector_collections"] = cls._export_vector_collections()
+        from core.brain.backup import export_brains
+        backup_data["brains"] = export_brains()
 
         return backup_data
 
@@ -959,6 +964,7 @@ class BackupService:
             "datastores": len(datastores),
             "datastore_entries": sum(len(ds.get("entries", [])) for ds in datastores),
             "vector_collections": len(backup_data.get("vector_collections", [])),
+            "brains": len(backup_data.get("brains", [])),
         }
 
         return {
@@ -1001,6 +1007,9 @@ class BackupService:
         """
         try:
             warnings: List[str] = []
+            from core.brain.backup import import_brains, validate_brain_backup
+            if "brains" in backup_data:
+                validate_brain_backup(backup_data["brains"])
 
             # Delete existing data (reverse dependency order)
             Run.objects.all().delete()
@@ -1027,6 +1036,8 @@ class BackupService:
             # with the rows (connections/providers are upserted, never deleted).
             warnings.extend(cls._cleanup_existing_vector_collections())
             VectorCollection.objects.all().delete()
+            if "brains" in backup_data:
+                Brain.objects.all().delete()
             # Note: We don't delete User objects to preserve authentication
             # GlobalSettings is singleton, so we update rather than delete
 
@@ -1089,6 +1100,12 @@ class BackupService:
                 backup_data.get("vector_collections", []), current_user, ws_map, default_ws
             )
             warnings.extend(vector_warnings)
+            brains_restored, brain_warnings = import_brains(
+                backup_data.get("brains", []),
+                workspace_for=lambda ws_id: cls._resolve_workspace(ws_id, ws_map, default_ws),
+                user_map=user_map, script_map=script_map, current_user=current_user,
+            )
+            warnings.extend(brain_warnings)
 
             # Regenerate django-q2 schedules
             schedules_created = cls._regenerate_all_schedules()
@@ -1108,11 +1125,13 @@ class BackupService:
                 "embedding_providers": embedding_providers_restored,
                 "vector_connections": vector_connections_restored,
                 "vector_collections": vector_collections_restored,
+                "brains": brains_restored,
             }
 
             return {"success": True, "counts": counts, "errors": [], "warnings": warnings}
 
         except Exception as e:
+            transaction.set_rollback(True)
             return {"success": False, "counts": {}, "errors": [str(e)], "warnings": []}
 
     @classmethod

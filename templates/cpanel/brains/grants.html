@@ -1,0 +1,7 @@
+{% extends "cpanel/brains/base.html" %}
+{% block brain_content %}
+<h2 class="font-semibold">Access grants</h2>
+<p class="text-sm text-muted">Without a grant, consumers cannot read this brain. Token access also respects its permissions and tier ceiling.</p>
+{% for grant in grants %}<div class="rounded-2xl border border-line bg-panel p-5 flex flex-wrap items-center justify-between gap-4"><div class="text-sm min-w-0"><p class="break-all">{{ grant.subject_kind }} · {{ grant.subject_id }}</p><p class="text-xs text-muted mt-1">{{ grant.max_tier }}{% if grant.can_propose %} · Can propose{% endif %}</p></div><form method="post" action="{% url 'cpanel:brain_grant_delete' brain.pk grant.pk %}">{% csrf_token %}<button class="text-sm text-fail">Revoke</button></form></div>{% empty %}<p class="text-sm text-muted">No external grants.</p>{% endfor %}
+<form method="post" class="rounded-2xl border border-line bg-panel p-5 space-y-5 max-w-4xl" data-brain-form>{% csrf_token %}<h3 class="font-semibold">Add or update a grant</h3>{% include "cpanel/brains/fields.html" %}<button class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm font-medium">Save grant</button></form>
+{% endblock %}

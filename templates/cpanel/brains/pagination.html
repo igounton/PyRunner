@@ -1,0 +1,1 @@
+{% if page.has_other_pages %}<nav class="flex gap-4 text-sm" aria-label="Pages">{% if page.has_previous %}<a class="text-ok" href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}<span>{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="text-ok" href="?page={{ page.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}

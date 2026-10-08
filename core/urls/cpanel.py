@@ -2,6 +2,7 @@
 URL patterns for control panel.
 """
 from django.urls import path
+from core.views import brains
 from core.views.connect import connect_view, url_tokens_toggle_view
 from core.views.services import (
     embedding_provider_delete_view,
@@ -216,6 +217,16 @@ app_name = "cpanel"
 
 urlpatterns = [
     path("connect/", connect_view, name="connect"),
+    path("brains/", brains.brain_list_view, name="brain_list"),
+    path("brains/create/", brains.brain_create_view, name="brain_create"),
+    path("brains/<uuid:brain_id>/", brains.brain_detail_view, name="brain_detail"),
+    path("brains/<uuid:brain_id>/edit/", brains.brain_edit_view, name="brain_edit"),
+    path("brains/<uuid:brain_id>/revisions/", brains.brain_revisions_view, name="brain_revisions"),
+    path("brains/<uuid:brain_id>/revisions/<uuid:revision_id>/", brains.brain_diff_view, name="brain_diff"),
+    path("brains/<uuid:brain_id>/settings/", brains.brain_settings_view, name="brain_settings"),
+    path("brains/<uuid:brain_id>/grants/", brains.brain_grants_view, name="brain_grants"),
+    path("brains/<uuid:brain_id>/grants/<uuid:grant_id>/delete/", brains.brain_grant_delete_view, name="brain_grant_delete"),
+    path("brains/<uuid:brain_id>/export/", brains.brain_export_view, name="brain_export"),
     path("connect/url-tokens/", url_tokens_toggle_view, name="mcp_url_tokens_toggle"),
     # Dashboard
     path("", dashboard_view, name="dashboard"),

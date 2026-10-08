@@ -21,5 +21,7 @@ psutil>=7.2.2
 # Vector seam: exact brute-force search over the Local store's cached matrices
 # (the one new dependency; manylinux wheels on slim).
 numpy>=2.0
+# Brain frontmatter parity with the imported contract (safe_load only).
+PyYAML==6.0.3
 boto3>=1.34.0
 claude-agent-sdk>=0.2.101,<0.3.0

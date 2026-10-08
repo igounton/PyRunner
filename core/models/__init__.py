@@ -29,7 +29,7 @@ from .channel import Channel, ChannelMember, ChannelMessage
 from .embedding_provider import EmbeddingProvider, EMBEDDING_PRESETS
 from .vector_connection import VectorConnection
 from .vector_collection import VectorCollection
-from .brain import Brain
+from .brain import Brain, BrainBlob, BrainRevision, BrainEntity, BrainGrant
 
 __all__ = [
     "User",
@@ -73,4 +73,8 @@ __all__ = [
     "VectorConnection",
     "VectorCollection",
     "Brain",
+    "BrainBlob",
+    "BrainRevision",
+    "BrainEntity",
+    "BrainGrant",
 ]

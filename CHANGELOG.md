@@ -9,6 +9,12 @@ begins tracking at the current release; earlier history is in the git log.
 ## [Unreleased]
 
 ### Added
+- **Workspace Brains** — immutable revisions and deduplicated text blobs,
+  a file browser with visibility and freshness badges, owner/admin edits,
+  revision diffs, access grants, template creation, and ZIP or public GitHub
+  import/export. Existing BrainOutside 1.0 content is preserved. Backup format
+  1.10.0 includes opted-in brains and their full history; token grants must be
+  recreated after restore.
 - **MCP and Connect** — stateless Streamable HTTP at `/mcp`, shared API
   handlers, permission-filtered OpenAPI, and workspace connector instructions.
   Expiring read-only URL tokens are opt-in. Supports current per-request
@@ -121,6 +127,8 @@ begins tracking at the current release; earlier history is in the git log.
   Settings → General instead of a hardcoded brand.
 
 ### Fixed
+- Backup restore now rolls back database changes when a non-database error
+  interrupts the replacement, preserving existing rows after failed restores.
 - SQLite transactions acquire their write lock at the start, avoiding immediate
   read-then-write failures while workers update the database.
 - Qdrant uses separate 3-second connect and 10-second read timeouts. After a

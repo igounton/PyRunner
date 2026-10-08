@@ -1,0 +1,15 @@
+{% extends "cpanel/brains/base.html" %}
+{% block actions %}{% if can_manage %}<a class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm font-medium" href="{% url 'cpanel:brain_create' %}">Create or import</a>{% endif %}{% endblock %}
+{% block brain_content %}
+<p class="text-sm text-muted">Curated notes with revision history and access grants. Console members can read all workspace notes.</p>
+<div class="space-y-3">
+{% for item in page %}
+    <a class="block rounded-2xl border border-line bg-panel p-5" href="{% url 'cpanel:brain_detail' item.pk %}">
+        <h2 class="font-semibold break-words">{{ item.name }}</h2>
+        <p class="text-sm text-muted mt-1 break-words">{{ item.description|default:item.slug }}</p>
+        <p class="text-xs text-faint mt-3">Revision {{ item.head_revision.number|default:"0" }} · Contract {{ item.contract_version|default:"unknown" }}{% if item.owner_plugin %} · {{ item.owner_plugin }}{% endif %}</p>
+    </a>
+{% empty %}<div class="rounded-2xl border border-line bg-panel p-6 text-sm text-muted">No brains yet. Create one from the template or import an existing BrainOutside archive.</div>{% endfor %}
+</div>
+{% include "cpanel/brains/pagination.html" %}
+{% endblock %}

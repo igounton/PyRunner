@@ -1,0 +1,11 @@
+{% for error in form.non_field_errors %}<p class="text-sm text-fail break-words" role="alert">{{ error }}</p>{% endfor %}
+{% for field in form %}
+    {% if field.is_hidden %}{{ field }}{% else %}
+    <div class="space-y-2 min-w-0">
+        <label class="block text-sm font-medium" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="text-xs text-muted">{{ field.help_text }}</p>{% endif %}
+        {% for error in field.errors %}<p class="text-xs text-fail" role="alert">{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+{% endfor %}

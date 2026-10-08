@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{% if brain %}{{ brain.name }}{% else %}Brains{% endif %} - {{ instance_name }}{% endblock %}
+{% block content %}
+<div class="flex">
+    {% include "cpanel/_sidebar.html" %}
+    <div class="flex-1 min-w-0">
+        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="min-w-0">
+                    <a href="{% url 'cpanel:brain_list' %}" class="text-sm text-muted">Brains</a>
+                    <h1 class="text-[22px] font-semibold tracking-tight break-words">{% block heading %}{{ brain.name|default:"Brains" }}{% endblock %}</h1>
+                    {% if brain %}<p class="text-sm text-muted mt-1 break-words">{{ brain.description|default:"A versioned knowledge base for this workspace." }}</p>{% endif %}
+                </div>
+                {% block actions %}{% endblock %}
+            </div>
+            {% if brain %}
+            <nav class="flex flex-wrap gap-4 text-sm" aria-label="Brain navigation">
+                <a class="text-ok" href="{% url 'cpanel:brain_detail' brain.pk %}">Files</a>
+                <a class="text-ok" href="{% url 'cpanel:brain_revisions' brain.pk %}">Revisions</a>
+                {% if can_manage %}<a class="text-ok" href="{% url 'cpanel:brain_settings' brain.pk %}">Settings</a><a class="text-ok" href="{% url 'cpanel:brain_grants' brain.pk %}">Grants</a>{% endif %}
+                <a class="text-ok" href="{% url 'cpanel:brain_export' brain.pk %}">Export ZIP</a>
+            </nav>
+            {% endif %}
+            {% if contract_warning %}<p class="rounded-xl border border-warn/30 bg-warn/5 p-4 text-sm text-warn">{{ contract_warning }}</p>{% endif %}
+            {% block brain_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

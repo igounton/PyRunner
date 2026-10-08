@@ -1,0 +1,24 @@
+{% extends "cpanel/brains/base.html" %}
+{% block actions %}{% if can_manage %}<a class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm font-medium" href="{% url 'cpanel:brain_edit' brain.pk %}{% if path %}?path={{ path|urlencode }}{% endif %}">{% if path %}Edit file{% else %}Add file{% endif %}</a>{% endif %}{% endblock %}
+{% block brain_content %}
+<div class="grid lg:grid-cols-3 gap-5">
+    <section class="rounded-2xl border border-line bg-panel p-5 min-w-0 space-y-3" aria-label="File tree">
+        <h2 class="font-semibold">Files <span class="text-xs text-faint">revision {{ brain.head_revision.number }}</span></h2>
+        {% for folder, entries in folders.items %}<details open><summary class="text-sm text-muted cursor-pointer break-all">{{ folder }}</summary>
+            <ul class="mt-2 space-y-2 pl-3">{% for entry in entries %}<li class="text-sm break-all"><a class="{% if path == entry.path %}text-ok{% else %}text-muted{% endif %}" href="?path={{ entry.path|urlencode }}">{{ entry.name }}</a></li>{% endfor %}</ul>
+        </details>{% endfor %}
+    </section>
+    <section class="lg:col-span-2 rounded-2xl border border-line bg-panel p-5 min-w-0 space-y-4">
+        {% if path %}
+        <h2 class="font-semibold break-all">{{ path }}</h2>
+        <div class="flex flex-wrap gap-2 text-xs text-muted">
+            {% if entity %}<span class="px-2 py-1 rounded-lg bg-ink">{{ entity.visibility }}</span><span class="px-2 py-1 rounded-lg bg-ink">{{ entity.kind }}</span>{% else %}<span>Contract / unindexed file · console only</span>{% endif %}
+            {% if entity.is_stale %}<span class="text-warn">Stale project: verify its details</span>{% endif %}
+            {% if entity.status == 'superseded' %}<span class="text-warn">Superseded{% if superseded %} · <a class="underline" href="?path={{ superseded.path|urlencode }}">{{ superseded.entity_id }}</a>{% endif %}</span>{% endif %}
+        </div>
+        {% if entity.malformed_frontmatter %}<p class="text-sm text-warn" role="alert">Malformed frontmatter. This note is private until its metadata is repaired.</p>{% endif %}
+        <pre class="text-sm whitespace-pre-wrap break-words overflow-x-auto font-mono">{{ content }}</pre>
+        {% else %}<h2 class="font-semibold">Browse your brain</h2><p class="text-sm text-muted">Choose a file to read it. Console members see the private tier. External consumers need an explicit grant.</p>{% endif %}
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends "cpanel/brains/base.html" %}
+{% block brain_content %}
+<h2 class="font-semibold">Revision history</h2>
+{% for revision in page %}<a class="block rounded-2xl border border-line bg-panel p-5 space-y-2" href="{% url 'cpanel:brain_diff' brain.pk revision.pk %}"><h3 class="font-medium break-words">{{ revision.number }} · {{ revision.message }}</h3><p class="text-xs text-muted">{{ revision.created_at }} · {{ revision.source }}{% if revision.author %} · {{ revision.author.username }}{% endif %}</p></a>{% empty %}<p class="text-sm text-muted">No revisions yet.</p>{% endfor %}
+{% include "cpanel/brains/pagination.html" %}
+{% endblock %}

@@ -1,0 +1,5 @@
+{% extends "cpanel/brains/base.html" %}
+{% block brain_content %}
+<h2 class="font-semibold break-words">Revision {{ revision.number }} · {{ revision.message }}</h2>
+{% for change in changes %}<section class="rounded-2xl border border-line bg-panel p-5 min-w-0 space-y-3"><h3 class="text-sm font-medium break-all">{{ change.action }} · {{ change.path }}</h3><pre class="text-xs overflow-x-auto font-mono">{{ change.diff }}</pre></section>{% empty %}<p class="text-sm text-muted">No content changes.</p>{% endfor %}
+{% endblock %}

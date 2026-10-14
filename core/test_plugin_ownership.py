@@ -255,6 +255,38 @@ class OwnedCleanupTests(TestCase):
         self.assertFalse(DataStore.objects.filter(owner_plugin="pp").exists())
         self.assertTrue(DataStore.objects.filter(name="userds").exists())
 
+    def test_cleanup_deprovisions_owned_databases_and_drops_public_pages(self):
+        from core.models import Database, PluginPublicPage
+        from core.services.database_service import DatabaseService
+        from core.test_databases import _make_database
+
+        owned = _make_database(self.ws, name="pp_data")
+        owned.owner_plugin = "pp"
+        owned.save(update_fields=["owner_plugin"])
+        unreachable = _make_database(self.ws, name="pp_other")
+        unreachable.owner_plugin = "pp"
+        unreachable.save(update_fields=["owner_plugin"])
+        user_db = _make_database(self.ws, name="user_data")
+        PluginPublicPage.objects.create(plugin_slug="pp", page="report", workspace=self.ws)
+        self.assertEqual(PluginService.owned_resource_counts("pp")["databases"], 2)
+
+        attempted = set()
+
+        def deprovision(database):
+            attempted.add(database.pk)  # delete() clears pk afterwards
+            if database.pk == unreachable.pk:
+                raise RuntimeError("data server unreachable")
+
+        with mock.patch.object(DatabaseService, "deprovision", side_effect=deprovision):
+            counts = PluginService._cleanup_owned_resources("pp")
+
+        self.assertEqual(counts.get("databases"), 1)
+        self.assertEqual(attempted, {owned.pk, unreachable.pk})
+        self.assertFalse(Database.objects.filter(pk=owned.pk).exists())
+        self.assertTrue(Database.objects.filter(pk=unreachable.pk).exists())  # never orphan a schema
+        self.assertTrue(Database.objects.filter(pk=user_db.pk).exists())
+        self.assertFalse(PluginPublicPage.objects.filter(plugin_slug="pp").exists())
+
 
 class DeleteGuardTests(TestCase):
     """Owned resources are delete-guarded on the generic Secrets page; a superuser

@@ -433,13 +433,16 @@ class PluginService:
         page. The delete dialog names them in prose instead, so the promise is
         still kept — just not as a number.
         """
-        from core.models import Brain, DataStore, Library, Script, Secret, VectorCollection
+        from core.models import (
+            Brain, Database, DataStore, Library, Script, Secret, VectorCollection,
+        )
 
         counts = {}
         for model, label in (
             (Script, "scripts"),
             (Secret, "secrets"),
             (DataStore, "datastores"),
+            (Database, "databases"),
             (Library, "libraries"),
             (VectorCollection, "vector_collections"),
             (Brain, "brains"),
@@ -467,7 +470,7 @@ class PluginService:
 
     @staticmethod
     def _cleanup_owned_resources(slug: str) -> dict:
-        """Delete Script/Secret/DataStore/Library rows owned by ``slug``. Returns counts.
+        """Delete everything ``slug`` owns (rows, stores, databases, objects). Returns counts.
 
         Field-gated (a pre-v2 schema has no ``owner_plugin`` column) and wrapped so
         a cleanup failure can never block plugin removal — the files + registry row
@@ -513,6 +516,40 @@ class PluginService:
             logger.warning(
                 "Owned-vector_collections cleanup skipped for plugin %r: %s", slug, exc
             )
+
+        # Managed databases: the row AND its schema/role on the data server, via
+        # the service like the Databases page. If the server can't be reached the
+        # row is kept (and logged) rather than orphaning the schema silently; a
+        # superuser can still retry or "delete anyway" from the Databases page.
+        try:
+            from core.models import Database
+            from core.services.database_service import DatabaseService
+
+            removed = 0
+            for database in Database.objects.filter(owner_plugin=slug):
+                try:
+                    DatabaseService.deprovision(database)
+                except Exception as exc:
+                    logger.warning(
+                        "Owned database %r of plugin %r kept: server cleanup failed: %s",
+                        database.name, slug, exc,
+                    )
+                    continue
+                database.delete()
+                removed += 1
+            if removed:
+                counts["databases"] = removed
+        except Exception as exc:
+            logger.warning("Owned-databases cleanup skipped for plugin %r: %s", slug, exc)
+
+        # Shared public pages would only 404 once the plugin is gone; drop them
+        # so the API Tokens oversight list doesn't keep dead links.
+        try:
+            from core.models import PluginPublicPage
+
+            PluginPublicPage.objects.filter(plugin_slug=slug).delete()
+        except Exception as exc:
+            logger.warning("Public-page cleanup skipped for plugin %r: %s", slug, exc)
 
         # Stored objects under apps/<slug>/. Best-effort and last: these live in a
         # remote bucket, so a network failure must not block the local removal the

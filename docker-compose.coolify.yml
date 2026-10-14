@@ -26,6 +26,17 @@ services:
       # into HTTPS it cannot speak (which would mark the backend down).
       - SECURE_SSL_REDIRECT=False
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      # Traefik is one proxy hop in front of PyRun. Login lockout and every
+      # per-IP rate limit read the client address it appends; without this
+      # they would see Traefik's address for every visitor. Use 2 if
+      # Cloudflare proxies the domain as well.
+      - RATELIMIT_TRUSTED_PROXY_DEPTH=${RATELIMIT_TRUSTED_PROXY_DEPTH:-1}
+
+      # Optional. Empty means unset (SQLite core DB, Databases feature off,
+      # console-entered URLs limited to public addresses).
+      - DATABASE_URL=${DATABASE_URL:-}
+      - PYRUNNER_DATA_DB_URL=${PYRUNNER_DATA_DB_URL:-}
+      - PYRUNNER_ALLOW_PRIVATE_NETWORK=${PYRUNNER_ALLOW_PRIVATE_NETWORK:-False}
 
       # Email — defaults to console. Configure SMTP/Resend in the app
       # (Settings -> Email) after first login so password-reset emails work.

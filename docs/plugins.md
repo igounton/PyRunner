@@ -922,7 +922,7 @@ site still boots. Last resort: `PYRUNNER_DISABLE_PLUGINS=1` boots with zero plug
 - Do slow or failure-prone work in `ready()`.
 
 A complete sample lives in [`examples/example_plugin/`](../examples/example_plugin/);
-the `qdrant-backup-plugin/` is a full SDK-based reference (config in an owned
+[`examples/qdrant_backup/`](../examples/qdrant_backup/) is a full SDK-based reference (config in an owned
 DataStore, owner-scoped secrets, an idempotent managed script + schedule).
 
 ## Retrieval consumers (SDK 2.7)

@@ -526,11 +526,10 @@ class ViewFlowTests(TestCase):
         db = Database.objects.get(name="events")
         self.assertEqual(db.workspace_id, self.ws.id)
         self.assertEqual(db.created_by, self.owner)
-        # Views redirect into the canonical (unprefixed) cpanel instance —
-        # house behavior for every workspace-scoped view.
+        # Redirects stay under the workspace prefix the request came from.
         self.assertRedirects(
             resp,
-            reverse("cpanel:database_detail", args=[db.pk]),
+            self._url("database_detail", db.pk),
             fetch_redirect_response=False,
         )
 
@@ -541,7 +540,7 @@ class ViewFlowTests(TestCase):
             )
         self.assertRedirects(
             resp,
-            reverse("cpanel:database_list"),
+            self._url("database_list"),
             fetch_redirect_response=False,
         )
         self.assertFalse(Database.objects.filter(name="events").exists())
@@ -559,7 +558,7 @@ class ViewFlowTests(TestCase):
         self.assertEqual(db.status, Database.STATUS_ERROR)
         self.assertRedirects(
             resp,
-            reverse("cpanel:database_detail", args=[db.pk]),
+            self._url("database_detail", db.pk),
             fetch_redirect_response=False,
         )
 
@@ -637,7 +636,26 @@ class ViewFlowTests(TestCase):
         ):
             self.client.post(
                 self._url("database_delete", db.pk),
-                {"confirm_name": db.name, "force": "on"},
+                {"confirm_name": db.name, "delete_anyway": "on"},
+            )
+        self.assertFalse(Database.objects.filter(pk=db.pk).exists())
+
+    def test_superuser_force_deletes_a_plugin_owned_database_from_the_form(self):
+        db = _make_database(self.ws)
+        db.owner_plugin = "yt_comments"
+        db.save(update_fields=["owner_plugin"])
+        detail = self.client.get(self._url("database_detail", db.pk)).content.decode()
+        self.assertNotIn('name="force"', detail)  # owners/admins never get the override
+        self.client.post(self._url("database_delete", db.pk), {"confirm_name": db.name, "force": "1"})
+        self.assertTrue(Database.objects.filter(pk=db.pk).exists())
+
+        self.owner.is_superuser = True
+        self.owner.save(update_fields=["is_superuser"])
+        detail = self.client.get(self._url("database_detail", db.pk)).content.decode()
+        self.assertIn('name="force" value="1"', detail)
+        with mock.patch.object(DatabaseService, "deprovision"):
+            self.client.post(
+                self._url("database_delete", db.pk), {"confirm_name": db.name, "force": "1"}
             )
         self.assertFalse(Database.objects.filter(pk=db.pk).exists())
 

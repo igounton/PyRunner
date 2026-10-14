@@ -180,9 +180,15 @@ with pyrunner_db.connect("{{ database.name }}") as conn:
                                placeholder="{{ database.name }}">
                     </div>
                     <label class="flex items-center gap-2 text-xs text-muted">
-                        <input type="checkbox" name="force" class="rounded border-line text-fail focus:ring-fail">
+                        <input type="checkbox" name="delete_anyway" class="rounded border-line text-fail focus:ring-fail">
                         Delete anyway if the data server is unreachable (leaves the schema/role behind)
                     </label>
+                    {% if database.owner_plugin and user.is_superuser %}
+                    <label class="flex items-center gap-2 text-xs text-muted">
+                        <input type="checkbox" name="force" value="1" class="rounded border-line text-fail focus:ring-fail">
+                        Force-delete this plugin-managed database (superuser escape hatch)
+                    </label>
+                    {% endif %}
                     <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete database</button>
                 </form>
             </section>

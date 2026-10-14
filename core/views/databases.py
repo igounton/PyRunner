@@ -391,8 +391,8 @@ def database_delete_view(request: HttpRequest, pk) -> HttpResponse:
 
     Requires the database's name typed back as confirmation. If the server
     cleanup fails the row is kept by default so the objects aren't orphaned
-    silently; 'force' skips that safety for a decommissioned/unreachable
-    server.
+    silently; 'delete_anyway' skips that safety for a decommissioned/unreachable
+    server. ('force' is the separate superuser override for plugin ownership.)
     """
     _require_manage(request)
     database = get_object_or_404(Database, pk=pk, workspace=request.workspace)
@@ -408,11 +408,11 @@ def database_delete_view(request: HttpRequest, pk) -> HttpResponse:
         )
         return redirect("cpanel:database_detail", pk=database.pk)
 
-    force = request.POST.get("force") == "on"
+    delete_anyway = request.POST.get("delete_anyway") == "on"
     try:
         DatabaseService.deprovision(database)
     except DatabaseProvisionError as e:
-        if not force:
+        if not delete_anyway:
             messages.error(
                 request,
                 f"Server cleanup failed, database kept: {e} — fix the data "

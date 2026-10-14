@@ -265,7 +265,16 @@ def vector_delete_view(request: HttpRequest, pk) -> HttpResponse:
         )
         return redirect("cpanel:vector_detail", pk=collection.pk)
 
-    name = collection.name
-    VectorService.delete_collection(collection)
-    messages.success(request, f'Collection "{name}" deleted.')
+    name, backend_ref = collection.name, collection.backend_ref
+    store = collection.connection.name if collection.connection_id else "the vector store"
+    if VectorService.delete_collection(collection):
+        messages.success(request, f'Collection "{name}" deleted.')
+    else:
+        # Saying "deleted" alone would hide that the points are still stored.
+        messages.warning(
+            request,
+            f'Collection "{name}" was removed from PyRun, but {store} could not be '
+            f'reached, so its data is still there. Delete "{backend_ref}" on that '
+            "server once it is back.",
+        )
     return redirect("cpanel:vector_list")

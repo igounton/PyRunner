@@ -261,18 +261,22 @@ class VectorService:
         return collection
 
     @classmethod
-    def delete_collection(cls, collection) -> None:
+    def delete_collection(cls, collection) -> bool:
         """Remove the backend store (best effort, logged) and the row.
 
+        Returns False when the store cleanup failed, so a console can say so.
         A Qdrant drop that fails (server down) leaves the server collection
         behind; a later collection mapping to the same name refuses to adopt it
         while it holds points, so the leftover can't leak into a new collection.
         """
+        cleaned = True
         try:
             cls._delete_backend(collection)
         except Exception as e:
+            cleaned = False
             logger.warning("Vector collection %s store cleanup failed: %s", collection.name, e)
         collection.delete()
+        return cleaned
 
     @classmethod
     def _delete_backend(cls, collection) -> None:

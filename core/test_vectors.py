@@ -815,6 +815,17 @@ class ConsoleFlowTests(TestCase):
         self.client.post(self._url("vector_delete", col.pk), {"confirm_name": "owned", "force": "1"})
         self.assertFalse(VectorCollection.objects.filter(pk=col.pk).exists())
 
+    def test_delete_warns_when_the_store_keeps_the_data(self):
+        col = VectorService.create_collection(workspace=self.ws, name="kept", embedding_provider=self.provider)
+        with mock.patch.object(VectorService, "_delete_backend", side_effect=RuntimeError("store down")):
+            resp = self.client.post(self._url("vector_delete", col.pk), {"confirm_name": "kept"}, follow=True)
+        self.assertFalse(VectorCollection.objects.filter(pk=col.pk).exists())
+        shown = [(m.level_tag, str(m)) for m in resp.context["messages"]]
+        self.assertEqual(len(shown), 1)
+        self.assertEqual(shown[0][0], "warning")
+        self.assertIn("its data is still there", shown[0][1])
+        self.assertIn(col.backend_ref, shown[0][1])
+
     def test_list_without_an_enabled_store_explains(self):
         VectorConnection.objects.update(enabled=False)
         resp = self.client.get(self._url("vector_list"))

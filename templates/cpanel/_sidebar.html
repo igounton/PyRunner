@@ -17,6 +17,21 @@
         </button>
     </div>
     <nav class="p-3 flex-1 overflow-y-auto scrollbar-thin">
+        {% if show_workspace_switcher %}
+        {# The header switcher is hidden on phones, so the drawer carries the workspaces too. #}
+        <div class="lg:hidden pb-3 mb-2 border-b border-line">
+            <div class="eyebrow text-faint px-3 pb-2 pt-1">Workspace</div>
+            {% for ws in user_workspaces %}
+            <a href="{% url 'cpanel_ws:dashboard' workspace_id=ws.id %}"
+               class="flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-colors {% if active_workspace and ws.id == active_workspace.id %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+                <span class="truncate">{{ ws.name }}</span>
+                {% if active_workspace and ws.id == active_workspace.id %}
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
         <div class="eyebrow text-faint px-3 pb-2 pt-1">Operate</div>
 
         <!-- Dashboard -->
@@ -137,6 +152,8 @@
             <span>Channels</span>
         </a>
 
+        {% if request.user.is_superuser %}
+        <!-- Services, Settings and Logs are instance-wide (superuser only) -->
         <!-- Services -->
         <a href="{% url 'cpanel:services' %}"
            class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'service' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
@@ -160,6 +177,15 @@
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span>Logs</span>
         </a>
+        {% elif user_can_manage_workspace %}
+        <!-- Owners/Admins manage members here; superusers find it under Admin -->
+        <a href="{% url 'cpanel:workspace_list' %}"
+           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'workspace' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+            {% if 'workspace' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
+            <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2"/></svg>
+            <span>Workspaces</span>
+        </a>
+        {% endif %}
 
         {% if plugin_nav %}
         <div class="eyebrow text-faint px-3 pb-2 pt-5">Plugins</div>

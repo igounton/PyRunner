@@ -104,11 +104,13 @@
                                     <td class="px-6 py-3 font-mono text-sm text-text">{{ package.name }}</td>
                                     <td class="px-6 py-3 font-mono text-sm text-muted">{{ package.version }}</td>
                                     <td class="px-6 py-3 text-right">
+                                        {% if user.is_superuser %}
                                         <form method="post" action="{% url 'cpanel:package_uninstall' pk=environment.pk %}" onsubmit="return confirm('Uninstall {{ package.name }}?');" class="inline" data-loading-form>
                                             {% csrf_token %}
                                             <input type="hidden" name="package_name" value="{{ package.name }}">
                                             <button type="submit" class="text-xs font-medium text-fail hover:underline">Uninstall</button>
                                         </form>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -128,6 +130,7 @@
 
                 <!-- Right: install forms -->
                 <div class="space-y-5">
+                    {% if user.is_superuser %}
                     <!-- Install single -->
                     <section class="rounded-2xl border border-line bg-panel p-5">
                         <h3 class="eyebrow text-faint mb-4">Install package</h3>
@@ -155,6 +158,12 @@
                             <button type="submit" class="w-full text-[13px] font-medium px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Install from requirements</button>
                         </form>
                     </section>
+                    {% else %}
+                    <section class="rounded-2xl border border-line bg-panel p-5">
+                        <h3 class="eyebrow text-faint mb-2">Install package</h3>
+                        <p class="text-sm text-muted">Environments are shared by every workspace, so only an administrator can install or remove packages.</p>
+                    </section>
+                    {% endif %}
                 </div>
             </div>
 

@@ -31,7 +31,7 @@
                 <div class="text-sm">
                     <span class="font-medium text-warn">Schedules paused</span>
                     <span class="text-muted"> — all scheduled script executions are paused. </span>
-                    <a href="{% url 'cpanel:settings' %}" class="text-info hover:underline">Resume in Settings</a>
+                    {% if user.is_superuser %}<a href="{% url 'cpanel:settings' %}" class="text-info hover:underline">Resume in Settings</a>{% else %}<span class="text-muted">An administrator can resume them.</span>{% endif %}
                 </div>
             </div>
             {% endif %}
@@ -128,7 +128,7 @@
                     <div class="eyebrow text-faint">This week</div>
                     <div class="mt-2 text-3xl font-semibold font-mono tnum tracking-tight">{{ runs_this_week }}</div>
                 </a>
-                <a href="{% url 'cpanel:settings' %}" class="px-6 py-5 hover:bg-panel-hi/50 transition-colors">
+                <a href="{% url 'cpanel:tasks' %}" class="px-6 py-5 hover:bg-panel-hi/50 transition-colors">
                     <div class="eyebrow text-faint">Queue</div>
                     <div class="mt-2 text-3xl font-semibold font-mono tnum tracking-tight {% if queue_size > 0 %}text-warn{% endif %}">{{ queue_size }}</div>
                 </a>

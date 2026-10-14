@@ -15,10 +15,12 @@
                     <h1 class="text-[22px] font-semibold tracking-tight">Environments</h1>
                     <p class="text-sm text-muted mt-1">Isolated Python environments for running scripts</p>
                 </div>
+                {% if user.is_superuser %}
                 <a href="{% url 'cpanel:environment_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                     New environment
                 </a>
+                {% endif %}
             </div>
 
             {% if environments %}
@@ -59,6 +61,7 @@
                 </div>
                 <h3 class="text-base font-semibold mb-1">No environments yet</h3>
                 <p class="text-sm text-muted mb-6">Create one to get started, or run the setup command.</p>
+                {% if user.is_superuser %}
                 <div class="flex flex-col items-center gap-4">
                     <a href="{% url 'cpanel:environment_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
@@ -67,6 +70,9 @@
                     <span class="eyebrow text-faint">or</span>
                     <code class="px-3 py-2 bg-ink border border-line-soft rounded-lg text-info text-sm font-mono">python manage.py setup_default_env</code>
                 </div>
+                {% else %}
+                <p class="text-sm text-faint">Ask an administrator to create one.</p>
+                {% endif %}
             </section>
             {% endif %}
 

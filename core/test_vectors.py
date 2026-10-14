@@ -743,7 +743,7 @@ class ConsoleFlowTests(TestCase):
         col = VectorCollection.objects.get(name="docs")
         self.assertEqual(col.workspace_id, self.ws.id)
         self.assertEqual(col.created_by, self.owner)
-        self.assertRedirects(resp, reverse("cpanel:vector_detail", args=[col.pk]), fetch_redirect_response=False)
+        self.assertRedirects(resp, self._url("vector_detail", col.pk), fetch_redirect_response=False)
         self.assertTrue(col.file_path.exists())
 
         with fake_embeddings():
@@ -778,7 +778,7 @@ class ConsoleFlowTests(TestCase):
         self.assertTrue(VectorCollection.objects.filter(pk=col.pk).exists())
         path = col.file_path
         resp = self.client.post(self._url("vector_delete", col.pk), {"confirm_name": "docs"})
-        self.assertRedirects(resp, reverse("cpanel:vector_list"), fetch_redirect_response=False)
+        self.assertRedirects(resp, self._url("vector_list"), fetch_redirect_response=False)
         self.assertFalse(VectorCollection.objects.filter(pk=col.pk).exists())
         self.assertFalse(path.exists())
 
@@ -808,7 +808,7 @@ class ConsoleFlowTests(TestCase):
             workspace=self.ws, name="owned", embedding_provider=self.provider, owner_plugin="demo", owner_key="k"
         )
         resp = self.client.post(self._url("vector_delete", col.pk), {"confirm_name": "owned"})
-        self.assertRedirects(resp, reverse("cpanel:vector_list"), fetch_redirect_response=False)
+        self.assertRedirects(resp, self._url("vector_list"), fetch_redirect_response=False)
         self.assertTrue(VectorCollection.objects.filter(pk=col.pk).exists())
         boss = User.objects.create(email="root@example.com", is_superuser=True)
         self.client.force_login(boss)
@@ -820,7 +820,7 @@ class ConsoleFlowTests(TestCase):
         resp = self.client.get(self._url("vector_list"))
         self.assertIn("No vector store is enabled", resp.content.decode())
         resp = self.client.get(self._url("vector_create"))
-        self.assertRedirects(resp, reverse("cpanel:vector_list"), fetch_redirect_response=False)
+        self.assertRedirects(resp, self._url("vector_list"), fetch_redirect_response=False)
 
 # =============================================================================
 # Services page

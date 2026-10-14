@@ -146,6 +146,9 @@ class BrainConsoleTests(TestCase):
         self.assertFalse(self.brain.include_in_backup)
 
     def test_brain_settings_does_not_activate_global_settings_sidebar(self):
+        # Only superusers see the global Settings link at all.
+        self.owner.is_superuser = True
+        self.owner.save(update_fields=["is_superuser"])
         response = self.client.get(self.url("settings", self.brain.pk))
         anchor = (
             response.content.decode()

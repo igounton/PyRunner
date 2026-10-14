@@ -185,6 +185,7 @@ class OwnedCountsTests(_LoggedIn):
                 "scripts": 1,
                 "secrets": 1,
                 "datastores": 1,
+                "databases": 0,
                 "libraries": 0,
                 "vector_collections": 0,
                 "brains": 0,

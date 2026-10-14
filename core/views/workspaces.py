@@ -210,7 +210,7 @@ def workspace_sandbox_policy_view(request: HttpRequest, pk) -> HttpResponse:
 def workspace_members_view(request: HttpRequest, pk) -> HttpResponse:
     """List/manage the members of a workspace (Owner/Admin or superuser)."""
     workspace = get_object_or_404(Workspace, pk=pk)
-    _require_manage(request, workspace)
+    caller = _require_manage(request, workspace)
 
     memberships = workspace.memberships.select_related("user").order_by(
         "role", "user__email"
@@ -226,6 +226,8 @@ def workspace_members_view(request: HttpRequest, pk) -> HttpResponse:
             # A workspace must keep at least one owner, so the last owner's
             # role/removal controls are disabled in the UI (and refused below).
             "owner_count": owner_count,
+            # Admins manage members but never the Owner role (grant, change, remove).
+            "can_manage_owners": _may_manage_owners(request, caller),
         },
     )
 
@@ -239,12 +241,15 @@ def workspace_member_add_view(request: HttpRequest, pk) -> HttpResponse:
     deferred invite-flow extension; here the target must already have an account.
     """
     workspace = get_object_or_404(Workspace, pk=pk)
-    _require_manage(request, workspace)
+    caller = _require_manage(request, workspace)
 
     email = (request.POST.get("email") or "").strip().lower()
     role = request.POST.get("role") or WorkspaceMembership.ROLE_MEMBER
     if role not in dict(WorkspaceMembership.ROLE_CHOICES):
         role = WorkspaceMembership.ROLE_MEMBER
+    if role == WorkspaceMembership.ROLE_OWNER and not _may_manage_owners(request, caller):
+        messages.error(request, "Only an owner can add another owner.")
+        return redirect("cpanel:workspace_members", pk=pk)
 
     if not email:
         messages.error(request, "Email is required.")
@@ -273,7 +278,7 @@ def workspace_member_add_view(request: HttpRequest, pk) -> HttpResponse:
 def workspace_member_role_view(request: HttpRequest, pk, membership_id) -> HttpResponse:
     """Change a member's role (Owner/Admin or superuser)."""
     workspace = get_object_or_404(Workspace, pk=pk)
-    _require_manage(request, workspace)
+    caller = _require_manage(request, workspace)
 
     membership = get_object_or_404(
         WorkspaceMembership, pk=membership_id, workspace=workspace
@@ -281,6 +286,12 @@ def workspace_member_role_view(request: HttpRequest, pk, membership_id) -> HttpR
     role = request.POST.get("role")
     if role not in dict(WorkspaceMembership.ROLE_CHOICES):
         messages.error(request, "Invalid role.")
+        return redirect("cpanel:workspace_members", pk=pk)
+
+    if WorkspaceMembership.ROLE_OWNER in (role, membership.role) and not _may_manage_owners(
+        request, caller
+    ):
+        messages.error(request, "Only an owner can grant or change the Owner role.")
         return redirect("cpanel:workspace_members", pk=pk)
 
     # Never demote the workspace's last owner — it must always have one.
@@ -303,11 +314,15 @@ def workspace_member_role_view(request: HttpRequest, pk, membership_id) -> HttpR
 def workspace_member_remove_view(request: HttpRequest, pk, membership_id) -> HttpResponse:
     """Remove a member from the workspace (Owner/Admin or superuser)."""
     workspace = get_object_or_404(Workspace, pk=pk)
-    _require_manage(request, workspace)
+    caller = _require_manage(request, workspace)
 
     membership = get_object_or_404(
         WorkspaceMembership, pk=membership_id, workspace=workspace
     )
+
+    if membership.role == WorkspaceMembership.ROLE_OWNER and not _may_manage_owners(request, caller):
+        messages.error(request, "Only an owner can remove an owner.")
+        return redirect("cpanel:workspace_members", pk=pk)
 
     # Never remove the last owner — it would leave the workspace unmanageable.
     if membership.role == WorkspaceMembership.ROLE_OWNER and not _has_other_owner(
@@ -330,4 +345,16 @@ def _has_other_owner(workspace, membership) -> bool:
         )
         .exclude(pk=membership.pk)
         .exists()
+    )
+
+
+def _may_manage_owners(request, caller) -> bool:
+    """Only an Owner (or a superuser) may grant, change or remove the Owner role.
+
+    ``caller`` is the membership ``_require_manage`` returned (None for a
+    superuser who isn't a member). Without this, an Admin could promote
+    themselves to Owner and then delete the workspace.
+    """
+    return request.user.is_superuser or (
+        caller is not None and caller.role == WorkspaceMembership.ROLE_OWNER
     )

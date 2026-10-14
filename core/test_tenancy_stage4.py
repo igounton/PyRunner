@@ -195,6 +195,54 @@ class MemberManagementTests(_Fixture):
         self.assertFalse(WorkspaceMembership.objects.filter(pk=m.id).exists())
 
 
+class OwnerRoleGuardTests(_Fixture):
+    """Only an Owner (or superuser) grants, changes or removes the Owner role."""
+
+    def _role(self, user, role):
+        m = WorkspaceMembership.objects.get(user=user, workspace=self.ws)
+        self.client.post(reverse("cpanel:workspace_member_role", args=[self.ws.id, m.id]), {"role": role})
+        m.refresh_from_db()
+        return m.role
+
+    def test_admin_cannot_promote_themselves_or_others_to_owner(self):
+        self._login(self.admin)
+        self.assertEqual(self._role(self.admin, "owner"), "admin")
+        self.assertEqual(self._role(self.plain, "owner"), "member")
+        self.assertEqual(self._role(self.plain, "admin"), "admin")  # other roles still fine
+
+    def test_admin_cannot_add_an_owner(self):
+        self._login(self.admin)
+        self.client.post(
+            reverse("cpanel:workspace_member_add", args=[self.ws.id]),
+            {"email": self.outsider.email, "role": "owner"},
+        )
+        self.assertFalse(
+            WorkspaceMembership.objects.filter(user=self.outsider, workspace=self.ws).exists()
+        )
+
+    def test_admin_cannot_demote_or_remove_an_owner(self):
+        _member(self.plain, self.ws, WorkspaceMembership.ROLE_OWNER)  # not the last owner
+        self._login(self.admin)
+        self.assertEqual(self._role(self.owner, "member"), "owner")
+        m = WorkspaceMembership.objects.get(user=self.owner, workspace=self.ws)
+        self.client.post(reverse("cpanel:workspace_member_remove", args=[self.ws.id, m.id]))
+        self.assertTrue(WorkspaceMembership.objects.filter(pk=m.id).exists())
+
+    def test_owner_and_superuser_manage_owners(self):
+        self._login(self.owner)
+        self.assertEqual(self._role(self.admin, "owner"), "owner")
+        self._login(self.super)
+        self.assertEqual(self._role(self.admin, "admin"), "admin")
+
+    def test_admin_page_offers_no_owner_controls(self):
+        self._login(self.admin)
+        html = self.client.get(reverse("cpanel:workspace_members", args=[self.ws.id])).content.decode()
+        self.assertNotIn('<option value="owner"', html)
+        self._login(self.owner)
+        html = self.client.get(reverse("cpanel:workspace_members", args=[self.ws.id])).content.decode()
+        self.assertIn('<option value="owner"', html)
+
+
 class DeleteTests(_Fixture):
     def _delete(self):
         return self.client.post(reverse("cpanel:workspace_delete", args=[self.ws.id]))

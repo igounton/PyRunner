@@ -26,7 +26,7 @@
                     {% csrf_token %}
                     <input type="email" name="email" required placeholder="user@example.com" class="flex-1 px-3.5 py-2.5 bg-ink border border-line rounded-lg text-text text-sm placeholder-faint/60 focus:outline-none focus:ring-2 focus:ring-ok/30 focus:border-ok/60 transition-colors">
                     <select name="role" class="px-3.5 py-2.5 bg-ink border border-line rounded-lg text-text text-sm focus:outline-none focus:ring-2 focus:ring-ok/30 focus:border-ok/60 transition-colors">
-                        {% for value, label in role_choices %}<option value="{{ value }}"{% if value == 'member' %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                        {% for value, label in role_choices %}{% if value != 'owner' or can_manage_owners %}<option value="{{ value }}"{% if value == 'member' %} selected{% endif %}>{{ label }}</option>{% endif %}{% endfor %}
                     </select>
                     <button type="submit" class="text-[13px] font-medium px-3.5 py-2.5 rounded-lg bg-ok text-ink hover:opacity-90 transition flex-shrink-0">Add</button>
                 </form>
@@ -48,11 +48,13 @@
                             {% if m.role == 'owner' and owner_count == 1 %}
                             <span class="px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok">Owner</span>
                             <span class="text-xs text-faint">last owner</span>
+                            {% elif m.role == 'owner' and not can_manage_owners %}
+                            <span class="px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok">Owner</span>
                             {% else %}
                             <form method="post" action="{% url 'cpanel:workspace_member_role' pk=workspace.id membership_id=m.id %}" class="flex items-center gap-2">
                                 {% csrf_token %}
                                 <select name="role" onchange="this.form.submit()" class="px-2.5 py-1.5 bg-ink border border-line rounded-lg text-text text-xs focus:outline-none focus:ring-2 focus:ring-ok/30 focus:border-ok/60 transition-colors">
-                                    {% for value, label in role_choices %}<option value="{{ value }}"{% if value == m.role %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                                    {% for value, label in role_choices %}{% if value != 'owner' or can_manage_owners %}<option value="{{ value }}"{% if value == m.role %} selected{% endif %}>{{ label }}</option>{% endif %}{% endfor %}
                                 </select>
                             </form>
                             <form method="post" action="{% url 'cpanel:workspace_member_remove' pk=workspace.id membership_id=m.id %}" onsubmit="return confirm('Remove {{ m.user.email|escapejs }} from this workspace?');">

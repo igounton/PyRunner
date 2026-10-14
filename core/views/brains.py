@@ -1,5 +1,6 @@
 """Workspace Brain console: browsing for members, writes for owners/admins."""
 
+from collections import Counter
 from urllib.parse import urlencode
 
 from django import forms
@@ -118,10 +119,35 @@ class BrainGrantForm(StyledForm, forms.ModelForm):
     class Meta:
         model = BrainGrant
         fields = ["subject_kind", "subject_id", "max_tier", "can_propose"]
+        labels = {"subject_kind": "Access for", "subject_id": "Recipient"}
         help_texts = {
             "subject_id": "Script or Unified API token UUID, plugin slug, or agent identifier.",
             "can_propose": "Allows proposals at agents-only or private tier. Every feed still needs approval.",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from core.models import APIToken, Script
+
+        self.fields["subject_kind"].choices = [
+            (value, "API token" if value == "token" else label)
+            for value, label in BrainGrant.SUBJECTS
+        ]
+        self.initial["subject_kind"] = self.initial.get("subject_kind") or "script"
+        workspace = self.instance.brain.workspace
+        # Only names and identifiers reach the picker, never token credentials.
+        subjects = {
+            "script": Script.objects.for_workspace(workspace),
+            "token": APIToken.objects.filter(workspace=workspace, scope="api"),
+        }
+        self.subject_choices = {}
+        for kind, queryset in subjects.items():
+            rows = list(queryset.order_by("name", "pk").values_list("pk", "name"))
+            counts = Counter(name for _, name in rows)
+            self.subject_choices[kind] = [
+                {"id": str(pk), "label": name if counts[name] == 1 else f"{name} ({str(pk)[:8]})"}
+                for pk, name in rows
+            ]
 
     def clean(self):
         data = super().clean()
@@ -409,6 +435,16 @@ def brain_grants_view(request, brain_id):
         )
         messages.success(request, "Grant saved.")
         return redirect(_url(request, "brain_grants", brain_id=brain.pk))
+    labels = {
+        (kind, item["id"]): item["label"]
+        for kind, items in form.subject_choices.items()
+        for item in items
+    }
+    grants = list(brain.grants.filter(brain__workspace=request.workspace).order_by(
+        "subject_kind", "subject_id"
+    ))
+    for grant in grants:
+        grant.subject_label = labels.get((grant.subject_kind, grant.subject_id), grant.subject_id)
     return render(
         request,
         "cpanel/brains/grants.html",
@@ -416,9 +452,7 @@ def brain_grants_view(request, brain_id):
             request,
             brain,
             form=form,
-            grants=brain.grants.filter(brain__workspace=request.workspace).order_by(
-                "subject_kind", "subject_id"
-            ),
+            grants=grants,
         ),
     )
 

@@ -10,7 +10,7 @@ from django.urls import reverse
 from core.brain.backup import export_brains
 from core.brain.imports import read_zip
 from core.brain.service import BrainService
-from core.models import APIToken, Brain, BrainGrant, User, Workspace, WorkspaceMembership
+from core.models import APIToken, Brain, BrainGrant, Environment, Script, User, Workspace, WorkspaceMembership
 from core.services.backup_service import BackupService
 from core.test_brain_store import archive, contract_files, note
 from core.test_plugin_api import _mock_setup
@@ -191,6 +191,56 @@ class BrainConsoleTests(TestCase):
             self.client.post(self.url("grant_delete", self.brain.pk, grant.pk)).status_code, 302
         )
         self.assertFalse(self.brain.grants.exists())
+
+    def test_grant_picker_scopes_names_and_never_exposes_token_credentials(self):
+        environment = Environment.objects.create(name="Grant picker")
+        script = Script.objects.create(name="Cafe reader", workspace=self.ws, environment=environment)
+        foreign = Script.objects.create(name="Foreign script", workspace=self.other, environment=environment)
+        raw = APIToken.generate_token(scope="api")
+        token = APIToken.objects.create(
+            name="Cafe connector", workspace=self.ws, scope="api", token=raw,
+            permissions=["brain:read"],
+        )
+        APIToken.objects.create(
+            name="Foreign connector", workspace=self.other, scope="api",
+            token=APIToken.generate_token(scope="api"), permissions=["brain:read"],
+        )
+        APIToken.objects.create(name="Legacy token", workspace=self.ws, token=APIToken.generate_token())
+        BrainGrant.objects.create(brain=self.brain, subject_kind="script", subject_id=str(script.pk))
+        BrainGrant.objects.create(brain=self.brain, subject_kind="token", subject_id=str(token.pk))
+        response = self.client.get(self.url("grants", self.brain.pk))
+        self.assertContains(response, "Cafe reader")
+        self.assertContains(response, "Cafe connector")
+        for hidden in (foreign.name, str(foreign.pk), "Foreign connector", "Legacy token", raw, token.token):
+            self.assertNotContains(response, hidden)
+        self.assertContains(response, '<p class="break-words">Cafe reader</p>', html=True)
+        self.assertContains(response, '<p class="break-words">Cafe connector</p>', html=True)
+
+    def test_grant_picker_preserves_selection_on_error_and_rejects_foreign_scripts(self):
+        environment = Environment.objects.create(name="Grant validation")
+        script = Script.objects.create(name="Reader", workspace=self.ws, environment=environment)
+        foreign = Script.objects.create(name="Foreign reader", workspace=self.other, environment=environment)
+        payload = {
+            "subject_kind": "script", "subject_id": str(script.pk),
+            "max_tier": "public", "can_propose": "on",
+        }
+        response = self.client.post(self.url("grants", self.brain.pk), payload)
+        self.assertContains(response, "Proposals require agents-only or private tier")
+        self.assertEqual(response.context["form"]["subject_id"].value(), str(script.pk))
+        self.assertFalse(self.brain.grants.exists())
+        response = self.client.post(
+            self.url("grants", self.brain.pk),
+            {**payload, "subject_id": str(foreign.pk), "max_tier": "agents-only"},
+        )
+        self.assertContains(response, "Unknown subject in this workspace")
+        self.assertFalse(self.brain.grants.exists())
+        response = self.client.post(
+            self.url("grants", self.brain.pk), {**payload, "max_tier": "agents-only"},
+        )
+        self.assertEqual(response.status_code, 302)
+        grant = self.brain.grants.get()
+        self.assertEqual(grant.subject_id, str(script.pk))
+        self.assertTrue(grant.can_propose)
 
     def test_export_content_and_headers(self):
         response = self.client.get(self.url("export", self.brain.pk))

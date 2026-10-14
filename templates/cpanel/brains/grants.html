@@ -3,6 +3,96 @@
 {% block brain_content %}
 <h2 class="font-semibold">Access grants</h2>
 <p class="text-sm text-muted">Without a grant, consumers cannot read this brain. Token access also respects its permissions and tier ceiling.</p>
-{% for grant in grants %}<div class="rounded-2xl border border-line bg-panel p-5 flex flex-wrap items-center justify-between gap-4"><div class="text-sm min-w-0"><p class="break-all">{{ grant.subject_kind }} · {{ grant.subject_id }}</p><p class="text-xs text-muted mt-1">{{ grant.max_tier }}{% if grant.can_propose %} · Can propose{% endif %}</p></div><form method="post" action="{% ws_url 'cpanel:brain_grant_delete' brain.pk grant.pk %}">{% csrf_token %}<button class="text-sm text-fail">Revoke</button></form></div>{% empty %}<p class="text-sm text-muted">No external grants.</p>{% endfor %}
-<form method="post" class="rounded-2xl border border-line bg-panel p-5 space-y-5 max-w-4xl" data-brain-form>{% csrf_token %}<h3 class="font-semibold">Add or update a grant</h3>{% include "cpanel/brains/fields.html" %}<button class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm font-medium">Save grant</button></form>
+{% for grant in grants %}<div class="rounded-2xl border border-line bg-panel p-5 flex flex-wrap items-center justify-between gap-4"><div class="text-sm min-w-0"><p class="break-words">{{ grant.subject_label }}</p><p class="text-xs text-muted mt-1">{{ grant.get_subject_kind_display }} · {{ grant.max_tier }}{% if grant.can_propose %} · Can propose{% endif %}</p></div><form method="post" action="{% ws_url 'cpanel:brain_grant_delete' brain.pk grant.pk %}">{% csrf_token %}<button class="text-sm text-fail">Revoke</button></form></div>{% empty %}<p class="text-sm text-muted">No external grants.</p>{% endfor %}
+<form method="post" class="rounded-2xl border border-line bg-panel p-5 space-y-5 max-w-4xl" data-brain-form id="grant-form">
+    {% csrf_token %}
+    <h3 class="font-semibold">Add or update a grant</h3>
+    {% for error in form.non_field_errors %}<p class="text-sm text-fail break-words" role="alert">{{ error }}</p>{% endfor %}
+    {% for field in form %}
+    <div class="space-y-2 min-w-0">
+        <label class="block text-sm font-medium" for="{{ field.id_for_label }}"{% if field.name == 'subject_id' %} id="grant-subject-label"{% endif %}>{{ field.label }}</label>
+        {% if field.name == 'subject_id' %}
+        <div id="grant-search-field" hidden>
+            <input type="search" id="grant-search" aria-label="Filter recipients by name" aria-controls="id_subject_id" autocomplete="off" class="w-full bg-ink border border-line rounded-lg p-2 text-sm">
+        </div>
+        <div id="grant-subject-control">{{ field }}</div>
+        <p id="grant-subject-help" class="text-xs text-muted" role="status" aria-live="polite">{{ field.help_text }}</p>
+        {% else %}
+        {{ field }}
+        {% if field.help_text %}<p class="text-xs text-muted">{{ field.help_text }}</p>{% endif %}
+        {% endif %}
+        {% for error in field.errors %}<p class="text-xs text-fail" role="alert">{{ error }}</p>{% endfor %}
+    </div>
+    {% endfor %}
+    <button class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm font-medium">Save grant</button>
+</form>
+{{ form.subject_choices|json_script:"grant-subject-choices" }}
+<script>
+(() => {
+    const choices = JSON.parse(document.getElementById('grant-subject-choices').textContent);
+    const kind = document.getElementById('id_subject_kind');
+    const container = document.getElementById('grant-subject-control');
+    const label = document.getElementById('grant-subject-label');
+    const help = document.getElementById('grant-subject-help');
+    const searchField = document.getElementById('grant-search-field');
+    const search = document.getElementById('grant-search');
+    const original = document.getElementById('id_subject_id');
+    const inputClass = original.className;
+    const initialValue = original.value;
+    const nouns = {script: 'script', token: 'API token'};
+
+    function filterChoices(selected) {
+        const control = document.getElementById('id_subject_id');
+        const all = choices[kind.value];
+        const noun = nouns[kind.value];
+        const query = search.value.trim().toLocaleLowerCase();
+        const matches = all.filter(item => item.label.toLocaleLowerCase().includes(query));
+        control.replaceChildren(new Option(`Choose a ${noun}…`, ''));
+        for (const item of matches) control.add(new Option(item.label, item.id));
+        control.value = matches.some(item => item.id === selected) ? selected : '';
+        if (!all.length) {
+            help.textContent = kind.value === 'script'
+                ? 'No scripts in this workspace. Create a script first.'
+                : 'No Unified API tokens in this workspace. Create one in API Tokens first.';
+        } else if (!matches.length) {
+            help.textContent = `No ${noun}s match your search.`;
+        } else {
+            help.textContent = `Choose the ${noun} that should have access. Select it again to update an existing grant.`;
+        }
+    }
+
+    function renderRecipient(value = '') {
+        const hasChoices = Object.hasOwn(choices, kind.value);
+        searchField.hidden = !hasChoices;
+        search.value = '';
+        const control = document.createElement(hasChoices ? 'select' : 'input');
+        control.id = original.id;
+        control.name = original.name;
+        control.required = true;
+        control.className = inputClass;
+        control.setAttribute('aria-describedby', 'grant-subject-help');
+        container.replaceChildren(control);
+        if (hasChoices) {
+            label.textContent = kind.value === 'script' ? 'Script' : 'API token';
+            search.placeholder = `Filter ${nouns[kind.value]}s by name…`;
+            search.setAttribute('aria-label', `Filter ${nouns[kind.value]}s by name`);
+            filterChoices(value);
+        } else {
+            const isPlugin = kind.value === 'plugin';
+            label.textContent = isPlugin ? 'Plugin slug' : 'Agent identifier';
+            control.type = 'text';
+            control.maxLength = 200;
+            control.value = value;
+            control.placeholder = isPlugin ? 'e.g. rag_chatbot' : 'e.g. pyai';
+            help.textContent = isPlugin
+                ? 'Enter the plugin slug used by its configuration.'
+                : 'Enter the identifier used by the agent.';
+        }
+    }
+
+    kind.addEventListener('change', () => renderRecipient());
+    search.addEventListener('input', () => filterChoices(document.getElementById('id_subject_id').value));
+    renderRecipient(initialValue);
+})();
+</script>
 {% endblock %}

@@ -8,6 +8,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
 from core.services.task_service import TaskService
+from core.views.params import positive_int
 
 
 @login_required
@@ -18,7 +19,7 @@ def tasks_view(request: HttpRequest) -> HttpResponse:
     """
     # Get filter parameters
     status_filter = request.GET.get("status", "")
-    page = int(request.GET.get("page", 1))
+    page = positive_int(request.GET.get("page"), 1)
     per_page = 50
 
     # Active workspace scopes all task listings (tenancy Stage 3).

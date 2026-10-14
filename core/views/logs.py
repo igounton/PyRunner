@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 
 from core.services.log_service import LogService
 from core.views.decorators import superuser_required
+from core.views.params import positive_int
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ def logs_view(request: HttpRequest) -> HttpResponse:
     search_query = request.GET.get("search", "").strip()
     date_from = request.GET.get("date_from")
     date_to = request.GET.get("date_to")
-    page = int(request.GET.get("page", 1))
+    page = positive_int(request.GET.get("page"), 1)
     per_page = 100
 
     # Parse dates
@@ -96,8 +97,7 @@ def logs_api_view(request: HttpRequest) -> JsonResponse:
             status=403,
         )
 
-    lines = int(request.GET.get("lines", 50))
-    lines = min(lines, 200)  # Cap at 200 for performance
+    lines = positive_int(request.GET.get("lines"), 50, maximum=200)  # capped for performance
 
     entries = LogService.tail_logs(lines=lines)
 

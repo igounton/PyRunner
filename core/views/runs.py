@@ -1,6 +1,8 @@
 """
 Run views for the control panel.
 """
+import uuid
+
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -38,7 +40,10 @@ def run_list_view(request: HttpRequest) -> HttpResponse:
     # Optional filtering by script
     script_filter = request.GET.get("script")
     if script_filter:
-        runs = runs.filter(script_id=script_filter)
+        try:
+            runs = runs.filter(script_id=uuid.UUID(script_filter))
+        except ValueError:
+            runs = runs.none()  # not a script id: no runs match
 
     # Text search: script name + stderr by default (the "which run had this
     # error?" question), stdout only when asked — it is the big column, and

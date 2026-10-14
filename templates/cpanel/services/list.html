@@ -312,7 +312,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
                     <div class="p-6 space-y-6">
 
                         <!-- Saved providers -->
-                        <div>
+                        <div id="ai-saved-providers">
                             <div class="flex items-center justify-between gap-3 mb-3">
                                 <p class="text-[13px] font-medium text-text">Saved providers</p>
                                 <button type="button" onclick="aiNewProvider()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add provider</button>
@@ -452,7 +452,7 @@ print(answer)</code></pre>
 
                     </div>
 
-                    <div id="claude-test-result" class="hidden mx-6 mb-6 p-4 rounded-lg"></div>
+                    <div id="claude-test-result" class="hidden" role="status" aria-live="polite" aria-atomic="true"></div>
                 </div>
             </div>
 
@@ -1095,6 +1095,7 @@ function aiApplyTypeHints(prefillBaseUrl) {
 }
 
 function aiShowProviderForm() {
+    aiResetFormTestFeedback();
     document.getElementById('ai-provider-form-wrap').classList.remove('hidden');
 }
 
@@ -1130,23 +1131,55 @@ function aiEditProvider(id) {
     aiShowProviderForm();
 }
 
-function aiRenderTestResult(data) {
+function aiResetTestButton(btn) {
+    if (btn.dataset.testLabel) btn.textContent = btn.dataset.testLabel;
+    if (btn.dataset.testClass) btn.className = btn.dataset.testClass;
+}
+
+function aiResetFormTestFeedback() {
+    const btn = document.getElementById('ai-test-form-btn');
+    // A response for fields that have since changed must not mark them as tested.
+    btn.dataset.testRevision = String(Number(btn.dataset.testRevision || 0) + 1);
+    if (!btn.disabled) aiResetTestButton(btn);
     const resultDiv = document.getElementById('claude-test-result');
-    resultDiv.classList.remove('hidden');
-    if (data.success) {
-        resultDiv.className = 'mx-6 mb-6 p-4 rounded-lg bg-ok/10 border border-ok/30 text-ok';
-        resultDiv.innerHTML = '<div class="flex items-start"><svg class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>' + escapeHtml(data.message) + '</span></div>';
-    } else {
-        resultDiv.className = 'mx-6 mb-6 p-4 rounded-lg bg-fail/10 border border-fail/30 text-fail';
-        resultDiv.innerHTML = '<div class="flex items-start"><svg class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg><span>' + escapeHtml(data.error) + '</span></div>';
-    }
+    if (resultDiv.closest('#ai-provider-form')) resultDiv.classList.add('hidden');
+}
+
+function aiRenderTestResult(data, btn) {
+    const passed = data.success === true;
+    const container = btn.closest('#ai-provider-form') || document.getElementById('ai-saved-providers');
+    const resultDiv = document.getElementById('claude-test-result');
+    container.appendChild(resultDiv);
+    resultDiv.className = 'mt-4 p-4 rounded-lg border text-sm break-words ' + (passed
+        ? 'bg-ok/10 border-ok/30 text-ok' : 'bg-fail/10 border-fail/30 text-fail');
+    const heading = passed ? 'Connection successful' : 'Connection failed';
+    const detail = (passed ? data.message : data.error) || 'No further details were returned.';
+    resultDiv.innerHTML = '<p class="font-medium">' + heading + '</p><p class="mt-1">' + escapeHtml(detail) + '</p>';
+    aiResetTestButton(btn);
+    btn.classList.remove('border-line', 'text-muted', 'hover:text-text', 'hover:border-faint');
+    btn.classList.add(...(passed ? ['border-ok/30', 'bg-ok/10', 'text-ok'] : ['border-fail/30', 'bg-fail/10', 'text-fail']));
+    btn.textContent = passed ? 'Test passed' : 'Test failed';
 }
 
 function aiPostTest(payload, btn, busyText) {
-    const original = btn.textContent;
+    if (!btn.dataset.testLabel) {
+        btn.dataset.testLabel = btn.textContent;
+        btn.dataset.testClass = btn.className;
+    }
+    aiResetTestButton(btn);
+    const revision = btn.dataset.testRevision;
     btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
     btn.textContent = busyText;
     document.getElementById('claude-test-result').classList.add('hidden');
+
+    function showResult(data) {
+        if (btn.dataset.testRevision !== revision) {
+            aiResetTestButton(btn);
+            return;
+        }
+        aiRenderTestResult(data, btn);
+    }
 
     fetch('{% url "cpanel:claude_test_connection" %}', {
         method: 'POST',
@@ -1157,13 +1190,13 @@ function aiPostTest(payload, btn, busyText) {
         body: JSON.stringify(payload),
     })
     .then(response => response.json())
-    .then(aiRenderTestResult)
+    .then(showResult)
     .catch(error => {
-        aiRenderTestResult({success: false, error: error.message});
+        showResult({success: false, error: error.message});
     })
     .finally(() => {
         btn.disabled = false;
-        btn.textContent = original;
+        btn.removeAttribute('aria-busy');
     });
 }
 
@@ -1549,6 +1582,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (aiType) {
         aiType.addEventListener('change', function () { aiApplyTypeHints(true); });
     }
+    const aiForm = document.getElementById('ai-provider-form');
+    aiForm.addEventListener('input', aiResetFormTestFeedback);
+    aiForm.addEventListener('change', aiResetFormTestFeedback);
     {% if not ai_providers %}
     // First run: open the card and the add-provider form.
     toggleClaudeConfig();

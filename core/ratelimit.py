@@ -17,6 +17,7 @@ window is a new key and nothing a backend does to the old key's TTL can
 stretch the budget. The TTL on the bucket key is garbage collection only.
 """
 
+import ipaddress
 import time
 
 from django.core.cache import cache
@@ -87,3 +88,19 @@ def client_ip(request) -> str:
         if len(parts) >= depth:
             return parts[-depth]
     return request.META.get("REMOTE_ADDR", "") or "unknown"
+
+
+def lockout_client_ip(request):
+    """``client_ip`` for django-axes: a valid IP address, or None.
+
+    Axes stores the address in a GenericIPAddressField, which PostgreSQL types
+    as ``inet``: the "unknown" placeholder (a request with no peer address,
+    e.g. ``force_login``) or a malformed X-Forwarded-For entry would make the
+    login request fail with a database error. None is what axes stores when
+    it can't tell.
+    """
+    address = client_ip(request)
+    try:
+        return str(ipaddress.ip_address(address))
+    except ValueError:
+        return None

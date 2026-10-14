@@ -427,7 +427,7 @@ AXES_VERBOSE = False  # Don't log every access attempt
 # direct peer is the proxy for everyone, so with axes' default REMOTE_ADDR one
 # caller's failures locked that account for every visitor. Honors
 # RATELIMIT_TRUSTED_PROXY_DEPTH (set it to the number of proxies in front).
-AXES_CLIENT_IP_CALLABLE = "core.ratelimit.client_ip"
+AXES_CLIENT_IP_CALLABLE = "core.ratelimit.lockout_client_ip"
 
 
 # Internationalization

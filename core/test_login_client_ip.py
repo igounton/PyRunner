@@ -3,9 +3,10 @@
 from unittest import mock
 
 from axes.utils import reset
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 
 from core.models import GlobalSettings, User
+from core.ratelimit import lockout_client_ip
 from core.services import EncryptionService
 from core.test_plugin_api import _mock_setup
 
@@ -66,3 +67,21 @@ class RecaptchaClientIpTests(TestCase):
                 **PROXY,
             )
         self.assertEqual(verify.call_args.args[2], "198.51.100.7")
+
+
+class LockoutClientIpTests(SimpleTestCase):
+    """Axes stores this in an inet column on PostgreSQL: only valid IPs or None."""
+
+    def test_valid_addresses_pass_through(self):
+        request = RequestFactory().get("/", REMOTE_ADDR="10.0.1.5", HTTP_X_FORWARDED_FOR="2001:db8::1")
+        self.assertEqual(lockout_client_ip(request), "10.0.1.5")
+        with override_settings(RATELIMIT_TRUSTED_PROXY_DEPTH=1):
+            self.assertEqual(lockout_client_ip(request), "2001:db8::1")
+
+    def test_missing_or_malformed_address_is_none(self):
+        no_peer = RequestFactory().get("/")
+        no_peer.META.pop("REMOTE_ADDR", None)
+        self.assertIsNone(lockout_client_ip(no_peer))
+        garbage = RequestFactory().get("/", REMOTE_ADDR="10.0.1.5", HTTP_X_FORWARDED_FOR="not-an-ip")
+        with override_settings(RATELIMIT_TRUSTED_PROXY_DEPTH=1):
+            self.assertIsNone(lockout_client_ip(garbage))

@@ -9,6 +9,9 @@ whitenoise>=6.6.0
 # collectstatic time, in addition to gzip — smaller payloads for modern browsers.
 Brotli>=1.2.0
 resend>=0.7.0
+# Core HTTP client (GitHub sync, Telegram, reCAPTCHA, secret providers, update
+# check). Declared directly: it used to arrive only as a dependency of resend.
+requests>=2.32.0
 cryptography>=42.0.0
 python-dotenv>=1.0.0
 # Postgres support (opt-in via DATABASE_URL; SQLite stays the zero-config default)

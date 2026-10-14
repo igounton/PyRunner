@@ -163,6 +163,23 @@ class EnvironmentAuthzTests(TestCase):
         self.assertEqual(resp.status_code, 200)
 
 
+class AccessDeniedPageTests(TestCase):
+    def setUp(self):
+        _mock_setup(self)
+
+    def test_role_denial_renders_the_styled_403_page(self):
+        from core.models import Workspace, WorkspaceMembership
+
+        member = User.objects.create(email="plain@example.com")
+        workspace = Workspace.get_default() or Workspace.objects.create(name="D", is_default=True)
+        WorkspaceMembership.ensure(member, workspace, role=WorkspaceMembership.ROLE_MEMBER)
+        self.client.force_login(member)
+        response = self.client.get(reverse("cpanel:database_list"))
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, "403.html")
+        self.assertContains(response, "Access Denied", status_code=403)
+
+
 class LogsAuthzTests(TestCase):
     """Vuln 4 — the shared application log is superuser-only to read.
 

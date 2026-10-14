@@ -8,6 +8,144 @@ When you cut a release, bump ``pyrunner/version.py`` and add an entry here.
 
 CHANGELOG = [
     {
+        "version": "2.0.0",
+        "date": "Release candidate",
+        "headline": (
+            "A versioned Brain for your workspace, one API for your AI clients, "
+            "and vector search for scripts and plugins."
+        ),
+        "changes": [
+            {
+                "tag": "Added",
+                "title": "Brains: knowledge with history and explicit access",
+                "body": (
+                    "Create a Brain from the included template or import a ZIP or "
+                    "public GitHub archive. Browse and edit files, compare immutable "
+                    "revisions and grant each token, plugin or agent a visibility tier. "
+                    "Canonical content lives in the database and travels with backups."
+                ),
+            },
+            {
+                "tag": "Added",
+                "title": "REST, MCP and Connect share one tool registry",
+                "body": (
+                    "Create a permission-scoped Unified API token and connect an AI "
+                    "client through stateless MCP, or call REST and generated OpenAPI. "
+                    "Connect shows the commands. URL-only read credentials are opt-in "
+                    "and expire. Existing datastore and plugin token scopes are unchanged."
+                ),
+            },
+            {
+                "tag": "Added",
+                "title": "Capture, review and ask your Brain",
+                "body": (
+                    "Capture text or URLs from the console, API, scripts, plugins and "
+                    "granted agents. An AI provider prepares a validated proposal; an "
+                    "owner or administrator reviews its diff before anything is applied. "
+                    "The confined reader returns cited context, optional vector search "
+                    "finds related notes, and cost caps bound admitted work."
+                ),
+            },
+            {
+                "tag": "Added",
+                "title": "GitHub sync keeps human review in the loop",
+                "body": (
+                    "Pull repository changes into the Brain inbox for review. Export "
+                    "an immutable revision to a dedicated branch after acknowledging "
+                    "that every visibility tier is copied. Updates never force a moved "
+                    "branch; optional polling only queues pulls. Tokens use Secrets."
+                ),
+            },
+            {
+                "tag": "Added",
+                "title": "Vector stores, embedding providers and SDK 2.7",
+                "body": (
+                    "Configure embedding providers and Local or Qdrant collections, "
+                    "then search, filter and manage points from the console, scripts "
+                    "or plugins. Helpers keep credentials out of runs by default. "
+                    "The SDK includes VectorAPI and grant-checked BrainAPI."
+                ),
+            },
+            {
+                "tag": "Added",
+                "title": "More ways to schedule and manage scripts",
+                "body": (
+                    "Use timezone-aware cron expressions, yearly dates including leap "
+                    "days, or any interval from 1 to 32767 minutes. Fork a script with "
+                    "its schedule paused, search run output, and compare the last 30 "
+                    "run durations. Manage and recover accounts with the user CLI."
+                ),
+            },
+            {
+                "tag": "Improved",
+                "title": "PyRunner is now PyRun",
+                "body": (
+                    "The product, console and documentation use the PyRun name. "
+                    "Existing pyrunner_* helpers, PYRUNNER_* variables, plugin class "
+                    "names and data paths remain compatible. The public image moves "
+                    "to hasanaboulhasan/pyrun; keep your existing volumes and keys."
+                ),
+            },
+            {
+                "tag": "Fixed",
+                "title": "Safer restores and more resilient workers",
+                "body": (
+                    "Failed database restores roll back, Brain history and attribution "
+                    "survive backups, and weekly/monthly schedules restore correctly. "
+                    "SQLite takes write locks before reads; Qdrant outages share a "
+                    "short fail-fast window across workers. Reconciled failed runs "
+                    "notify you, package installs terminate cleanly, and partial "
+                    "environment creation no longer reserves a broken name."
+                ),
+            },
+            {
+                "tag": "Fixed",
+                "title": "Plugin and console maintenance",
+                "body": (
+                    "Plugin minimum versions are enforced and unowned stray plugin "
+                    "folders no longer prevent upload. The dashboard includes weekly "
+                    "and monthly schedules, database-helper dependency guidance is "
+                    "accurate, and changing the admin URL explains the required restart."
+                ),
+            },
+            {
+                "tag": "Security",
+                "title": "Explicit network access and credential boundaries",
+                "body": (
+                    "Login failures now enforce the configured account lockout. "
+                    "Outbound helpers share SSRF protection; private networks require "
+                    "operator opt-in and metadata addresses remain blocked. New API "
+                    "tokens are hashed and scoped. Docker builds exclude local "
+                    "environment variants and private artifacts."
+                ),
+            },
+            {
+                "tag": "Security",
+                "title": "Tighter roles and lockout behind a proxy",
+                "body": (
+                    "Behind Coolify or another reverse proxy, login lockout now uses "
+                    "each visitor's address, so failed logins can no longer lock an "
+                    "account for everyone. Changing a password asks for the current "
+                    "one. Only an Owner can grant or change the Owner role, only "
+                    "superusers rename or delete shared tags, and members no longer "
+                    "see other workspaces' script names or host details."
+                ),
+            },
+            {
+                "tag": "Fixed",
+                "title": "Workspaces stay put",
+                "body": (
+                    "Inside a second workspace, sidebar links and saves no longer jump "
+                    "back to the default workspace, and phones get a workspace list in "
+                    "the menu. Members only see the pages they can open, workspace "
+                    "owners can reach member management, malformed page filters no "
+                    "longer error, and deleting a plugin with its data also removes "
+                    "its managed databases."
+                ),
+            },
+        ],
+    },
+    {
         "version": "1.16.0",
         "date": "July 29, 2026",
         "headline": (

@@ -373,6 +373,9 @@ def manual_cleanup_view(request: HttpRequest) -> HttpResponse:
 @login_required
 def cleanup_preview_view(request: HttpRequest) -> JsonResponse:
     """Get preview of what would be cleaned up."""
+    # Instance-wide (every workspace's script names), like the rest of Settings.
+    if not request.user.is_superuser:
+        return JsonResponse({"success": False, "error": "Permission denied."}, status=403)
     try:
         stats = RetentionService.get_cleanup_stats()
         return JsonResponse({
@@ -390,6 +393,9 @@ def cleanup_preview_view(request: HttpRequest) -> JsonResponse:
 @login_required
 def system_info_view(request: HttpRequest) -> JsonResponse:
     """Get system information via AJAX."""
+    # Instance-wide host details, like the rest of Settings.
+    if not request.user.is_superuser:
+        return JsonResponse({"success": False, "error": "Permission denied."}, status=403)
     try:
         info = SystemInfoService.get_all_info()
         return JsonResponse({

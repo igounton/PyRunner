@@ -80,6 +80,26 @@ class SettingsAuthzTests(TestCase):
         self.assertEqual(gs.email_backend, GlobalSettings.EmailBackend.DISABLED)
         self.assertNotEqual(gs.smtp_host, "attacker.example")
 
+    def test_settings_json_reads_are_superuser_only(self):
+        """The cleanup preview lists every workspace's script names; system info
+        describes the host. Both belong to the superuser-only Settings page."""
+        from core.models import Environment, Run, Script, Workspace
+
+        other = Workspace.objects.create(name="Other team")
+        script = Script.objects.create(
+            name="OTHER-TEAM-SCRIPT", workspace=other,
+            environment=Environment.objects.create(name="authz-env"),
+        )
+        Run.objects.create(script=script, workspace=other)
+        for name in ("cpanel:cleanup_preview", "cpanel:system_info"):
+            with self.subTest(endpoint=name):
+                self.client.force_login(self.member)
+                resp = self.client.get(reverse(name))
+                self.assertEqual(resp.status_code, 403)
+                self.assertNotIn("OTHER-TEAM-SCRIPT", resp.content.decode())
+                self.client.force_login(self.superuser)
+                self.assertEqual(self.client.get(reverse(name)).status_code, 200)
+
     def test_superuser_still_reaches_settings_handlers(self):
         """The gate must not break admins: a superuser reaches the view and is
         redirected back to the settings page, not to login."""

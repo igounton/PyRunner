@@ -149,7 +149,7 @@ class BrainConsoleTests(TestCase):
         response = self.client.get(self.url("settings", self.brain.pk))
         anchor = (
             response.content.decode()
-            .split('href="' + reverse("cpanel:settings") + '"', 1)[1]
+            .split('href="' + reverse("cpanel_ws:settings", args=[self.ws.pk]) + '"', 1)[1]
             .split(">", 1)[0]
         )
         self.assertNotIn("font-medium text-ok", anchor)

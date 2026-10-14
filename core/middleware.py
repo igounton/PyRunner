@@ -115,12 +115,33 @@ class ActiveWorkspaceMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Under the prefix, a member gets a URLconf whose canonical cpanel names
+        # reverse back into this workspace (core/workspace_urls.py), so links and
+        # redirects never fall back to the default one. Checked before resolving:
+        # a workspace the user can't access keeps the root URLconf and 404s below.
+        from core.workspace_urls import requested_workspace_id, urlconf_for
+
+        workspace_id = requested_workspace_id(request.path_info)
+        user = getattr(request, "user", None)
+        if workspace_id is not None and user is not None and user.is_authenticated:
+            from core.models import Workspace
+
+            workspace, ok = Workspace.resolve_for(user, requested_id=workspace_id)
+            if ok:
+                request.urlconf = urlconf_for(workspace_id)
+                request._prefixed_workspace = workspace
         return self.get_response(request)
 
     def process_view(self, request, view_func, view_args, view_kwargs):
-        # The prefixed include passes ``workspace_id`` to every view it wraps;
-        # strip it here so the existing view signatures are untouched.
+        # The generic prefixed include passes ``workspace_id`` to every view it
+        # wraps; strip it here so the existing view signatures are untouched.
         requested_id = view_kwargs.pop("workspace_id", None)
+        prefixed = getattr(request, "_prefixed_workspace", None)
+        if prefixed is not None and requested_id in (None, prefixed.pk):
+            # Already resolved and authorized in __call__ (per-workspace URLconf).
+            request.current_app = "cpanel"
+            request.workspace = prefixed
+            return None
 
         # Pin namespace resolution to the canonical (unprefixed) cpanel instance.
         # The cpanel routes are mounted twice (canonical + the /w/<id>/ prefixed

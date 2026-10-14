@@ -12,6 +12,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_protect
 from django.http import HttpRequest, HttpResponse
 
+from core.ratelimit import client_ip
 from core.models import User, UserInvite, PasswordResetToken
 from core.models.settings import GlobalSettings
 from core.email import send_password_reset_email
@@ -92,7 +93,9 @@ def _verify_recaptcha(request: HttpRequest, settings: GlobalSettings) -> bool:
     except EncryptionError:
         logger.error("Could not decrypt reCAPTCHA secret key for login verification")
         return False
-    return RecaptchaService.verify(secret, token, get_client_ip(request))
+    # The left-most X-Forwarded-For entry is caller-controlled; use the same
+    # proxy-aware address as the rate limits and lockout.
+    return RecaptchaService.verify(secret, token, client_ip(request))
 
 
 @require_POST
@@ -277,11 +280,3 @@ def reset_password_view(request: HttpRequest, token: str) -> HttpResponse:
         "form": form,
         "token": token,
     })
-
-
-def get_client_ip(request: HttpRequest) -> str:
-    """Extract client IP from request headers."""
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        return x_forwarded_for.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "")

@@ -16,7 +16,7 @@ from core.ratelimit import client_ip
 from core.models import User, UserInvite, PasswordResetToken
 from core.models.settings import GlobalSettings
 from core.email import send_password_reset_email
-from core.forms import PasswordLoginForm, SetPasswordForm
+from core.forms import ChangePasswordForm, PasswordLoginForm, SetPasswordForm
 from core.services import RecaptchaService, EncryptionService, EncryptionError
 
 logger = logging.getLogger(__name__)
@@ -179,8 +179,10 @@ def accept_invite_view(request: HttpRequest, token: str) -> HttpResponse:
 @require_http_methods(["GET", "POST"])
 def change_password_view(request: HttpRequest) -> HttpResponse:
     """Allow users to set or change their password."""
+    # Settings (where superusers manage the account) is superuser-only.
+    done_url = "cpanel:settings" if request.user.is_superuser else "cpanel:dashboard"
     if request.method == "POST":
-        form = SetPasswordForm(request.POST, user=request.user)
+        form = ChangePasswordForm(request.POST, user=request.user)
         if form.is_valid():
             password = form.cleaned_data["password"]
             request.user.set_password(password)
@@ -192,13 +194,14 @@ def change_password_view(request: HttpRequest) -> HttpResponse:
             # backend for session-loaded users.
             update_session_auth_hash(request, request.user)
             messages.success(request, "Password updated successfully.")
-            return redirect("cpanel:settings")
+            return redirect(done_url)
     else:
-        form = SetPasswordForm()
+        form = ChangePasswordForm(user=request.user)
 
     return render(request, "auth/change_password.html", {
         "form": form,
         "has_password": request.user.has_usable_password(),
+        "done_url": done_url,
     })
 
 

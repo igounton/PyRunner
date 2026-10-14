@@ -2125,6 +2125,38 @@ class SetPasswordForm(forms.Form):
         return cleaned_data
 
 
+class ChangePasswordForm(SetPasswordForm):
+    """Change a signed-in user's password, confirming the current one if set.
+
+    Without it, anyone holding a signed-in session (an unlocked laptop, a
+    copied cookie) could take the account over by setting a new password. An
+    account with no usable password yet (e.g. from an invite) just sets one.
+    """
+
+    current_password = forms.CharField(
+        widget=forms.PasswordInput(
+            attrs={
+                "class": INPUT_CLASS,
+                "placeholder": "Current password",
+                "autocomplete": "current-password",
+            }
+        ),
+        label="Current Password",
+    )
+    field_order = ["current_password", "password", "password_confirm"]
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, user=user, **kwargs)
+        if user is None or not user.has_usable_password():
+            del self.fields["current_password"]
+
+    def clean_current_password(self):
+        value = self.cleaned_data.get("current_password", "")
+        if not self.user.check_password(value):
+            raise forms.ValidationError("Your current password is incorrect.")
+        return value
+
+
 class AdminSetupForm(forms.Form):
     """Form for initial admin setup with password.
 

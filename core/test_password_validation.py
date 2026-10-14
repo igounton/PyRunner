@@ -91,7 +91,7 @@ class ChangePasswordViewTests(TestCase):
         self.client.force_login(self.user)
 
     def test_weak_password_rejected_and_unchanged(self):
-        resp = self.client.post(reverse("auth:change_password"), _pw_data("12345678"))
+        resp = self.client.post(reverse("auth:change_password"), {**_pw_data("12345678"), "current_password": STRONG})
 
         self.assertEqual(resp.status_code, 200)  # re-rendered with errors
         self.user.refresh_from_db()
@@ -99,7 +99,7 @@ class ChangePasswordViewTests(TestCase):
 
     def test_email_similar_password_rejected(self):
         resp = self.client.post(
-            reverse("auth:change_password"), _pw_data("worker.honey.bee")
+            reverse("auth:change_password"), {**_pw_data("worker.honey.bee"), "current_password": STRONG}
         )
 
         self.assertEqual(resp.status_code, 200)
@@ -112,7 +112,7 @@ class ChangePasswordViewTests(TestCase):
         # (axes + ModelBackend) — found by this test, fixed with
         # update_session_auth_hash().
         new = "another-long-sturdy-passphrase-42"
-        resp = self.client.post(reverse("auth:change_password"), _pw_data(new))
+        resp = self.client.post(reverse("auth:change_password"), {**_pw_data(new), "current_password": STRONG})
 
         self.assertEqual(resp.status_code, 302)
         self.user.refresh_from_db()
@@ -120,3 +120,39 @@ class ChangePasswordViewTests(TestCase):
         # Session must still be authenticated (no forced logout).
         follow_up = self.client.get(reverse("auth:change_password"))
         self.assertEqual(follow_up.status_code, 200)
+
+    def test_wrong_current_password_is_refused(self):
+        new = "another-long-sturdy-passphrase-42"
+        for current in ("", "not-my-password"):
+            with self.subTest(current=current):
+                resp = self.client.post(
+                    reverse("auth:change_password"), {**_pw_data(new), "current_password": current}
+                )
+                self.assertEqual(resp.status_code, 200)
+                self.user.refresh_from_db()
+                self.assertTrue(self.user.check_password(STRONG))
+
+    def test_member_returns_to_the_dashboard_and_sees_the_header_link(self):
+        User.objects.create(email="root@example.com", is_superuser=True)  # keeps setup complete
+        self.user.is_superuser = False
+        self.user.save(update_fields=["is_superuser"])
+        dashboard = self.client.get(reverse("cpanel:dashboard"))
+        self.assertContains(dashboard, f'href="{reverse("auth:change_password")}"')
+        page = self.client.get(reverse("auth:change_password"))
+        self.assertContains(page, f'href="{reverse("cpanel:dashboard")}"')  # Cancel
+        new = "another-long-sturdy-passphrase-42"
+        resp = self.client.post(
+            reverse("auth:change_password"), {**_pw_data(new), "current_password": STRONG}
+        )
+        self.assertRedirects(resp, reverse("cpanel:dashboard"), fetch_redirect_response=False)
+
+    def test_account_without_a_password_sets_one_without_the_current_field(self):
+        self.user.set_unusable_password()
+        self.user.save()
+        self.client.force_login(self.user)  # the hash change ended the old session
+        self.assertNotContains(self.client.get(reverse("auth:change_password")), "id_current_password")
+        new = "another-long-sturdy-passphrase-42"
+        resp = self.client.post(reverse("auth:change_password"), _pw_data(new))
+        self.assertEqual(resp.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(new))

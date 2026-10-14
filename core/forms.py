@@ -1224,6 +1224,24 @@ class NotificationSettingsForm(forms.Form):
         return instance
 
 
+
+def _reserved_top_level_paths():
+    """First path segments of every root route except the admin itself."""
+    from importlib import import_module
+
+    from django.conf import settings
+    from django.urls.resolvers import URLResolver
+
+    # Plugin mounts exist only while a plugin is loaded, so reserve their root too.
+    reserved = {"static", "media", "plugins"}
+    for entry in import_module(settings.ROOT_URLCONF).urlpatterns:
+        if isinstance(entry, URLResolver) and entry.app_name == "admin":
+            continue
+        segment = str(entry.pattern).lstrip("^").split("/", 1)[0]
+        if segment and "<" not in segment:
+            reserved.add(segment)
+    return reserved
+
 class GeneralSettingsForm(forms.Form):
     """Form for general instance settings."""
 
@@ -1278,9 +1296,9 @@ class GeneralSettingsForm(forms.Form):
             raise forms.ValidationError(
                 "Admin URL can only contain lowercase letters, numbers, hyphens, and underscores."
             )
-        # Prevent conflicts with existing routes
-        reserved = ["setup", "auth", "cpanel", "webhook", "static", "media"]
-        if slug in reserved:
+        # The admin is mounted first (pyrunner/urls.py), so a slug equal to any
+        # other top-level route would shadow it: "api" would hide /api/v1/.
+        if slug in _reserved_top_level_paths():
             raise forms.ValidationError(
                 f"'{slug}' is a reserved URL path. Please choose a different name."
             )

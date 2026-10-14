@@ -445,6 +445,13 @@ class AdminSlugNoticeTests(TestCase):
         messages = self._post("django-admin")
         self.assertFalse(any("restart" in m.lower() for m in messages), messages)
 
+    def test_slug_cannot_shadow_another_top_level_route(self):
+        # The admin is mounted first, so e.g. "api" would hide /api/v1/.
+        for slug in ("api", "mcp", "internal", "channels", "p", "plugins", "webhook", "cpanel"):
+            with self.subTest(slug=slug):
+                self._post(slug)
+                self.assertEqual(GlobalSettings.get_settings().admin_url_slug, "django-admin")
+
 
 # ---------------------------------------------------------------------------
 # F9 — drive django-q's real scheduler loop against freshly synced schedules

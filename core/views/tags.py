@@ -4,18 +4,24 @@ Tag management views for the control panel.
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from core.forms import TagForm
 from core.models import Tag
+from core.views.decorators import superuser_required
 
 
 @login_required
 def tag_list_view(request: HttpRequest) -> HttpResponse:
-    """List all tags with script counts."""
-    tags = Tag.objects.all().order_by("name")
+    """List all tags with how many of this workspace's scripts use each."""
+    # Tags are instance-wide; the count is scoped so a member never learns how
+    # many scripts another workspace has.
+    tags = Tag.objects.annotate(
+        workspace_script_count=Count("scripts", filter=Q(scripts__workspace=request.workspace))
+    ).order_by("name")
     return render(
         request,
         "cpanel/tags/list.html",
@@ -44,9 +50,9 @@ def tag_create_view(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
+@superuser_required
 def tag_edit_view(request: HttpRequest, pk) -> HttpResponse:
-    """Edit an existing tag."""
+    """Edit an existing tag (superuser: tags are shared by every workspace)."""
     tag = get_object_or_404(Tag, pk=pk)
 
     if request.method == "POST":
@@ -65,10 +71,10 @@ def tag_edit_view(request: HttpRequest, pk) -> HttpResponse:
     )
 
 
-@login_required
+@superuser_required
 @require_POST
 def tag_delete_view(request: HttpRequest, pk) -> HttpResponse:
-    """Delete a tag."""
+    """Delete a tag (superuser: it is removed from every workspace's scripts)."""
     tag = get_object_or_404(Tag, pk=pk)
     name = tag.name
     tag.delete()

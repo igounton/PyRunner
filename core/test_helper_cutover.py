@@ -14,9 +14,11 @@ import json
 import os
 import sys
 import uuid
+import unittest
 from unittest import mock
 
 from django.conf import settings
+from django.db import connection
 from django.test import LiveServerTestCase, TestCase
 from django.urls import reverse
 
@@ -64,6 +66,7 @@ class ClaudeUsageEndpointTests(TestCase):
 
 
 class ExecutorInjectionTests(TestCase):
+    @unittest.skipUnless(connection.vendor == "sqlite", "the DB path is only injected on SQLite")
     def test_sqlite_run_env_has_db_path_and_signed_token(self):
         from core.executor import _build_script_environment
 

@@ -20,8 +20,10 @@ import io
 import tempfile
 import zipfile
 from datetime import timedelta
+import unittest
 from unittest import mock
 
+from django.db import connection
 from django.db import models as dj_models
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
@@ -92,8 +94,9 @@ class DatabaseSizeVendorTests(TestCase):
             self.assertEqual(SystemInfoService.get_database_size(), 0)
             self.assertEqual(SystemInfoService.get_database_size_display(), "N/A")
 
+    @unittest.skipUnless(connection.vendor == "sqlite", "SQLite-only size display")
     def test_sqlite_display_is_not_na(self):
-        # The suite runs on SQLite; display is a real (possibly "0 B") size.
+        # On SQLite the display is a real (possibly "0 B") size.
         self.assertNotEqual(SystemInfoService.get_database_size_display(), "N/A")
 
 

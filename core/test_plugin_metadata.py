@@ -266,7 +266,11 @@ class IconViewTests(_SuperuserMixin):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "image/svg+xml")
         self.assertEqual(resp["X-Content-Type-Options"], "nosniff")
-        resp.close()  # release the file handle before tempdir teardown (Windows)
+        # Reading the stream to the end lets the test client close the file
+        # handle (before tempdir teardown on Windows) without firing
+        # request_finished; resp.close() would also close the DB connection
+        # and break the next test on PostgreSQL.
+        self.assertIn(b"<svg", b"".join(resp.streaming_content))
 
     def test_no_icon_declared_404(self):
         self._make_plugin(icon=None)

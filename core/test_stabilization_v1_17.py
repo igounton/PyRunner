@@ -479,7 +479,10 @@ class ScheduleFirstTickTests(TestCase):
         from django_q.brokers import get_broker
         from django_q.scheduler import scheduler
 
-        scheduler(get_broker())
+        # The real loop resets DB connections first; inside a TestCase that would
+        # close PostgreSQL's test transaction. Scheduling semantics are what's tested.
+        with mock.patch("django_q.scheduler.close_old_django_connections"):
+            scheduler(get_broker())
 
     @staticmethod
     def _queued():

@@ -658,6 +658,90 @@ class StorageAPIUrlTests(TestCase):
 
 
 # --------------------------------------------------------------------------- #
+# Services → Object storage: Test button on a saved row
+# --------------------------------------------------------------------------- #
+
+@override_settings(PYRUNNER_ENCRYPTION_KEY=_TEST_KEY)
+class StorageRowTestViewTests(TestCase):
+    """The row's Test button posts only {connection_id}; the saved row is tested
+    as stored. (2.0 RC run, §13.01: it tested the empty typed fields instead and
+    always answered "Bucket name is required".)"""
+
+    def setUp(self):
+        from core.models import WorkspaceMembership
+
+        s = GlobalSettings.get_settings()
+        s.setup_completed = True
+        s.save()
+        Environment.objects.get_or_create(
+            name="default", defaults={"is_default": True, "python_version": "3.12"}
+        )
+        self.admin = User.objects.create(
+            email="admin@example.com", is_superuser=True, is_staff=True
+        )
+        WorkspaceMembership.ensure(
+            self.admin, Workspace.get_default(), role=WorkspaceMembership.ROLE_OWNER
+        )
+        self.client.force_login(self.admin)
+        self.connection = _make_connection(name="Backups", bucket="saved-bucket")
+
+    def _post(self, payload):
+        response = self.client.post(
+            reverse("cpanel:s3_test_connection"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.content[:300])
+        return response.json()
+
+    def test_row_test_uses_the_saved_connection_and_records_it(self):
+        client = mock.MagicMock()
+        with mock.patch.object(S3Service, "get_client", return_value=client) as get_client:
+            result = self._post({"connection_id": str(self.connection.pk)})
+
+        self.assertTrue(result["success"], result)
+        self.assertIn("saved-bucket", result["message"])
+        self.assertEqual(get_client.call_args.args[0].pk, self.connection.pk)
+        client.head_bucket.assert_called_once_with(Bucket="saved-bucket")
+        self.connection.refresh_from_db()
+        self.assertIsNotNone(self.connection.last_tested_at)
+
+    def test_row_test_failure_is_reported_and_not_recorded(self):
+        client = mock.MagicMock()
+        client.head_bucket.side_effect = Exception("An error occurred (403) Forbidden")
+        with mock.patch.object(S3Service, "get_client", return_value=client):
+            result = self._post({"connection_id": str(self.connection.pk)})
+
+        self.assertFalse(result["success"])
+        self.assertNotIn("Bucket name is required", result["error"])
+        self.connection.refresh_from_db()
+        self.assertIsNone(self.connection.last_tested_at)
+
+    def test_row_test_for_a_deleted_connection(self):
+        pk = str(self.connection.pk)
+        self.connection.delete()
+        result = self._post({"connection_id": pk})
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"], "Storage connection not found.")
+
+    def test_form_test_still_tests_the_typed_fields(self):
+        with mock.patch.object(
+            S3Service, "test_connection_with_credentials", return_value=(True, "ok")
+        ) as typed:
+            result = self._post({
+                "connection_id": str(self.connection.pk),
+                "bucket": "typed-bucket",
+                "endpoint_url": "https://acct.r2.cloudflarestorage.com",
+                "region": "auto",
+                "access_key": "AKIA-TYPED",
+                "secret_key": "typed-secret",
+            })
+        self.assertTrue(result["success"])
+        self.assertEqual(typed.call_args.kwargs["bucket_name"], "typed-bucket")
+        self.assertEqual(typed.call_args.kwargs["access_key"], "AKIA-TYPED")
+
+
+# --------------------------------------------------------------------------- #
 # S3Service helpers
 # --------------------------------------------------------------------------- #
 

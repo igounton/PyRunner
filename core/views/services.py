@@ -343,7 +343,16 @@ def s3_test_connection_view(request: HttpRequest) -> JsonResponse:
             except (ValidationError, ValueError):
                 saved = None
 
-        if data:
+        # A saved row's Test button sends only its id: test the row exactly as
+        # stored (bucket, endpoint, region and keys), which also records
+        # last_tested_at. Without this the empty typed fields were tested.
+        row_test = bool(connection_id) and not (set(data) - {"connection_id"})
+        if row_test:
+            if saved is None:
+                success, message = False, "Storage connection not found."
+            else:
+                success, message = S3Service.test_connection(saved)
+        elif data:
             access_key = data.get("access_key", "")
             if not access_key and saved and saved.access_key_encrypted:
                 access_key = EncryptionService.decrypt(saved.access_key_encrypted)

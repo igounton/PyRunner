@@ -93,6 +93,24 @@ class TaskService:
         """Task ids currently in the queue (decoded from the payloads)."""
         return {tid for _q, _p, tid in cls._queued_entries() if tid}
 
+    @staticmethod
+    def _running_task_ids() -> set:
+        """Task ids whose Run is executing right now.
+
+        django-q2 keeps a task's queue row until the task finishes (the worker
+        acks by deleting it), so a running task still has an OrmQ entry. Those
+        belong in "Running", not "Queued" — and must never be "cancelled" from
+        the queue, which would flag the run cancelled while its process runs on.
+        """
+        from core.models import Run
+
+        return set(
+            Run.objects.filter(status=Run.Status.RUNNING)
+            .exclude(task_id__isnull=True)
+            .exclude(task_id="")
+            .values_list("task_id", flat=True)
+        )
+
     @classmethod
     def _delete_queued(cls, task_id) -> int:
         """Remove the queue entry of ONE task (by its payload id); returns rows deleted."""
@@ -116,7 +134,7 @@ class TaskService:
 
         from core.models import Run
 
-        hidden = cls._hidden_task_ids(workspace)
+        hidden = cls._hidden_task_ids(workspace) | cls._running_task_ids()
 
         queued = []
         for q, payload, tid in cls._queued_entries(OrmQ.objects.order_by("lock")):
@@ -270,7 +288,10 @@ class TaskService:
         now = timezone.now()
         stale_threshold = now - timedelta(minutes=threshold_minutes)
 
-        hidden = cls._hidden_task_ids(workspace)
+        # A long-running task keeps its queue row (and old lock) until it
+        # finishes; it is not a stuck queue entry — the overtime check below
+        # covers runs that really hang.
+        hidden = cls._hidden_task_ids(workspace) | cls._running_task_ids()
 
         stuck = []
 
@@ -369,9 +390,10 @@ class TaskService:
         }
 
         try:
-            if hidden:
+            not_queued = hidden | cls._running_task_ids()
+            if not_queued:
                 stats["queued_count"] = sum(
-                    1 for _q, _p, tid in cls._queued_entries() if tid not in hidden
+                    1 for _q, _p, tid in cls._queued_entries() if tid not in not_queued
                 )
             else:
                 stats["queued_count"] = OrmQ.objects.count()
@@ -433,6 +455,11 @@ class TaskService:
             return False, "Task not found in queue"
 
         try:
+            # A started task still has its queue row until it finishes; removing
+            # it would not stop the process, so point the user at Stop instead.
+            if Run.objects.filter(task_id=task_id, status=Run.Status.RUNNING).exists():
+                return False, "This task is already running — use Stop instead."
+
             # Delete this task's queue entry only (matched by payload id; the
             # OrmQ ``key`` is the queue name shared by every entry).
             deleted_count = cls._delete_queued(task_id)
@@ -440,11 +467,10 @@ class TaskService:
             if deleted_count == 0:
                 return False, "Task not found in queue"
 
-            # Update linked Run if exists
-            run = Run.objects.filter(
-                task_id=task_id,
-                status__in=[Run.Status.PENDING, Run.Status.RUNNING],
-            ).first()
+            # Update linked Run if exists. A pending run cancelled here never
+            # starts even if a worker already prefetched the task: execution
+            # begins with an atomic PENDING → RUNNING claim.
+            run = Run.objects.filter(task_id=task_id, status=Run.Status.PENDING).first()
 
             if run:
                 run.status = Run.Status.CANCELLED

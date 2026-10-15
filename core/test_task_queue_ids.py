@@ -93,6 +93,26 @@ class QueuedTaskIdTests(TestCase):
         self.assertEqual([s["id"] for s in stuck], ["task-one"])
         self.assertEqual(stuck[0]["linked_run"], self.run1)
 
+    def test_running_task_row_is_not_queued_stuck_or_cancellable(self):
+        # django-q keeps the row until the task finishes; a started run's entry
+        # must not show as queued/stuck, and Cancel must not flag it cancelled
+        # while its process keeps running.
+        OrmQ.objects.all().delete()
+        _enqueue("task-one", lock=timezone.now() - timedelta(minutes=10))
+        _enqueue("task-two")
+        Run.objects.filter(pk=self.run1.pk).update(
+            status=Run.Status.RUNNING, started_at=timezone.now() - timedelta(minutes=10)
+        )
+        self.assertEqual([t["id"] for t in TaskService.get_queued_tasks(workspace=self.ws)], ["task-two"])
+        self.assertEqual(TaskService.get_task_statistics(workspace=self.ws)["queued_count"], 1)
+        self.assertNotIn("task-one", [s["id"] for s in TaskService.get_stuck_tasks(workspace=self.ws)])
+        ok, msg = TaskService.cancel_queued_task("task-one", workspace=self.ws)
+        self.assertFalse(ok)
+        self.assertIn("already running", msg)
+        self.run1.refresh_from_db()
+        self.assertEqual(self.run1.status, Run.Status.RUNNING)
+        self.assertEqual(self._queued_ids(), {"task-one", "task-two"})
+
     def test_queued_count_hides_other_workspace_entries(self):
         other = Workspace.objects.create(name="other")
         Run.objects.create(

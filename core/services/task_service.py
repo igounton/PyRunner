@@ -73,6 +73,39 @@ class TaskService:
         return linked.filter(cls._run_workspace_filter(workspace)).exists()
 
     @classmethod
+    def _queued_entries(cls, rows=None):
+        """Yield ``(ormq_row, payload, task_id)`` for each queue entry.
+
+        django-q2's ORM broker stores the *queue name* (``Conf.PREFIX``, e.g.
+        "PyRun") in ``OrmQ.key`` — every row shares it — and the task id lives
+        inside the signed payload. Matching rows on ``key`` therefore hit every
+        queued task at once (or none), so everything here resolves a row's id by
+        decoding its payload. ``task_id`` is "" when the payload can't be decoded.
+        """
+        from django_q.models import OrmQ
+
+        for q in (rows if rows is not None else OrmQ.objects.all()):
+            payload = cls._decode_ormq_payload(q.payload)
+            yield q, payload, str(payload.get("id") or "")
+
+    @classmethod
+    def _queued_task_ids(cls) -> set:
+        """Task ids currently in the queue (decoded from the payloads)."""
+        return {tid for _q, _p, tid in cls._queued_entries() if tid}
+
+    @classmethod
+    def _delete_queued(cls, task_id) -> int:
+        """Remove the queue entry of ONE task (by its payload id); returns rows deleted."""
+        from django_q.models import OrmQ
+
+        if not task_id:
+            return 0
+        pks = [q.pk for q, _p, tid in cls._queued_entries() if tid == task_id]
+        if not pks:
+            return 0
+        return OrmQ.objects.filter(pk__in=pks).delete()[0]
+
+    @classmethod
     def get_queued_tasks(cls, workspace=None) -> list[dict[str, Any]]:
         """
         Get all tasks currently in the queue (pending execution).
@@ -86,32 +119,30 @@ class TaskService:
         hidden = cls._hidden_task_ids(workspace)
 
         queued = []
-        for q in OrmQ.objects.exclude(key__in=hidden).order_by("lock"):
+        for q, payload, tid in cls._queued_entries(OrmQ.objects.order_by("lock")):
+            if tid in hidden:
+                continue
+            # An undecodable payload has no id; fall back to the row pk so the
+            # entry is still listed (its Cancel then reports "not found").
+            task_id = tid or f"ormq-{q.pk}"
             task_info = {
-                "id": q.key,
-                "name": "Unknown",
-                "func": "Unknown",
+                "id": task_id,
+                "name": payload.get("name", task_id),
+                "func": payload.get("func", "Unknown"),
                 "queued_at": q.lock,
                 "linked_run": None,
                 "type": "system",
             }
 
-            # Decode the task payload for its name/func. django-q SIGNS+pickles
-            # the payload, so a raw pickle.loads nearly always throws — use the
-            # shared SignedPackage-aware decoder (returns {} on failure, so the
-            # name falls back to the key and func stays "Unknown").
-            payload = cls._decode_ormq_payload(q.payload)
-            task_info["name"] = payload.get("name", q.key)
-            task_info["func"] = payload.get("func", "Unknown")
-
             # Try to find linked Run
-            try:
-                run = Run.objects.filter(task_id=q.key).select_related("script").first()
-                if run:
-                    task_info["linked_run"] = run
-                    task_info["type"] = "script_run"
-            except Exception as e:
-                logger.debug(f"Error finding linked run: {e}")
+            if tid:
+                try:
+                    run = Run.objects.filter(task_id=tid).select_related("script").first()
+                    if run:
+                        task_info["linked_run"] = run
+                        task_info["type"] = "script_run"
+                except Exception as e:
+                    logger.debug(f"Error finding linked run: {e}")
 
             queued.append(task_info)
 
@@ -245,9 +276,13 @@ class TaskService:
 
         # Check OrmQ for stale entries
         try:
-            for q in OrmQ.objects.filter(lock__lt=stale_threshold).exclude(key__in=hidden):
+            for q, _payload, tid in cls._queued_entries(
+                OrmQ.objects.filter(lock__lt=stale_threshold)
+            ):
+                if tid in hidden:
+                    continue
                 task_info = {
-                    "id": q.key,
+                    "id": tid or f"ormq-{q.pk}",
                     "type": "queued_stale",
                     "queued_at": q.lock,
                     "stuck_minutes": int((now - q.lock).total_seconds() / 60),
@@ -255,7 +290,11 @@ class TaskService:
                 }
 
                 # Try to find linked Run
-                run = Run.objects.filter(task_id=q.key).select_related("script").first()
+                run = (
+                    Run.objects.filter(task_id=tid).select_related("script").first()
+                    if tid
+                    else None
+                )
                 if run:
                     task_info["linked_run"] = run
 
@@ -271,9 +310,10 @@ class TaskService:
             )
             if workspace is not None:
                 overtime = overtime.filter(cls._run_workspace_filter(workspace))
+            queued_ids = cls._queued_task_ids()
             for run in overtime.select_related("script"):
                 # Check if task is still in queue
-                in_queue = OrmQ.objects.filter(key=run.task_id).exists() if run.task_id else False
+                in_queue = bool(run.task_id) and run.task_id in queued_ids
 
                 if not in_queue:
                     # Task not in queue but Run is still "running" - might be stuck
@@ -329,7 +369,12 @@ class TaskService:
         }
 
         try:
-            stats["queued_count"] = OrmQ.objects.exclude(key__in=hidden).count()
+            if hidden:
+                stats["queued_count"] = sum(
+                    1 for _q, _p, tid in cls._queued_entries() if tid not in hidden
+                )
+            else:
+                stats["queued_count"] = OrmQ.objects.count()
         except Exception:
             pass
 
@@ -380,8 +425,6 @@ class TaskService:
         Returns:
             Tuple of (success, message)
         """
-        from django_q.models import OrmQ
-
         from core.models import Run
 
         # Cross-workspace guard FIRST (before touching the queue), so a denied
@@ -390,8 +433,9 @@ class TaskService:
             return False, "Task not found in queue"
 
         try:
-            # Delete from OrmQ
-            deleted_count = OrmQ.objects.filter(key=task_id).delete()[0]
+            # Delete this task's queue entry only (matched by payload id; the
+            # OrmQ ``key`` is the queue name shared by every entry).
+            deleted_count = cls._delete_queued(task_id)
 
             if deleted_count == 0:
                 return False, "Task not found in queue"
@@ -431,8 +475,6 @@ class TaskService:
         queryset). Returns ``(changed, message)``; ``changed`` is False when
         ``run`` is None or already in a terminal (non-cancellable) state.
         """
-        from django_q.models import OrmQ
-
         from core.executor import _kill_process_tree
         from core.models import Run
 
@@ -441,7 +483,7 @@ class TaskService:
 
         # Drop any queue entry for this task (covers pending / not-yet-claimed).
         if run.task_id:
-            OrmQ.objects.filter(key=run.task_id).delete()
+            cls._delete_queued(run.task_id)
 
         if run.status == Run.Status.RUNNING:
             # Belt-and-suspenders: only kill while still RUNNING (avoids killing
@@ -483,8 +525,6 @@ class TaskService:
         Returns:
             Tuple of (success, message)
         """
-        from django_q.models import OrmQ
-
         from core.models import Run
 
         # Cross-workspace guard FIRST — never kill another tenant's process tree
@@ -506,7 +546,7 @@ class TaskService:
 
             # No controllable run (system/infra task, or already finished): still
             # clear any lingering queue entry, then report nothing to stop.
-            OrmQ.objects.filter(key=task_id).delete()
+            cls._delete_queued(task_id)
             return False, "No running or pending task found with this ID"
 
         except Exception as e:
@@ -560,7 +600,7 @@ class TaskService:
         workspace, returns None (tenancy Stage 3 IDOR guard → 404, no
         existence disclosure). NULL-workspace runs stay visible (transitional).
         """
-        from django_q.models import OrmQ, Task
+        from django_q.models import Task
 
         from core.models import Run
 
@@ -615,10 +655,12 @@ class TaskService:
                 "type": task_type,
             }
 
-        # 2) Still queued (not yet executed).
-        q = OrmQ.objects.filter(key=task_id).first()
+        # 2) Still queued (not yet executed) — matched by payload id.
+        q, payload = next(
+            ((row, p) for row, p, tid in cls._queued_entries() if tid == task_id),
+            (None, None),
+        )
         if q:
-            payload = cls._decode_ormq_payload(q.payload)
             func = payload.get("func", "Unknown")
             if func and not isinstance(func, str):
                 func = getattr(func, "__name__", str(func))

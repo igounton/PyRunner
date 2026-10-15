@@ -118,10 +118,15 @@ class QueuedTasksDecodeTests(TestCase):
         from django_q.models import OrmQ
         from django_q.signing import SignedPackage
 
+        from django_q.conf import Conf
+
+        # As django-q2's ORM broker writes it: key = the queue name, the task id
+        # inside the signed payload (see core/test_task_queue_ids.py).
         payload = SignedPackage.dumps(
-            {"func": "core.tasks.demo_task", "name": "demo-123", "args": (), "kwargs": {}}
+            {"id": "demo-123", "func": "core.tasks.demo_task", "name": "demo-123",
+             "args": (), "kwargs": {}}
         )
-        OrmQ.objects.create(key="demo-123", payload=payload, lock=timezone.now())
+        OrmQ.objects.create(key=Conf.PREFIX, payload=payload, lock=timezone.now())
 
         tasks = {t["id"]: t for t in TaskService.get_queued_tasks()}
         self.assertIn("demo-123", tasks)

@@ -12,10 +12,15 @@ once per window (add + incr) and increments atomically.
 import uuid
 from unittest import mock
 
-from django.test import TestCase
+from datetime import timedelta
 
-from core.models import Environment, GlobalSettings, User
-from core.ratelimit import rate_limit_exceeded
+from django.core.cache.backends.db import DatabaseCache
+from django.db import DatabaseError
+from django.test import TestCase, override_settings
+from django.utils import timezone
+
+from core.models import Environment, GlobalSettings, RateLimitCounter, User
+from core.ratelimit import _use_db_counter, rate_limit_exceeded, rate_limit_over
 
 
 def _key():
@@ -56,11 +61,69 @@ class RateLimitHelperTests(TestCase):
     def test_cull_race_still_counts_the_hit(self):
         # incr() raising ValueError (key culled between add and incr) must
         # neither crash nor drop the brake: the hit lands on a fresh counter.
-        with mock.patch("core.ratelimit.cache") as c:
+        with mock.patch("core.ratelimit._use_db_counter", return_value=False),                 mock.patch("core.ratelimit.cache") as c:
             c.add.return_value = False
             c.incr.side_effect = ValueError("no such key")
             self.assertFalse(rate_limit_exceeded(_key(), 3, 60))
             c.set.assert_called_once()  # counted as 1 on a fresh counter
+
+
+class DatabaseCounterTests(TestCase):
+    """2.0 release test (F36): with the default DatabaseCache, parallel hits were
+    lost — its incr() is get()+set(), so concurrent requests read one value and
+    each wrote value+1 (70 parallel API calls on a 60/min token: counted 30,
+    all passed). The counter now lives in RateLimitCounter rows."""
+
+    def test_default_cache_uses_the_database_counter(self):
+        self.assertTrue(_use_db_counter())
+        key = _key()
+        results = [rate_limit_exceeded(key, 3, 60) for _ in range(5)]
+        self.assertEqual(results, [False, False, False, True, True])
+        row = RateLimitCounter.objects.get(bucket__startswith=f"{key}:")
+        self.assertEqual(row.count, 5)
+
+    def test_hits_count_even_when_every_cache_read_is_stale(self):
+        """The burst race, made deterministic: in a parallel burst every
+        request reads the same old counter. Old code (cache incr = get()+1)
+        counted each hit as 1 and never tripped; the row counter must."""
+        key = _key()
+        with mock.patch.object(DatabaseCache, "get", return_value=0):
+            results = [rate_limit_exceeded(key, 3, 60) for _ in range(5)]
+        self.assertEqual(results, [False, False, False, True, True])
+
+    def test_peek_reads_the_database_counter(self):
+        key = _key()
+        for _ in range(3):
+            rate_limit_exceeded(key, 2, 60)
+        self.assertTrue(rate_limit_over(key, 2, 60))
+        self.assertFalse(rate_limit_over(_key(), 2, 60))
+
+    def test_new_window_purges_finished_windows(self):
+        RateLimitCounter.objects.create(
+            bucket="old:1", count=9, expires_at=timezone.now() - timedelta(seconds=1)
+        )
+        rate_limit_exceeded(_key(), 3, 60)
+        self.assertFalse(RateLimitCounter.objects.filter(bucket="old:1").exists())
+
+    def test_long_keys_are_hashed_to_fit(self):
+        key = "x" * 400
+        results = [rate_limit_exceeded(key, 1, 60) for _ in range(2)]
+        self.assertEqual(results, [False, True])
+        self.assertTrue(rate_limit_over(key, 0, 60))
+
+    def test_counter_failure_fails_open(self):
+        with mock.patch("core.ratelimit._db_count_hit", side_effect=DatabaseError("locked")):
+            self.assertFalse(rate_limit_exceeded(_key(), 0, 60))
+
+    @override_settings(
+        CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+    )
+    def test_atomic_cache_backends_keep_using_the_cache(self):
+        self.assertFalse(_use_db_counter())
+        key = _key()
+        results = [rate_limit_exceeded(key, 1, 60) for _ in range(2)]
+        self.assertEqual(results, [False, True])
+        self.assertFalse(RateLimitCounter.objects.filter(bucket__startswith=f"{key}:").exists())
 
 
 class WebhookRateLimitIntegrationTests(TestCase):

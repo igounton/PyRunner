@@ -15,35 +15,107 @@ default) is itself a get()+set() that re-arms the TTL, so any TTL-based fixed
 window silently turns sliding on that backend. With bucketed keys, a new
 window is a new key and nothing a backend does to the old key's TTL can
 stretch the budget. The TTL on the bucket key is garbage collection only.
+
+That same get()+set() also LOSES hits under concurrency: requests in parallel
+read one value and each write value+1. Measured on the 2.0 release test, 70
+parallel API calls against a 60/min token limit were counted as 30 and all 70
+passed. So when the default cache is DatabaseCache (PyRun's default), the
+counter lives in ``RateLimitCounter`` rows incremented by one UPDATE inside a
+transaction — serialised by the database on SQLite and PostgreSQL. Backends
+whose ``incr()`` is atomic (Redis, LocMem) keep using the cache.
 """
 
+import hashlib
 import ipaddress
+import logging
 import time
+from datetime import timedelta
 
-from django.core.cache import cache
+from django.core.cache import cache, caches
+from django.core.cache.backends.db import DatabaseCache
+from django.db import DatabaseError, IntegrityError, transaction
+from django.db.models import F
+from django.utils import timezone
+
+logger = logging.getLogger(__name__)
+
+
+def _use_db_counter() -> bool:
+    """True when the default cache can't increment atomically (DatabaseCache)."""
+    return isinstance(caches["default"], DatabaseCache)
+
+
+def _db_bucket(bucket_key: str) -> str:
+    """The row key for ``bucket_key``; over-long keys are hashed to fit the column."""
+    if len(bucket_key) <= 255:
+        return bucket_key
+    return "sha256:" + hashlib.sha256(bucket_key.encode("utf-8")).hexdigest()
+
+
+def _db_count_hit(bucket_key: str, ttl_seconds: int) -> int:
+    """Add one hit to ``bucket_key``'s row and return the new total.
+
+    The UPDATE and the read run in one transaction: the row stays locked
+    (PostgreSQL) or the database write-locked (SQLite) until commit, so the
+    value read back is exactly this hit's position in the window.
+    """
+    from core.models import RateLimitCounter
+
+    bucket_key = _db_bucket(bucket_key)
+    rows = RateLimitCounter.objects.filter(bucket=bucket_key)
+    with transaction.atomic():
+        if rows.update(count=F("count") + 1):
+            return rows.values_list("count", flat=True).first() or 1
+    now = timezone.now()
+    try:
+        with transaction.atomic():
+            RateLimitCounter.objects.create(
+                bucket=bucket_key, count=1, expires_at=now + timedelta(seconds=ttl_seconds)
+            )
+    except IntegrityError:
+        # Another request opened this window first: count on its row.
+        with transaction.atomic():
+            rows.update(count=F("count") + 1)
+            return rows.values_list("count", flat=True).first() or 1
+    # A new window opened: drop finished windows (cheap, indexed).
+    RateLimitCounter.objects.filter(expires_at__lt=now).delete()
+    return 1
+
+
+def _cache_count_hit(bucket_key: str, ttl_seconds: int) -> int:
+    cache.add(bucket_key, 0, ttl_seconds)  # TTL = cleanup only
+    try:
+        return cache.incr(bucket_key)
+    except ValueError:
+        # The key vanished between add() and incr() (cull race). Count this
+        # hit on a fresh counter rather than dropping the brake entirely.
+        cache.set(bucket_key, 1, ttl_seconds)
+        return 1
 
 
 def rate_limit_exceeded(key: str, limit: int, window_seconds: int) -> bool:
     """Count one hit against ``key``; True when the fixed window is over budget.
 
     Allows exactly ``limit`` hits per window (windows are aligned to epoch
-    multiples of ``window_seconds``); further hits return True until the next
-    window starts. Rejected hits cannot extend the window.
+    multiples of ``window_seconds``), also when the hits arrive in parallel;
+    further hits return True until the next window starts. Rejected hits cannot
+    extend the window.
 
     Fail-open by design: these limits are abuse brakes in front of endpoints
-    that carry their own auth (tokens, signatures) — a misbehaving cache must
-    not take webhooks down with it.
+    that carry their own auth (tokens, signatures) — a misbehaving counter
+    store must not take webhooks down with it.
     """
     bucket = int(time.time() // window_seconds)
     bucket_key = f"{key}:{bucket}"
-    cache.add(bucket_key, 0, window_seconds + 60)  # TTL = cleanup only
+    ttl = window_seconds + 60
     try:
-        count = cache.incr(bucket_key)
-    except ValueError:
-        # The key vanished between add() and incr() (cull race). Count this
-        # hit on a fresh counter rather than dropping the brake entirely.
-        cache.set(bucket_key, 1, window_seconds + 60)
-        count = 1
+        if _use_db_counter():
+            count = _db_count_hit(bucket_key, ttl)
+        else:
+            count = _cache_count_hit(bucket_key, ttl)
+    except DatabaseError:
+        logger.warning("Rate-limit counter unavailable for %r; allowing the request", key, exc_info=True)
+        return False
     return count > limit
 
 
@@ -56,7 +128,22 @@ def rate_limit_over(key: str, limit: int, window_seconds: int) -> bool:
     stops costing a query per guess. Same fail-open stance as the counter.
     """
     bucket = int(time.time() // window_seconds)
-    count = cache.get(f"{key}:{bucket}") or 0
+    bucket_key = f"{key}:{bucket}"
+    try:
+        if _use_db_counter():
+            from core.models import RateLimitCounter
+
+            count = (
+                RateLimitCounter.objects.filter(bucket=_db_bucket(bucket_key))
+                .values_list("count", flat=True)
+                .first()
+                or 0
+            )
+        else:
+            count = cache.get(bucket_key) or 0
+    except DatabaseError:
+        logger.warning("Rate-limit counter unavailable for %r; allowing the request", key, exc_info=True)
+        return False
     return count > limit
 
 

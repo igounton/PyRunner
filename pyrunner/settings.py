@@ -179,7 +179,9 @@ connection_created.connect(_enable_sqlite_wal)
 #
 # DatabaseCache is the right default here — it shares state through a single DB
 # table with zero extra infrastructure, keeping the single-container story
-# intact, and works identically on SQLite and Postgres. Operators scaling out to
+# intact, and works identically on SQLite and Postgres. Its incr() is not atomic,
+# so with this backend the rate-limit COUNTERS use their own table instead
+# (core.models.RateLimitCounter, see core/ratelimit.py). Operators scaling out to
 # many workers/hosts can set REDIS_URL to switch to Redis (first-party backend,
 # needs the `redis` package which ships in requirements.txt).
 REDIS_URL = os.environ.get("REDIS_URL", "").strip()

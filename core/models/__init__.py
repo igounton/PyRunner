@@ -30,6 +30,7 @@ from .embedding_provider import EmbeddingProvider, EMBEDDING_PRESETS
 from .vector_connection import VectorConnection
 from .vector_collection import VectorCollection
 from .brain import Brain, BrainBlob, BrainRevision, BrainEntity, BrainGrant, BrainFeed, BrainReaderJob, BrainSync
+from .ratelimit import RateLimitCounter
 
 __all__ = [
     "User",
@@ -79,4 +80,5 @@ __all__ = [
     "BrainGrant",
     "BrainFeed",
     "BrainReaderJob",
+    "RateLimitCounter",
 ]

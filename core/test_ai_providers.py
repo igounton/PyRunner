@@ -495,6 +495,31 @@ class ProviderCrudViewTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("glm-5.2", resp.content.decode())
 
+    def test_usage_chart_data_is_a_json_object(self):
+        """The page does JSON.parse(#usage-chart-data) and reads .labels/.input:
+        the embedded value must be an object, not a JSON-encoded string (2.0 RC
+        run, 13.04: it was double-encoded, so the chart never drew a bar)."""
+        import re
+        from html import unescape
+
+        ClaudeUsage.objects.create(
+            source=ClaudeUsage.Source.SCRIPT, provider="openrouter", model="m",
+            input_tokens=10, output_tokens=5,
+        )
+        resp = self.client.get(reverse("cpanel:claude_usage") + "?period=7")
+        self.assertEqual(resp.status_code, 200)
+        match = re.search(
+            r'<script id="usage-chart-data" type="application/json">(.*?)</script>',
+            resp.content.decode(),
+            re.S,
+        )
+        self.assertIsNotNone(match)
+        data = json.loads(unescape(match.group(1)))
+        self.assertIsInstance(data, dict)
+        self.assertEqual(data["input"], [10])
+        self.assertEqual(data["output"], [5])
+        self.assertEqual(len(data["labels"]), 1)
+
 
 @override_settings(ENCRYPTION_KEY=_TEST_KEY)
 @unittest.skipUnless(

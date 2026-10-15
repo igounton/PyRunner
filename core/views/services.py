@@ -798,7 +798,7 @@ def claude_usage_view(request: HttpRequest) -> HttpResponse:
             "period_label": period_label,
             "period_options": [("7", "7d"), ("30", "30d"), ("90", "90d"), ("all", "All")],
             "summary": summary,
-            "chart_json": json.dumps(chart),
+            "chart_json": chart,  # json_script encodes it; dumps() here double-encoded it
             "has_data": summary["requests"] > 0,
             "by_model": by_model,
             "by_script": by_script,

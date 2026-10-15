@@ -20,6 +20,7 @@ from unittest import mock
 
 from cryptography.fernet import Fernet
 from django.conf import settings
+from django.contrib.messages import get_messages
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -290,6 +291,18 @@ class DeprovisionTests(TestCase):
                 DatabaseService.deprovision(self.db)
         self.db.refresh_from_db()
         self.assertEqual(self.db.status, Database.STATUS_ERROR)
+
+    def test_unreachable_server_leaves_database_ready(self):
+        # Nothing reached the server, so the database is untouched: it must stay
+        # ready for its scripts (and its backups) rather than flip to 'error'.
+        with mock.patch.object(
+            DatabaseService, "_admin_connect", side_effect=OSError("connection timeout expired")
+        ):
+            with self.assertRaises(DatabaseProvisionError):
+                DatabaseService.deprovision(self.db)
+        self.db.refresh_from_db()
+        self.assertEqual(self.db.status, Database.STATUS_READY)
+        self.assertEqual(self.db.last_error, "")
 
 
 # ---------------------------------------------------------------------------
@@ -626,6 +639,22 @@ class ViewFlowTests(TestCase):
                 self._url("database_delete", db.pk), {"confirm_name": db.name}
             )
         self.assertTrue(Database.objects.filter(pk=db.pk).exists())
+
+    def test_delete_refused_while_server_unreachable_keeps_database_usable(self):
+        db = _make_database(self.ws)
+        with mock.patch.object(
+            DatabaseService, "_admin_connect", side_effect=OSError("connection timeout expired")
+        ):
+            resp = self.client.post(
+                self._url("database_delete", db.pk), {"confirm_name": db.name}
+            )
+        db.refresh_from_db()
+        self.assertEqual(db.status, Database.STATUS_READY)
+        self.assertEqual(db.last_error, "")
+        self.assertIn(
+            "Server cleanup failed, database kept",
+            " ".join(str(m) for m in get_messages(resp.wsgi_request)),
+        )
 
     def test_delete_forced_despite_cleanup_failure(self):
         db = _make_database(self.ws)

@@ -272,7 +272,9 @@ class DatabaseService:
         """Drop the schema (CASCADE — all data), its role, and live sessions.
 
         Raises ``DatabaseProvisionError`` on failure so the caller can decide
-        whether to keep the row (default) or orphan the server objects.
+        whether to keep the row (default) or orphan the server objects. A
+        failure after connecting marks the row ``error`` (the schema may be
+        half-dropped); a failure to connect at all leaves it untouched.
         """
         from psycopg import sql
 
@@ -282,7 +284,17 @@ class DatabaseService:
         schema = sql.Identifier(database.schema_name)
 
         try:
-            with cls._admin_connect() as conn:
+            admin = cls._admin_connect()
+        except Exception as e:
+            # Nothing reached the server, so nothing changed there: the database
+            # is exactly as usable as before. Raise without marking the row —
+            # a refused delete during an outage must not take a healthy database
+            # away from its scripts (status 'error' answers them "not ready")
+            # or drop its data from backups.
+            raise DatabaseProvisionError(str(e)) from e
+
+        try:
+            with admin as conn:
                 conn.execute(
                     "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
                     "WHERE usename = %s",

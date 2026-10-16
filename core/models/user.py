@@ -213,10 +213,14 @@ class UserInvite(models.Model):
     @classmethod
     def create_invite(cls, email: str, created_by: User) -> "UserInvite":
         """
-        Create a new invitation. Deletes any existing unused invite for the same email.
+        Create a new invitation, replacing any earlier invite for the same email.
+
+        ``email`` is unique, so an earlier row must go even when it was used:
+        the invite view refuses addresses that still have an account, so a used
+        invite left here belongs to an account that was deleted since, and
+        keeping it would make the new invite fail.
         """
-        # Delete existing unused invite for this email
-        cls.objects.filter(email__iexact=email, used_at__isnull=True).delete()
+        cls.objects.filter(email__iexact=email).delete()
 
         return cls.objects.create(
             email=email.lower().strip(),

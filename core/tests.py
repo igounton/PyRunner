@@ -87,6 +87,25 @@ class InviteOnlyRegistrationTests(TestCase):
         # Logged in as the new user.
         self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
 
+    def test_reinvite_after_the_account_was_deleted(self):
+        """F74: the invite row stayed (used) after its account was deleted and
+        UserInvite.email is unique, so inviting the address again was a 500."""
+        invite = self._create_invite("guest@example.com")
+        self.client.post(
+            reverse("auth:accept_invite", kwargs={"token": invite.token}),
+            {"password": "s3cretpassword", "password_confirm": "s3cretpassword"},
+        )
+        User.objects.get(email="guest@example.com").delete()
+
+        root = User.objects.create(email="root@example.com", is_superuser=True, is_staff=True)
+        self.client.force_login(root)
+        resp = self.client.post(reverse("cpanel:invite_user"), {"email": "guest@example.com"})
+
+        self.assertEqual(resp.status_code, 302)
+        fresh = UserInvite.objects.get(email="guest@example.com")
+        self.assertIsNone(fresh.used_at)
+        self.assertNotEqual(fresh.token, invite.token)
+
     def test_accept_invalid_invite_creates_no_account(self):
         resp = self.client.post(
             reverse("auth:accept_invite", kwargs={"token": "bogus-token"}),

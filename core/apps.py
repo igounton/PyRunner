@@ -18,6 +18,9 @@ class CoreConfig(AppConfig):
         # Ensure every newly-created user lands in a workspace (tenancy Stage 0).
         self._register_membership_signal()
 
+        # A deleted script's working folder goes with it.
+        self._register_script_workdir_cleanup()
+
         # Use post_migrate signal to ensure heartbeat schedule exists after migrations
         # This avoids database access during app initialization
         from django.db.models.signals import post_migrate
@@ -33,6 +36,38 @@ class CoreConfig(AppConfig):
         self._ensure_heartbeat_schedule()
         self._ensure_update_check_schedule()
         self._ensure_resync_schedule()
+
+    def _register_script_workdir_cleanup(self):
+        """Remove ``workdir/<script id>/`` once a script deletion commits.
+
+        Runs on commit and only if the id is really gone then: a backup restore
+        deletes every script and re-creates the ones in the backup under the same
+        ids inside one transaction, and those keep their folders. A rolled-back
+        delete never touches the disk.
+        """
+        from django.db import transaction
+        from django.db.models.signals import post_delete
+
+        def schedule_cleanup(sender, instance, **kwargs):
+            script_id = instance.pk
+
+            def cleanup():
+                from core.executor import remove_script_workdir
+                from core.models import Script
+
+                if not Script.objects.filter(pk=script_id).exists():
+                    remove_script_workdir(script_id)
+
+            transaction.on_commit(cleanup, using=kwargs.get("using"))
+
+        from core.models import Script
+
+        post_delete.connect(
+            schedule_cleanup,
+            sender=Script,
+            dispatch_uid="remove_script_workdir",
+            weak=False,
+        )
 
     def _register_membership_signal(self):
         """Ensure a new User always gets a default-workspace membership.

@@ -132,6 +132,37 @@ def resolve_secrets_for_run(run) -> dict:
     return secrets_env
 
 
+def script_workdir(script_id) -> Path:
+    """A script's own working folder, ``SCRIPTS_WORKDIR/<script id>/``.
+
+    Every run of the script starts there (its cwd), so files it writes persist
+    for its next run but never mix with other scripts' files. The folder is
+    removed when the script is deleted (``remove_script_workdir``); it is not
+    part of backups.
+    """
+    return Path(settings.SCRIPTS_WORKDIR) / str(script_id)
+
+
+def remove_script_workdir(script_id) -> bool:
+    """Delete a deleted script's working folder. Returns True if one was removed.
+
+    Refuses anything that isn't a real directory directly under SCRIPTS_WORKDIR
+    named exactly after the id (a symlink planted in its place is left alone).
+    """
+    root = Path(settings.SCRIPTS_WORKDIR)
+    folder = script_workdir(script_id)
+    if folder.parent != root or folder.name in ("", ".", ".."):
+        return False
+    if folder.is_symlink() or not folder.is_dir():
+        return False
+    try:
+        shutil.rmtree(folder)
+    except OSError as e:
+        logger.warning("Could not remove the working folder of deleted script %s: %s", script_id, e)
+        return False
+    return True
+
+
 def _build_script_environment(
     webhook_data: dict | None = None,
     run: "Run | None" = None,
@@ -615,14 +646,19 @@ def execute_run(run: Run, webhook_data: dict | None = None) -> None:
             logger.error(f"Run {run.id} failed: {e}")
             return
 
-        # Ensure working directory exists
-        workdir = Path(settings.SCRIPTS_WORKDIR)
+        # The script's own working folder (kept between its runs, removed when
+        # the script is deleted). The temp script file and the libraries staging
+        # dir live inside it too: the sandbox backend binds only the run's cwd
+        # writable, so everything the run needs must be under it. Dot-prefixed so
+        # a script listing its folder doesn't trip over them.
+        workdir = script_workdir(run.script_id)
         workdir.mkdir(parents=True, exist_ok=True)
 
         # Phase 2: Create temporary script file
         # Use delete=False for Windows compatibility (must close before subprocess reads)
         with tempfile.NamedTemporaryFile(
             mode="w",
+            prefix=".pyrun-",
             suffix=".py",
             delete=False,
             encoding="utf-8",
@@ -634,12 +670,12 @@ def execute_run(run: Run, webhook_data: dict | None = None) -> None:
             script_file_path = script_file.name
 
         # Phase 2b: Materialize the libraries pinned on this run at queue time.
-        # The staging dir lives UNDER the workdir, which the sandbox backend
+        # The staging dir lives UNDER the run's workdir, which the sandbox backend
         # already binds writable and whose PYTHONPATH entries it binds into the
         # jail — so isolated runs import libraries with no extra sandbox wiring.
         if run.library_versions:
             try:
-                library_root = tempfile.mkdtemp(prefix="libs-", dir=str(workdir))
+                library_root = tempfile.mkdtemp(prefix=".pyrun-libs-", dir=str(workdir))
                 materialize_libraries(run, library_root)
             except LibraryMaterializationError as e:
                 # Fail-closed: a pinned revision that no longer exists fails the

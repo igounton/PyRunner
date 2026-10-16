@@ -16,6 +16,14 @@ begins tracking at the current release; earlier history is in the git log.
   *Selected*, attach the secrets it reads (*Auto-detect from code* finds them) or
   switch it to *All*. Plugin scripts are unchanged: they keep their plugin's own
   secrets, unowned secrets and their grants.
+- **Each script has its own working folder.** A run's current directory is now
+  `/app/data/workdir/<script id>/` (the id is in the script's URL) instead of the
+  folder every script shared. Files a run writes there are there for the script's
+  next run, other scripts no longer see them, and the folder is deleted with the
+  script (a backup restore keeps the folders of the scripts it restores; the files
+  are not part of backups). Files scripts wrote before 2.0 stay in
+  `/app/data/workdir/`; move what a script still reads into its own folder, or
+  read it by absolute path.
 - **Container process limit.** `docker-compose.coolify.yml` now sets
   `pids_limit: 2048` (processes and threads for the whole container). Scripts
   run as root in the image and the kernel exempts root from the per-run process

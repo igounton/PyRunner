@@ -169,6 +169,13 @@ begins tracking at the current release; earlier history is in the git log.
   Settings → General instead of a hardcoded brand.
 
 ### Fixed
+- A run that was executing when the container or its worker restarted is now
+  marked failed as soon as the worker starts again, if its process is gone. It
+  used to show "running" until its timeout plus five minutes had passed (65
+  minutes for the default timeout). Workers you start yourself
+  (`manage.py pyrunner_qcluster` without `--reconcile-orphans`, e.g. split worker
+  containers) keep the deadline rule; set `PYRUNNER_RECONCILE_ON_START=false` if
+  several all-in-one containers share one database.
 - Backup restore now rolls back database changes when a non-database error
   interrupts the replacement, preserving existing rows after failed restores.
 - SQLite transactions acquire their write lock at the start, avoiding immediate

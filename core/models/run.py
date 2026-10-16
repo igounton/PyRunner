@@ -273,6 +273,79 @@ class Run(models.Model):
         return reconciled
 
     @classmethod
+    def reconcile_orphans_at_worker_start(cls, worker_started_at: float) -> int:
+        """Fail RUNNING runs whose script process is gone, as a worker starts.
+
+        Called by ``pyrunner_qcluster --reconcile-orphans``, which the standard
+        all-in-one container (entrypoint.sh) passes: there the worker and every
+        script it started share one process namespace, so after a container
+        restart (or a worker restart) a run still marked RUNNING whose process
+        no longer exists here can never finish. Without this it showed "running"
+        until ``reconcile_stale``'s deadline (started + timeout + 5 min).
+
+        A worker started on its own (split worker containers, several workers on
+        one database) doesn't pass the flag — a run's pid there may belong to
+        another container — and keeps the deadline rule.
+
+        Conservative by construction: only runs that started before this worker
+        and have a recorded pid; the pid counts as gone if no such process
+        exists, it is a zombie, or the process holding that pid now was created
+        after this worker started (the pid was reused). A live process — or one
+        that can't be inspected — is left alone, and runs with no pid yet are
+        left to the deadline rule. Status-only, like ``reconcile_stale``.
+
+        Returns the number of runs reconciled.
+        """
+        import psutil
+        from django.utils import timezone
+
+        started_cutoff = datetime.datetime.fromtimestamp(
+            worker_started_at, tz=datetime.timezone.utc
+        )
+        now = timezone.now()
+        reconciled = 0
+        notify_pks: list = []
+        candidates = cls.objects.filter(
+            status=cls.Status.RUNNING,
+            pid__isnull=False,
+            started_at__isnull=False,
+            started_at__lt=started_cutoff,
+        )
+        for run in candidates:
+            try:
+                proc = psutil.Process(run.pid)
+                gone = (
+                    proc.status() == psutil.STATUS_ZOMBIE
+                    or proc.create_time() >= worker_started_at
+                )
+            except psutil.NoSuchProcess:
+                gone = True
+            except psutil.Error:
+                gone = False  # can't tell (e.g. access denied): keep the deadline rule
+            if not gone:
+                continue
+            marker = (
+                "\n[RECONCILED: the worker restarted while this run was executing "
+                "and the run's process is gone, so its output was never captured. "
+                "Marked failed when the worker started again.]"
+            )
+            flipped = cls.objects.filter(
+                pk=run.pk, status=cls.Status.RUNNING, pid=run.pid
+            ).update(
+                status=cls.Status.FAILED,
+                exit_code=-1,
+                stderr=(run.stderr or "") + marker,
+                ended_at=now,
+                pid=None,
+            )
+            reconciled += flipped
+            if flipped:
+                notify_pks.append(run.pk)
+
+        cls._notify_reconciled(notify_pks)
+        return reconciled
+
+    @classmethod
     def _notify_reconciled(cls, pks) -> None:
         """Send the normal failure notifications for reconciled runs.
 

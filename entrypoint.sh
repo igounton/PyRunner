@@ -87,9 +87,19 @@ QCLUSTER_PID_FILE="/tmp/qcluster.pid"
 # Function to start qcluster worker. pyrunner_qcluster (not plain qcluster):
 # it applies the DB-backed Workers settings — unreachable at settings-import
 # time — before the cluster starts, so "restart workers to apply" is real.
+#
+# --reconcile-orphans: this container runs the worker and every script it
+# starts, so a run still "running" whose process is gone here (after a container
+# or worker restart) is failed at once instead of at its deadline. Set
+# PYRUNNER_RECONCILE_ON_START=false when several containers run workers against
+# one database.
 start_qcluster() {
     echo "    - Starting django-q2 worker..."
-    python manage.py pyrunner_qcluster &
+    if [ "${PYRUNNER_RECONCILE_ON_START:-true}" = "false" ]; then
+        python manage.py pyrunner_qcluster &
+    else
+        python manage.py pyrunner_qcluster --reconcile-orphans &
+    fi
     QCLUSTER_PID=$!
     echo $QCLUSTER_PID > "$QCLUSTER_PID_FILE"
     echo "    - Worker started with PID $QCLUSTER_PID"

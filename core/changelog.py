@@ -106,6 +106,16 @@ CHANGELOG = [
                 ),
             },
             {
+                "tag": "Fixed",
+                "title": "Runs interrupted by a restart fail right away",
+                "body": (
+                    "When the container or its worker restarts mid-run, the worker "
+                    "now marks runs whose process is gone as failed as soon as it "
+                    "starts again, instead of showing them as running until their "
+                    "timeout plus five minutes had passed."
+                ),
+            },
+            {
                 "tag": "Improved",
                 "title": "PyRunner is now PyRun",
                 "body": (

@@ -5,8 +5,9 @@ Covers the data-model + executor half of WS3:
   * Secret uniqueness re-scoped to (workspace, owner_plugin) — user secrets keep
     their exact per-workspace rule; owned secrets get their own per-owner rule.
   * The executor's injection-mode resolution: 'all' (default) = user secrets only
-    (byte-identical to pre-v2); 'selected' = global + same-owner + granted, by
-    clean name, with global < same-owner < grant precedence.
+    (byte-identical to pre-v2); 'selected' = global + same-owner + granted for a
+    plugin script, by clean name, with global < same-owner < grant precedence,
+    and granted-only for a user script (F24, 2.0).
   * DataStore name stays per-workspace unique regardless of owner.
   * PYRUNNER_OWNER_PLUGIN exposed to an owned script's run env.
 """
@@ -130,6 +131,28 @@ class InjectionModeTests(TestCase):
         grant.save(update_fields=["active"])
         out = resolve_secrets_for_run(self.owned_run)
         self.assertNotIn("OTHER_KEY", out)  # inactive grant → not injected
+
+    def test_selected_user_script_gets_only_granted_secrets(self):
+        # F24: a USER script in Selected mode gets exactly its attached secrets —
+        # not every unowned secret (pre-2.0 it got the same set as 'all').
+        self.user_script.injection_mode = Script.InjectionMode.SELECTED
+        self.user_script.save(update_fields=["injection_mode"])
+        out = resolve_secrets_for_run(self.user_run)
+        self.assertEqual(out, {})  # nothing attached → nothing injected
+
+        alpha = _secret("ALPHA", "a-val", workspace=self.ws)
+        _secret("BETA", "b-val", workspace=self.ws)
+        SecretGrant.objects.create(script=self.user_script, secret=alpha)
+        out = resolve_secrets_for_run(self.user_run)
+        self.assertEqual(out, {"ALPHA": "a-val"})
+        self.assertNotIn("BETA", out)
+        self.assertNotIn("GLOBAL_KEY", out)
+
+        # The env the script actually receives matches (no un-granted user secret).
+        env = _build_script_environment(run=self.user_run, secrets=out)
+        self.assertEqual(env.get("ALPHA"), "a-val")
+        self.assertNotIn("BETA", env)
+        self.assertNotIn("GLOBAL_KEY", env)
 
     def test_masking_set_matches_injection_set(self):
         # The env builder injects exactly the resolved clean names (shared resolver

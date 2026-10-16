@@ -131,6 +131,9 @@ class RenderTests(_LoggedIn):
         self.assertIn('name="injection_mode"', body)
         self.assertIn("Auto-detect from code", body)
         self.assertIn(reverse("cpanel:secret_picker"), body)
+        # F24: a user script's Selected copy no longer promises global secrets.
+        self.assertIn("Other workspace secrets are not.", body)
+        self.assertNotIn("explicitly-global", body)
 
     def test_edit_page_prefills_granted_chips(self):
         script = Script.objects.create(

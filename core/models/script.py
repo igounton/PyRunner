@@ -57,8 +57,9 @@ class Script(models.Model):
 
     # Secret injection mode (Plugin Platform v2, WS3). 'all' is the default and
     # the literal pre-v2 behavior: inject every user (owner-NULL) secret in the
-    # workspace. 'selected' is opt-in (set by the SDK for plugin-owned scripts):
-    # inject only granted + same-owner + explicitly-global secrets. NOTE: this is
+    # workspace. 'selected' is opt-in: a user script gets only its granted
+    # secrets; a plugin-owned script (the SDK default) gets granted + same-owner +
+    # explicitly-global secrets (core.executor.resolve_secrets_for_run). NOTE: this is
     # SECRET scoping, NOT the sandbox ``isolation_mode`` field below.
     class InjectionMode(models.TextChoices):
         ALL = "all", "All secrets (default)"

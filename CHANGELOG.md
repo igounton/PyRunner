@@ -8,6 +8,15 @@ begins tracking at the current release; earlier history is in the git log.
 
 ## [Unreleased]
 
+### Upgrade notes (from 1.x)
+- **Selected secret injection is now exact.** A user script in *Selected* mode
+  receives only the secrets attached to it on the script form. Before 2.0 it also
+  received every unowned workspace secret, which is the same set *All* gives, so
+  the setting narrowed nothing. After upgrading, open each script that uses
+  *Selected*, attach the secrets it reads (*Auto-detect from code* finds them) or
+  switch it to *All*. Plugin scripts are unchanged: they keep their plugin's own
+  secrets, unowned secrets and their grants.
+
 ### Added
 - **Workspace Brains** — immutable revisions and deduplicated text blobs,
   a file browser with visibility and freshness badges, owner/admin edits,

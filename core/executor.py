@@ -59,10 +59,15 @@ def resolve_secrets_for_run(run) -> dict:
       ⇒ every USER (``owner_plugin IS NULL``) secret in scope. This is the literal
       pre-v2 path: on an existing instance every row is owner-NULL, so the set is
       byte-identical; plugin-owned secrets never leak into a non-owned script.
-    - ``injection_mode='selected'`` (opt-in; set by the SDK for plugin scripts)
-      ⇒ explicitly-global (owner-NULL) + same-owner + actively-granted secrets,
-      each injected under its CLEAN name. Precedence on a clean-name clash:
-      global < same-owner < explicit grant (the most specific wins).
+    - ``injection_mode='selected'`` ⇒ the actively-granted (attached) secrets,
+      each injected under its CLEAN name:
+      * a USER script (``owner_plugin`` NULL) gets ONLY its granted secrets —
+        what the script form promises ("Selected = only the secrets you attach").
+        Before 2.0 it also got every unowned secret, i.e. the same set as 'all'.
+      * a PLUGIN script (the SDK's default) also gets explicitly-global
+        (owner-NULL) and same-owner secrets, the documented SDK contract.
+        Precedence on a clean-name clash: global < same-owner < explicit grant
+        (the most specific wins).
 
     Returns:
         Dict of {clean_name: decrypted_value}.
@@ -92,9 +97,9 @@ def resolve_secrets_for_run(run) -> dict:
             # Build by precedence so an owner's own / granted secret wins a
             # clean-name clash with a global one.
             chosen = {}  # clean_name -> Secret
-            for s in _ws_scope(Secret.objects.filter(owner_plugin__isnull=True)):
-                chosen[s.get_clean_name()] = s
             if owner:
+                for s in _ws_scope(Secret.objects.filter(owner_plugin__isnull=True)):
+                    chosen[s.get_clean_name()] = s
                 for s in _ws_scope(Secret.objects.filter(owner_plugin=owner)):
                     chosen[s.get_clean_name()] = s
             granted = Secret.objects.filter(

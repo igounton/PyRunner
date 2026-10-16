@@ -115,7 +115,11 @@
 
             <!-- Selected mode: per-script attach -->
             <div id="injection-selected-panel" class="space-y-3 hidden">
-                <p class="text-xs text-faint">Only the secrets attached here are injected (plus any owned by the same plugin, and explicitly-global secrets).</p>
+                {% if form.instance.owner_plugin %}
+                <p class="text-xs text-faint">Only the secrets attached here are injected, plus the secrets owned by this script's plugin and unowned workspace secrets.</p>
+                {% else %}
+                <p class="text-xs text-faint">Only the secrets attached here are injected. Other workspace secrets are not.</p>
+                {% endif %}
 
                 <div id="secret-chips" class="flex flex-wrap gap-2">
                     {% for s in granted_secrets %}

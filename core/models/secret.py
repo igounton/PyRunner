@@ -238,7 +238,8 @@ class SecretGrant(models.Model):
     """A per-secret grant attaching one Secret to one Script (Plugin Platform v2).
 
     Opt-in scoped injection: a Script with ``injection_mode='selected'`` receives
-    only its granted secrets (plus same-owner and explicitly-global secrets). The
+    only its granted secrets (a plugin-owned script also gets same-owner and
+    explicitly-global secrets). The
     default ``injection_mode='all'`` never consults this table, so existing
     scripts are byte-for-byte unaffected — the grant layer is purely additive.
     """

@@ -16,6 +16,17 @@ CHANGELOG = [
         ),
         "changes": [
             {
+                "tag": "Changed",
+                "title": "Upgrading from 1.x: what behaves differently",
+                "body": (
+                    "Selected secret injection now means what the script form says: "
+                    "a script in Selected mode gets only the secrets attached to it "
+                    "(plugin scripts also keep their plugin's own and unowned "
+                    "secrets). Before 2.0 a Selected user script received every "
+                    "workspace secret, so attach the ones it uses or switch it to All."
+                ),
+            },
+            {
                 "tag": "Added",
                 "title": "Brains: knowledge with history and explicit access",
                 "body": (

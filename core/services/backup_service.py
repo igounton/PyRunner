@@ -1111,6 +1111,11 @@ class BackupService:
             )
             warnings.extend(brain_warnings)
 
+            # create() can't set auto_now/auto_now_add fields: Django overwrites
+            # them, so every row above was stamped with the restore time. Put
+            # the backup's times back (run history, schedule history, …).
+            cls._restore_timestamps(backup_data, restore_runs)
+
             # Regenerate django-q2 schedules
             schedules_created = cls._regenerate_all_schedules()
 
@@ -1137,6 +1142,61 @@ class BackupService:
         except Exception as e:
             transaction.set_rollback(True)
             return {"success": False, "counts": {}, "errors": [str(e)], "warnings": []}
+
+    # Backup sections whose rows keep their id on restore and carry
+    # created_at/updated_at.
+    _TIMESTAMPED_SECTIONS = (
+        ("environments", Environment),
+        ("secrets", Secret),
+        ("libraries", Library),
+        ("scripts", Script),
+        ("script_schedules", ScriptSchedule),
+        ("schedule_history", ScheduleHistory),
+        ("runs", Run),
+        ("package_operations", PackageOperation),
+        ("datastores", DataStore),
+    )
+
+    @classmethod
+    def _restore_timestamps(cls, backup_data: dict, restore_runs: bool = True) -> None:
+        """Write the backup's created_at/updated_at onto the restored rows.
+
+        ``bulk_update`` skips ``pre_save``, so ``auto_now``/``auto_now_add``
+        don't replace the values. Rows without a time in the backup keep the
+        restore time. Only the id and the two timestamps are loaded.
+        """
+
+        def apply(model, rows):
+            columns = {f.name for f in model._meta.concrete_fields} & {"created_at", "updated_at"}
+            wanted = {}
+            for row in rows:
+                stamps = {
+                    name: cls._deserialize_datetime(row.get(name))
+                    for name in columns
+                    if row.get(name)
+                }
+                if row.get("id") and stamps:
+                    wanted[str(row["id"])] = stamps
+            if not wanted:
+                return
+            ids = list(wanted)
+            for start in range(0, len(ids), 500):
+                chunk = ids[start:start + 500]
+                objs = list(model.objects.filter(pk__in=chunk).only("pk", *columns))
+                for obj in objs:
+                    for name, value in wanted[str(obj.pk)].items():
+                        setattr(obj, name, value)
+                if objs:
+                    model.objects.bulk_update(objs, sorted(columns))
+
+        for key, model in cls._TIMESTAMPED_SECTIONS:
+            if key == "runs" and not restore_runs:
+                continue
+            apply(model, backup_data.get(key) or [])
+        apply(
+            DataStoreEntry,
+            [entry for ds in backup_data.get("datastores") or [] for entry in ds.get("entries", [])],
+        )
 
     @classmethod
     def _import_global_settings(cls, data: dict) -> None:

@@ -119,6 +119,22 @@ cron expression before/after), so you can audit who changed what and when.
 
 ---
 
+## When the server was down
+
+Missed fires are not replayed one by one. If one or more scheduled times pass
+while PyRun (or its worker) is stopped, the schedule runs **once**, late, at the
+first scheduler check after the worker is back (within about a minute), and then
+returns to its normal cadence. For example, an every-5-minutes schedule that was
+down for 20 minutes runs once on return, not four times; a daily 09:00 schedule
+whose server was down overnight runs once when the server comes back, at
+whatever time that is.
+
+The late run looks like any other scheduled run. If a job must not run outside
+its window (a "09:00 report" that is wrong at 15:00), check the time in the
+script and exit early.
+
+---
+
 ## Backup & restore
 
 Cron schedules — and the full weekly/monthly configuration — are included in

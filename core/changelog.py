@@ -97,6 +97,16 @@ CHANGELOG = [
             },
             {
                 "tag": "Improved",
+                "title": "Large run output keeps its ending",
+                "body": (
+                    "Each output stream is still stored up to 1 MB, but past that a "
+                    "run keeps the first 200 KB and the last 800 KB with a marker "
+                    "saying how much was cut, so the result line or the traceback at "
+                    "the end is no longer lost."
+                ),
+            },
+            {
+                "tag": "Improved",
                 "title": "PyRunner is now PyRun",
                 "body": (
                     "The product, console and documentation use the PyRun name. "

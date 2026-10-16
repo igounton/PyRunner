@@ -152,6 +152,12 @@ begins tracking at the current release; earlier history is in the git log.
   list. Each bar links to its run. Rendered server-side, no JavaScript.
 
 ### Changed
+- **Large run output keeps its ending.** stdout and stderr are each stored up
+  to 1 MB per run (unchanged). Beyond that a run used to keep only the first
+  1 MB, losing the end of the output, which is where a result line or a
+  traceback usually is. It now keeps the first 200 KB and the last ~800 KB, cut
+  at line breaks, with a marker in between:
+  `[OUTPUT TRUNCATED: N bytes cut from the middle. Kept the first … and the last … of … bytes.]`
 - **Rebranded to PyRun** — the product is now called PyRun and lives at
   [pyrun.ai](https://pyrun.ai). Console, emails, setup and error pages, the
   docs links, and the GitHub (`hassancs91/PyRun`) and Docker Hub

@@ -35,8 +35,16 @@ from core.services.secret_backends import SecretResolutionError
 
 logger = logging.getLogger(__name__)
 
-# Maximum output size (1MB) to prevent database bloat
+# Each stream (stdout, stderr) is stored up to MAX_OUTPUT_BYTES (1 MB) to keep
+# the database small. Past that the start and the END are kept — the end is where
+# a result line or a traceback usually is — with a marker in between saying how
+# much was cut: the first OUTPUT_HEAD_BYTES (200 KB) and the last ~800 KB.
 MAX_OUTPUT_BYTES = 1_000_000
+OUTPUT_HEAD_BYTES = 200_000
+# Room reserved for the marker line inside the cap.
+_TRUNCATION_MARKER_RESERVE = 256
+# Cut at a line break when one is this close to the cut point.
+_TRUNCATION_LINE_SLACK = 4096
 
 
 def resolve_secrets_for_run(run) -> dict:
@@ -340,29 +348,53 @@ class PythonNotFoundError(ExecutorError):
 
 
 def _truncate_output(output: str, max_bytes: int = MAX_OUTPUT_BYTES) -> str:
-    """
-    Truncate output if it exceeds max_bytes.
+    """Cap ``output`` at ``max_bytes`` (UTF-8), keeping its head and its tail.
 
-    Args:
-        output: The output string to potentially truncate
-        max_bytes: Maximum size in bytes (default 1MB)
-
-    Returns:
-        The original or truncated output with notice
+    Output within the cap is returned unchanged. Larger output keeps the first
+    ``OUTPUT_HEAD_BYTES`` (scaled to ``max_bytes``) and as much of the end as
+    still fits, cut at line breaks when one is near, with a marker line between
+    them that says how many bytes were left out. The result stays within
+    ``max_bytes`` (for any cap of a few KB or more) and never splits a character.
     """
     if not output:
         return output
 
     encoded = output.encode("utf-8", errors="replace")
-    if len(encoded) <= max_bytes:
+    total = len(encoded)
+    if total <= max_bytes:
         return output
 
-    # Truncate and decode back, keeping a buffer for the notice
-    notice = "\n\n[OUTPUT TRUNCATED - exceeded maximum size]"
-    truncated = encoded[: max_bytes - len(notice.encode())].decode(
-        "utf-8", errors="replace"
+    head_budget = OUTPUT_HEAD_BYTES * max_bytes // MAX_OUTPUT_BYTES
+    tail_budget = max(0, max_bytes - head_budget - _TRUNCATION_MARKER_RESERVE)
+
+    head = encoded[: _head_cut(encoded[:head_budget])]
+    tail_raw = encoded[total - tail_budget :]
+    tail = tail_raw[_tail_cut(tail_raw) :]
+
+    head_text = head.decode("utf-8", errors="ignore")
+    tail_text = tail.decode("utf-8", errors="ignore")
+    kept_head = len(head_text.encode("utf-8"))
+    kept_tail = len(tail_text.encode("utf-8"))
+    omitted = total - kept_head - kept_tail
+    marker = (
+        f"\n[OUTPUT TRUNCATED: {omitted:,} bytes cut from the middle. Kept the "
+        f"first {kept_head:,} and the last {kept_tail:,} of {total:,} bytes.]\n"
     )
-    return truncated + notice
+    if not head_text.endswith("\n"):
+        marker = "\n" + marker
+    return head_text + marker + tail_text
+
+
+def _head_cut(head: bytes) -> int:
+    """Where to end the kept head: after its last line break if one is near."""
+    nl = head.rfind(b"\n", max(0, len(head) - _TRUNCATION_LINE_SLACK))
+    return nl + 1 if nl != -1 else len(head)
+
+
+def _tail_cut(tail: bytes) -> int:
+    """Where to start the kept tail: after its first line break if one is near."""
+    nl = tail.find(b"\n", 0, _TRUNCATION_LINE_SLACK)
+    return nl + 1 if nl != -1 else 0
 
 
 def _validate_environment(run: Run) -> str:

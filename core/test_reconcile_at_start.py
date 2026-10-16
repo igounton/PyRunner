@@ -18,7 +18,6 @@ from unittest import mock
 import psutil
 from django.core.management import call_command
 from django.test import TestCase
-from django.utils import timezone
 
 from core.models import Environment, Run, Script, Workspace
 
@@ -38,14 +37,18 @@ class ReconcileAtWorkerStartTests(TestCase):
             name="long", code="x", environment=env, workspace=self.ws,
             timeout_seconds=3600,
         )
-        self.worker_started_at = time.time()
+        # The "worker" in these tests is this test process (the command reads its
+        # own start time), so orphaned runs must predate it — the suite may have
+        # been running for many minutes.
+        self.proc_start = psutil.Process(os.getpid()).create_time()
 
-    def _running(self, pid, started_ago=60):
+    def _running(self, pid, started_at=None):
+        ts = self.proc_start - 60 if started_at is None else started_at
         return Run.objects.create(
             script=self.script,
             workspace=self.ws,
             status=Run.Status.RUNNING,
-            started_at=timezone.now() - datetime.timedelta(seconds=started_ago),
+            started_at=datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc),
             pid=pid,
         )
 
@@ -66,7 +69,7 @@ class ReconcileAtWorkerStartTests(TestCase):
     def test_live_process_is_left_alone(self):
         # This test process is alive and older than the "worker".
         run = self._running(os.getpid())
-        later = psutil.Process(os.getpid()).create_time() + 5
+        later = self.proc_start + 5
         self.assertEqual(Run.reconcile_orphans_at_worker_start(later), 0)
         run.refresh_from_db()
         self.assertEqual(run.status, Run.Status.RUNNING)
@@ -75,14 +78,14 @@ class ReconcileAtWorkerStartTests(TestCase):
         # The pid exists, but its process was created after the worker started:
         # it is not the run's script.
         run = self._running(os.getpid())
-        before = psutil.Process(os.getpid()).create_time() - 5
+        before = self.proc_start - 5
         self.assertEqual(Run.reconcile_orphans_at_worker_start(before), 1)
         run.refresh_from_db()
         self.assertEqual(run.status, Run.Status.FAILED)
 
     def test_runs_without_pid_or_started_after_the_worker_are_untouched(self):
         no_pid = self._running(None)
-        newer = self._running(_dead_pid(), started_ago=-30)  # started after the worker
+        newer = self._running(_dead_pid(), started_at=time.time() + 30)  # after the worker
         self.assertEqual(Run.reconcile_orphans_at_worker_start(time.time()), 0)
         for run in (no_pid, newer):
             run.refresh_from_db()

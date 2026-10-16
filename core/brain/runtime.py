@@ -140,6 +140,12 @@ async def _drive(prompt, options, result, partial, timeout):
                 result.usage = message.usage or {}
                 result.cost_usd = message.total_cost_usd
                 result.num_turns, result.duration_ms = message.num_turns, message.duration_ms
+                if message.is_error and message.subtype == "error_max_budget_usd":
+                    raise ApiError(
+                        "daily_cap",
+                        "This call reached the brain's daily AI cap before it finished. "
+                        "Raise the cap or retry tomorrow.",
+                    )
                 if message.is_error:
                     raise ApiError(
                         "provider_error",

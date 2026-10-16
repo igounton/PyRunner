@@ -522,6 +522,42 @@ class RuntimeTests(TestCase):
             runtime.prepare(self.ws, self.brain.pk, "feeder")
         self.assertEqual(ClaudeUsage.objects.count(), 1)
 
+    def test_budget_exhausted_mid_call_reports_the_daily_cap(self):
+        import claude_agent_sdk as sdk
+
+        self.brain.daily_cost_cap_usd = Decimal("0.01")
+        self.brain.save()
+
+        async def over_budget(*, prompt, options):
+            self.assertEqual(options.max_budget_usd, 0.01)
+            yield sdk.ResultMessage(
+                subtype="error_max_budget_usd",
+                duration_ms=900,
+                duration_api_ms=800,
+                is_error=True,
+                num_turns=1,
+                session_id="s",
+                total_cost_usd=0.012,
+                usage={"input_tokens": 0, "output_tokens": 0},
+                errors=["Reached maximum budget ($0.01)"],
+            )
+
+        with (
+            patch("claude_agent_sdk.query", new=over_budget),
+            self.assertRaises(ApiError) as caught,
+        ):
+            runtime.run_agent(
+                self.ws,
+                self.brain.pk,
+                kind="reader",
+                prompt="test",
+                system="test",
+                schema={"type": "object"},
+            )
+        self.assertEqual(caught.exception.code, "daily_cap")
+        self.assertIn("daily AI cap", caught.exception.message)
+        self.assertEqual(ClaudeUsage.objects.get(brain_id=self.brain.pk).cost_usd, 0.012)
+
     def test_timeout_records_partial_tokens_with_unknown_cost(self):
         async def timeout(prompt, options, result, partial, seconds):
             partial.observe({"type": "message_start", "message": {"usage": {"input_tokens": 42}}})

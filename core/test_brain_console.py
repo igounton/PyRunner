@@ -104,6 +104,34 @@ class BrainConsoleTests(TestCase):
         self.assertEqual(response.status_code, 409)
         self.assertContains(response, "Reload and review", status_code=409)
 
+    def test_editor_crlf_is_stored_as_lf_unless_the_file_uses_crlf(self):
+        def save(path, content):
+            self.brain.refresh_from_db()
+            response = self.client.post(
+                self.url("edit", self.brain.pk),
+                {
+                    "path": path,
+                    "content": content,
+                    "message": "Browser edit",
+                    "expected_head": str(self.brain.head_revision_id),
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            return BrainService.files(self.ws, self.brain.pk)[path]
+
+        lf_note = note("lf", "public").replace("\r\n", "\n")
+        self.assertEqual(save("knowledge/takes/lf.md", lf_note.replace("\n", "\r\n")), lf_note)
+        crlf = note("crlf", "public").replace("\r\n", "\n").replace("\n", "\r\n")
+        BrainService.edit(
+            self.ws,
+            self.brain.pk,
+            path="knowledge/takes/crlf.md",
+            content=crlf,
+            message="Windows file",
+            expected_head=BrainService.get(self.ws, self.brain.pk).head_revision_id,
+        )
+        self.assertEqual(save("knowledge/takes/crlf.md", crlf + "More\r\n"), crlf + "More\r\n")
+
     def test_warning_badges_and_superseded_link(self):
         files = {
             **contract_files(),

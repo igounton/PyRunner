@@ -347,6 +347,10 @@ def brain_edit_view(request, brain_id):
                     "invalid_input",
                     "Upload a UTF-8 replacement or enter shorter content before saving.",
                 )
+            elif "\r\n" not in files.get(data["path"], ""):
+                # Browsers submit textarea text with CRLF; keep LF files LF so
+                # exports and GitHub sync don't rewrite every line.
+                data["content"] = data["content"].replace("\r\n", "\n")
             revision = BrainService.edit(request.workspace, brain.pk, author=request.user, **data)
         except (ApiError, ValidationError) as exc:
             _error(form, exc)

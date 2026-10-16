@@ -44,30 +44,30 @@ class NotificationService:
         return f"[{name or 'PyRun'}] {text}"
 
     @classmethod
-    def _is_safe_webhook_url(cls, url: str) -> bool:
+    def _webhook_url_problem(cls, url: str) -> str:
         """
-        Validate a webhook URL to prevent SSRF attacks.
+        Why a webhook URL may not be used, or "" when it is safe (SSRF guard).
 
         Enforces http/https, then delegates to the shared ``core.netguard`` guard,
         which DNS-resolves the hostname (a public name pointing at a private IP is
         caught too), blocks loopback/private hosts unless the operator set
         ``PYRUNNER_ALLOW_PRIVATE_NETWORK``, and never lets the cloud-metadata range
-        or the unspecified addresses through.
-
-        Args:
-            url: The webhook URL to validate
-
-        Returns:
-            bool: True if URL is safe to use
+        or the unspecified addresses through. The guard's reason is kept so the
+        logged refusal names the cause (and the flag, when the flag would help).
         """
         try:
             parsed = urlparse(url)
             if parsed.scheme not in ("http", "https") or not parsed.hostname:
-                return False
-            is_safe, _ = is_safe_endpoint_url(url)
-            return is_safe
-        except Exception:
-            return False
+                return "it must be an http:// or https:// URL with a host name"
+            is_safe, why = is_safe_endpoint_url(url)
+            return "" if is_safe else (why or "the address is not allowed")
+        except Exception as e:  # noqa: BLE001 — a malformed URL is simply refused
+            return f"it could not be checked ({e})"
+
+    @classmethod
+    def _is_safe_webhook_url(cls, url: str) -> bool:
+        """True when ``url`` passes the webhook SSRF guard (see ``_webhook_url_problem``)."""
+        return not cls._webhook_url_problem(url)
 
     @classmethod
     def should_notify(cls, run: "Run") -> bool:
@@ -301,10 +301,9 @@ class NotificationService:
         url = run.script.notify_webhook_url
 
         # Validate URL to prevent SSRF attacks
-        if not cls._is_safe_webhook_url(url):
-            raise ValueError(
-                f"Webhook URL rejected: must be http/https and not target localhost or private networks"
-            )
+        problem = cls._webhook_url_problem(url)
+        if problem:
+            raise ValueError(f"Webhook URL rejected: {problem}")
 
         payload = cls._build_webhook_payload(run)
 

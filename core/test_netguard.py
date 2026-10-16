@@ -197,3 +197,28 @@ class CallerWiringTests(SimpleTestCase):
             self.assertTrue(NotificationService._is_safe_webhook_url("http://10.0.0.5/h"))
             self.assertFalse(NotificationService._is_safe_webhook_url("http://169.254.169.254/h"))
             self.assertFalse(NotificationService._is_safe_webhook_url("http://0.0.0.0/h"))
+
+    def test_webhook_refusal_names_the_reason_and_the_flag(self):
+        """F47: the logged refusal says why — a private URL names the flag, metadata doesn't."""
+        from unittest import mock
+
+        from core.services.notification_service import NotificationService
+
+        run = mock.Mock()
+        run.script.notify_webhook_url = "http://10.0.0.5/h"
+        with self.assertRaises(ValueError) as cm:
+            NotificationService._send_webhook_notification(run)
+        self.assertIn("10.0.0.5", str(cm.exception))
+        self.assertIn("PYRUNNER_ALLOW_PRIVATE_NETWORK", str(cm.exception))
+
+        run.script.notify_webhook_url = "http://169.254.169.254/latest/meta-data/"
+        with override_settings(PYRUNNER_ALLOW_PRIVATE_NETWORK=True):
+            with self.assertRaises(ValueError) as cm:
+                NotificationService._send_webhook_notification(run)
+        self.assertIn("never allowed", str(cm.exception))
+        self.assertNotIn("PYRUNNER_ALLOW_PRIVATE_NETWORK", str(cm.exception))
+
+        run.script.notify_webhook_url = "ftp://example.com/h"
+        with self.assertRaises(ValueError) as cm:
+            NotificationService._send_webhook_notification(run)
+        self.assertIn("http:// or https://", str(cm.exception))

@@ -23,7 +23,10 @@ const PyRunnerToast = {
 
         const toast = document.createElement('div');
         toast.className = this.getToastClasses(type);
-        toast.innerHTML = this.getToastHTML(message, type);
+        toast.innerHTML = this.getToastHTML(type);
+        // Messages carry user-controlled text (script, store, brain names):
+        // always plain text, never parsed as HTML.
+        toast.querySelector('[data-toast-message]').textContent = String(message);
         toast.style.animation = 'toastSlideIn 0.3s ease-out';
 
         const closeBtn = toast.querySelector('[data-toast-close]');
@@ -31,8 +34,13 @@ const PyRunnerToast = {
             closeBtn.addEventListener('click', () => this.dismiss(toast));
         }
 
-        while (this.container.children.length >= this.defaults.maxToasts) {
-            this.dismiss(this.container.firstChild);
+        // A dismissed toast stays in the DOM for its 200 ms exit animation, so
+        // count only the ones still showing (counting all of them never got
+        // smaller and froze the page on a sixth message).
+        let showing = this.showing();
+        while (showing.length >= this.defaults.maxToasts) {
+            this.dismiss(showing[0]);
+            showing = this.showing();
         }
 
         this.container.appendChild(toast);
@@ -44,8 +52,13 @@ const PyRunnerToast = {
         return toast;
     },
 
+    showing() {
+        return Array.from(this.container.children).filter((t) => !t.dataset.dismissing);
+    },
+
     dismiss(toast) {
-        if (!toast || !toast.parentNode) return;
+        if (!toast || !toast.parentNode || toast.dataset.dismissing) return;
+        toast.dataset.dismissing = '1';
         toast.style.animation = 'toastSlideOut 0.2s ease-in forwards';
         setTimeout(() => toast.remove(), 200);
     },
@@ -61,7 +74,7 @@ const PyRunnerToast = {
         return `${base} ${types[type] || types.info}`;
     },
 
-    getToastHTML(message, type) {
+    getToastHTML(type) {
         const icons = {
             success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>',
             error: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>',
@@ -73,7 +86,7 @@ const PyRunnerToast = {
             <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 ${icons[type] || icons.info}
             </svg>
-            <p class="flex-1 text-sm text-code-text">${message}</p>
+            <p data-toast-message class="flex-1 text-sm text-code-text"></p>
             <button data-toast-close class="flex-shrink-0 text-code-muted hover:text-code-text transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>

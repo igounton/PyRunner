@@ -16,6 +16,14 @@ begins tracking at the current release; earlier history is in the git log.
   *Selected*, attach the secrets it reads (*Auto-detect from code* finds them) or
   switch it to *All*. Plugin scripts are unchanged: they keep their plugin's own
   secrets, unowned secrets and their grants.
+- **Container process limit.** `docker-compose.coolify.yml` now sets
+  `pids_limit: 2048` (processes and threads for the whole container). Scripts
+  run as root in the image and the kernel exempts root from the per-run process
+  limit (`RLIMIT_NPROC`), so that setting can't stop a fork bomb; Settings →
+  Isolation now marks it "not enforced while scripts run as root". Raise the
+  limit if your scripts start many processes (several headless browsers), and set
+  one yourself on other deployments (`docker run --pids-limit`, or compose
+  `pids_limit`).
 
 ### Added
 - **Workspace Brains** — immutable revisions and deduplicated text blobs,

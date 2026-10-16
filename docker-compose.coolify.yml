@@ -56,6 +56,12 @@ services:
       # injected plugins, no fork). Empty on a fresh install.
       - pyrunner_plugins:/app/plugins
     restart: unless-stopped
+    # Caps processes + threads for the whole container. Scripts run as root, and
+    # the kernel exempts root from the per-run process limit (Settings ->
+    # Isolation), so this is what stops a fork bomb from exhausting the host's
+    # PIDs and taking down everything else on the server. Raise it if your
+    # scripts legitimately start many processes (e.g. several headless browsers).
+    pids_limit: 2048
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
       interval: 30s

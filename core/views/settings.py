@@ -2,6 +2,7 @@
 Settings views for the control panel.
 """
 import logging
+import os
 
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -65,8 +66,19 @@ def settings_view(request: HttpRequest) -> HttpResponse:
             "backup_schedule_form": backup_schedule_form,
             "backup_schedule_status": backup_schedule_status,
             "recaptcha_form": recaptcha_form,
+            "nproc_not_enforced": _scripts_run_as_root(),
         },
     )
+
+
+def _scripts_run_as_root() -> bool:
+    """Whether scripts run as root here (they inherit the worker's uid).
+
+    The kernel exempts root from RLIMIT_NPROC, so the Isolation tab's process
+    cap does nothing in the standard image, where everything runs as uid 0.
+    """
+    geteuid = getattr(os, "geteuid", None)  # absent on Windows
+    return bool(geteuid is not None and geteuid() == 0)
 
 
 @login_required

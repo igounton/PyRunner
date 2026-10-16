@@ -413,6 +413,21 @@ class ExecutionIsolationViewTests(TestCase):
         self.assertEqual(gs.sandbox_rlimit_memory_mb, 512)
         self.assertEqual(gs.sandbox_rlimit_fsize_mb, 16)
 
+    def test_process_cap_marked_not_enforced_when_scripts_run_as_root(self):
+        # F29: root is exempt from RLIMIT_NPROC, so the Isolation tab must say
+        # the process cap does nothing while scripts run as uid 0 (the image).
+        from django.urls import reverse
+
+        self.client.force_login(self.admin)
+        note = "Not enforced while scripts run as root"
+        with mock.patch("core.views.settings.os.geteuid", create=True, return_value=0):
+            body = self.client.get(reverse("cpanel:settings")).content.decode()
+        self.assertIn(note, body)
+        self.assertIn("pids_limit", body)
+        with mock.patch("core.views.settings.os.geteuid", create=True, return_value=1000):
+            body = self.client.get(reverse("cpanel:settings")).content.decode()
+        self.assertNotIn(note, body)
+
     def test_requires_superuser(self):
         self.client.force_login(self.member)
         resp = self.client.post(self.url, {"sandbox_default": "required"})

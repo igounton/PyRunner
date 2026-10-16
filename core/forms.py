@@ -1573,7 +1573,7 @@ class ExecutionIsolationForm(forms.Form):
         widget=forms.NumberInput(attrs={"class": INPUT_CLASS, "min": 0}),
         label="Process limit",
         help_text="Per-run process/thread cap (RLIMIT_NPROC, fork-bomb guard). "
-        "0 = unlimited. POSIX only.",
+        "0 = unlimited. POSIX only, and only for scripts that don't run as root.",
     )
 
     sandbox_rlimit_fsize_mb = forms.IntegerField(

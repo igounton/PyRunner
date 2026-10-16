@@ -23,7 +23,11 @@ CHANGELOG = [
                     "a script in Selected mode gets only the secrets attached to it "
                     "(plugin scripts also keep their plugin's own and unowned "
                     "secrets). Before 2.0 a Selected user script received every "
-                    "workspace secret, so attach the ones it uses or switch it to All."
+                    "workspace secret, so attach the ones it uses or switch it to All. "
+                    "The Coolify compose file now caps the container at 2048 "
+                    "processes and threads; the per-run process limit can't stop a "
+                    "fork bomb while scripts run as root, and Settings → Isolation "
+                    "now says so."
                 ),
             },
             {

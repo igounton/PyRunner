@@ -2,6 +2,7 @@
 Log service for reading and parsing application logs.
 """
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple
@@ -154,9 +155,20 @@ class LogService:
 
     @classmethod
     def clear_logs(cls) -> int:
-        """Clear all log files. Returns number of bytes freed."""
+        """Empty the log files. Returns number of bytes freed.
+
+        The current file is truncated in place, never deleted: every PyRun
+        process (web workers, task workers) holds it open through its logging
+        handler, so a deleted file kept receiving their lines out of sight (and
+        kept its disk space) while the Logs page stayed empty until a restart.
+        Rotated files are not held open and are removed.
+        """
         total_size = 0
+        current = cls.get_log_file_path()
         for log_file in cls.get_log_files():
             total_size += log_file.stat().st_size
-            log_file.unlink()
+            if log_file == current:
+                os.truncate(log_file, 0)
+            else:
+                log_file.unlink()
         return total_size

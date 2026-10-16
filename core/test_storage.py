@@ -1231,6 +1231,53 @@ class BackupRegressionTests(TestCase):
         _make_connection(is_default=True, enabled=False)
         self.assertEqual(BackupScheduleService.list_backups(), [])
 
+    def test_retention_prunes_only_this_prefix_s_scheduled_backups(self):
+        # 2.0 release test §19.05: S3 prefixes are plain string prefixes, so
+        # retention for "pyrun-a/" listed "pyrun-a" and also pruned another
+        # instance's "pyrun-a-staging/…" backups and hand-made files in a
+        # sub-folder — anything ending in .json.gz.
+        from core.services.backup_schedule_service import BackupScheduleService
+
+        settings = GlobalSettings.get_settings()
+        settings.s3_backup_prefix = "pyrun-a/"
+        settings.s3_backup_retention_count = 1
+        settings.save()
+        connection = _make_connection(is_default=True)
+
+        def obj(key, day):
+            return {"Key": key, "Size": 1, "LastModified": datetime(2026, 10, day, tzinfo=dt_timezone.utc), "ETag": '"x"'}
+
+        bucket = [
+            obj("pyrun-a/backup_20261001_020000.json.gz", 1),
+            obj("pyrun-a/backup_20261002_020000.json.gz", 2),
+            obj("pyrun-a/backup_20261003_020000.json.gz", 3),
+            obj("pyrun-a/manual/keep-me.json.gz", 4),
+            obj("pyrun-a/notes.json.gz", 5),
+            obj("pyrun-a-staging/backup_20261004_020000.json.gz", 6),
+        ]
+        client = mock.Mock()
+        paginator = mock.Mock()
+        paginator.paginate.side_effect = lambda Bucket, Prefix: [
+            {"Contents": [o for o in bucket if o["Key"].startswith(Prefix)]}
+        ]
+        client.get_paginator.return_value = paginator
+        client.delete_objects.return_value = {"Deleted": [{}, {}]}
+
+        with mock.patch.object(S3Service, "get_client", return_value=client):
+            listed = [f["key"] for f in BackupScheduleService.list_backups()]
+            BackupScheduleService.apply_retention()
+
+        self.assertEqual(listed, [
+            "pyrun-a/backup_20261003_020000.json.gz",
+            "pyrun-a/backup_20261002_020000.json.gz",
+            "pyrun-a/backup_20261001_020000.json.gz",
+        ])
+        deleted = sorted(o["Key"] for o in client.delete_objects.call_args.kwargs["Delete"]["Objects"])
+        self.assertEqual(deleted, [
+            "pyrun-a/backup_20261001_020000.json.gz",
+            "pyrun-a/backup_20261002_020000.json.gz",
+        ])
+
 
 class PluginDeleteStorageCleanupTests(TestCase):
     """remove_data must also clear the plugin's objects — and must not fail the

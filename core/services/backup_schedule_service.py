@@ -5,6 +5,7 @@ Manages django-q2 schedules for automated S3 backups.
 """
 
 import logging
+import re
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 
@@ -19,6 +20,11 @@ from core.models import GlobalSettings
 from core.services.schedule_service import BACKUP_SCHEDULE_NAME, ScheduleService
 
 logger = logging.getLogger(__name__)
+
+# The name ``S3Service.generate_backup_key`` gives every scheduled backup.
+# Retention and the listing only ever touch files with exactly this name
+# directly under the configured prefix.
+_BACKUP_NAME_RE = re.compile(r"backup_\d{8}_\d{6}\.json\.gz")
 
 
 def _instance_tz(settings) -> ZoneInfo:
@@ -206,15 +212,7 @@ class BackupScheduleService:
         if connection is None:
             return 0
 
-        # List existing backups
-        prefix = settings.s3_backup_prefix.rstrip("/")
-        files = S3Service.list_files(connection, prefix)
-
-        # Filter to only backup files (ending in .json.gz)
-        backup_files = [f for f in files if f["key"].endswith(".json.gz")]
-
-        # Sort by last_modified descending (newest first)
-        backup_files.sort(key=lambda x: x["last_modified"], reverse=True)
+        backup_files = cls._scheduled_backup_files(connection, settings)
 
         # Keep only the configured number
         files_to_delete = backup_files[settings.s3_backup_retention_count:]
@@ -244,11 +242,27 @@ class BackupScheduleService:
         if connection is None or not connection.enabled or not S3Service.is_configured(connection):
             return []
 
+        return cls._scheduled_backup_files(connection, settings)
+
+    @classmethod
+    def _scheduled_backup_files(cls, connection, settings) -> list[dict]:
+        """This feature's backups under the configured prefix, newest first.
+
+        S3 prefixes are plain string prefixes: listing ``pyrun-a`` also returns
+        ``pyrun-a-staging/…``, and ``.json.gz`` matches files someone put in a
+        sub-folder. Retention deletes what this returns, so it lists
+        ``<prefix>/`` and keeps only ``backup_YYYYMMDD_HHMMSS.json.gz`` files
+        directly inside it — another instance's backups in the same bucket and
+        hand-made copies are never pruned.
+        """
+        from core.services.s3_service import S3Service
+
         prefix = settings.s3_backup_prefix.rstrip("/")
-        files = S3Service.list_files(connection, prefix)
-
-        # Filter to only backup files and sort by date
-        backup_files = [f for f in files if f["key"].endswith(".json.gz")]
+        list_prefix = f"{prefix}/" if prefix else ""
+        backup_files = [
+            f
+            for f in S3Service.list_files(connection, list_prefix)
+            if _BACKUP_NAME_RE.fullmatch(f["key"][len(list_prefix):])
+        ]
         backup_files.sort(key=lambda x: x["last_modified"], reverse=True)
-
         return backup_files

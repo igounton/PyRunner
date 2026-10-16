@@ -44,6 +44,21 @@
                 </div>
             </div>
 
+            {% if not environment.exists or not environment.python_exists %}
+            <div class="p-4 rounded-xl bg-warn/10 border border-warn/30 flex items-start justify-between gap-4 flex-wrap">
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-warn">This environment's folder is missing on disk</p>
+                    <p class="text-xs text-muted mt-1">Scripts that use it fail with "Environment directory not found". This happens after restoring a backup on a new server or when the folder was removed. Recreating it builds the venv at the same path and reinstalls its saved packages.</p>
+                </div>
+                {% if user.is_superuser %}
+                <form method="post" action="{% url 'cpanel:environment_recreate' pk=environment.pk %}" class="flex-shrink-0">
+                    {% csrf_token %}
+                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-warn text-ink hover:opacity-90 transition">Recreate environment</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 <!-- Left: scripts -->
                 <div class="lg:col-span-2">

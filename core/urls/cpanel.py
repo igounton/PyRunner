@@ -52,6 +52,7 @@ from core.views.environments import (
     environment_edit_view,
     environment_delete_view,
     environment_set_default_view,
+    environment_recreate_view,
     environment_packages_view,
     package_install_view,
     package_uninstall_view,
@@ -282,6 +283,7 @@ urlpatterns = [
     path("environments/<uuid:pk>/edit/", environment_edit_view, name="environment_edit"),
     path("environments/<uuid:pk>/delete/", environment_delete_view, name="environment_delete"),
     path("environments/<uuid:pk>/set-default/", environment_set_default_view, name="environment_set_default"),
+    path("environments/<uuid:pk>/recreate/", environment_recreate_view, name="environment_recreate"),
     # Package Management
     path("environments/<uuid:pk>/packages/", environment_packages_view, name="environment_packages"),
     path("environments/<uuid:pk>/packages/install/", package_install_view, name="package_install"),

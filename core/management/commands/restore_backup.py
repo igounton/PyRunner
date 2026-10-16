@@ -86,3 +86,15 @@ class Command(BaseCommand):
                 f"Restore complete: {result['counts']}; workspace-assigned {scoped} rows"
             )
         )
+        from core.tasks import queue_environment_rebuild
+
+        try:
+            queue_environment_rebuild()
+            self.stdout.write(
+                "Environment rebuild queued: the task worker recreates missing venvs "
+                "and reinstalls saved packages."
+            )
+        except Exception as e:
+            self.stdout.write(
+                self.style.WARNING(f"Warning: could not queue the environment rebuild: {e}")
+            )

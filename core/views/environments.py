@@ -200,6 +200,34 @@ def environment_set_default_view(request: HttpRequest, pk) -> HttpResponse:
     return redirect("cpanel:environment_detail", pk=pk)
 
 
+@login_required
+@superuser_required
+@require_POST
+def environment_recreate_view(request: HttpRequest, pk) -> HttpResponse:
+    """Rebuild an environment whose venv folder is missing (e.g. after a restore
+    on a new server) at the same path, then reinstall its saved packages."""
+    environment = get_object_or_404(Environment, pk=pk)
+
+    if environment.exists() and environment.python_exists():
+        messages.info(request, f'"{environment.name}" already exists on disk; nothing to recreate.')
+        return redirect("cpanel:environment_detail", pk=pk)
+
+    success, message = EnvironmentService.recreate_environment(environment)
+    if not success:
+        messages.error(request, f"Could not recreate the environment: {message}")
+        return redirect("cpanel:environment_detail", pk=pk)
+
+    operation = EnvironmentService.queue_requirements_install(environment, user=request.user)
+    if operation is not None:
+        messages.success(
+            request,
+            f'Environment "{environment.name}" recreated. Reinstalling its saved packages…',
+        )
+    else:
+        messages.success(request, f'Environment "{environment.name}" recreated.')
+    return redirect("cpanel:environment_packages", pk=pk)
+
+
 # Package Management Views
 
 

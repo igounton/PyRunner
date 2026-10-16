@@ -608,7 +608,7 @@
                             <ul class="text-xs text-fail/80 ml-4 space-y-1">
                                 <li>• ENCRYPTION_KEY must match the backup</li>
                                 <li>• Current data will be backed up automatically first</li>
-                                <li>• Virtual environments must be recreated after restore</li>
+                                <li>• Environments are rebuilt in the background after a restore (missing venvs recreated, saved packages reinstalled)</li>
                             </ul>
                         </div>
                         <div id="upload-status" class="hidden mb-4"></div>
@@ -1058,7 +1058,7 @@ function showRestorePreview(preview, warnings) {
     html += '<ul class="text-xs text-fail/80 ml-4 space-y-1">';
     html += '<li>• All existing data will be DELETED</li>';
     html += '<li>• Current state will be backed up automatically</li>';
-    html += '<li>• You will need to recreate virtual environments after restore</li>';
+    html += '<li>• Environments are rebuilt in the background afterwards (missing venvs recreated, saved packages reinstalled)</li>';
     html += '</ul>';
     html += '</div>';
 

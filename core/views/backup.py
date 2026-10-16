@@ -229,9 +229,25 @@ def backup_restore_view(request):
                 request,
                 f"Backup restored successfully! Imported: {counts.get('scripts', 0)} scripts, "
                 f"{counts.get('environments', 0)} environments, {counts.get('secrets', 0)} secrets, "
-                f"{counts.get('runs', 0)} runs. "
-                f"Next: Recreate virtual environments from the Environments page."
+                f"{counts.get('runs', 0)} runs."
             )
+            # Environments come back as rows only: rebuild missing venvs and
+            # reinstall saved packages in the background.
+            try:
+                from core.tasks import queue_environment_rebuild
+
+                queue_environment_rebuild()
+                messages.info(
+                    request,
+                    "Environments are being rebuilt in the background: missing folders are "
+                    "recreated and saved packages reinstalled (see each environment's Packages page).",
+                )
+            except Exception as e:
+                messages.warning(
+                    request,
+                    f"Could not queue the environment rebuild ({e}). Open each environment and "
+                    "use Recreate environment if its folder is missing.",
+                )
             # What the restore could not bring back (external vector points,
             # skipped store images, database rows): the operator has to act on it.
             for warning in result.get("warnings") or []:

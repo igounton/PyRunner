@@ -309,6 +309,97 @@ class EnvironmentService:
             shutil.rmtree(full_path, ignore_errors=True)
 
     @classmethod
+    def _interpreter_for(cls, environment) -> str:
+        """The interpreter to rebuild ``environment`` with: one of the same
+        Python version when this host has it, else the one running PyRun."""
+        wanted = (environment.python_version or "").strip()
+        if wanted:
+            for candidate in cls.discover_python_versions():
+                if candidate.get("version") == wanted:
+                    return candidate["path"]
+        return sys.executable
+
+    @classmethod
+    def recreate_environment(cls, environment) -> tuple[bool, str]:
+        """Rebuild a missing venv in place (same path, same Environment row).
+
+        A restore brings environments back as rows only; on a new server (or
+        after the folder was deleted) the venv is gone and every script using it
+        fails with "Environment directory not found". A folder that exists
+        without a working interpreter is a broken leftover and is replaced. A
+        healthy venv is left alone.
+        """
+        if environment.exists() and environment.python_exists():
+            return True, "Environment already exists"
+        full_path = environment.get_full_path()
+        if os.path.exists(full_path):
+            shutil.rmtree(full_path, ignore_errors=True)
+            if os.path.exists(full_path):
+                return False, f"Could not remove the broken folder: {full_path}"
+        return cls.create_environment(cls._interpreter_for(environment), environment.path)
+
+    @staticmethod
+    def _requirement_key(line: str) -> tuple[str, str]:
+        """(normalized name, pinned version or "") of one requirements line."""
+        spec = line.split(";", 1)[0].split()[0] if line.split() else ""
+        name, _, version = spec.partition("==")
+        name = re.split(r"[\[<>=!~@ ]", name, maxsplit=1)[0]
+        return re.sub(r"[-_.]+", "-", name).lower(), version.strip()
+
+    @classmethod
+    def missing_requirements(cls, environment) -> list[str]:
+        """Lines of the environment's saved requirements that aren't installed.
+
+        ``requirements`` is the ``pip freeze`` PyRun stores after every package
+        operation (and carries in backups); a pinned line counts as installed
+        only at that version.
+        """
+        lines = [
+            line.strip()
+            for line in (environment.requirements or "").splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+        if not lines:
+            return []
+        installed = {
+            cls._requirement_key(p["name"])[0]: p["version"]
+            for p in cls.get_installed_packages(environment)
+        }
+        missing = []
+        for line in lines:
+            name, version = cls._requirement_key(line)
+            if name not in installed or (version and installed[name] != version):
+                missing.append(line)
+        return missing
+
+    @classmethod
+    def queue_requirements_install(cls, environment, user=None):
+        """Queue a bulk install of the saved requirements when any are missing.
+
+        Returns the queued PackageOperation, or None when nothing is missing.
+        """
+        from django_q.tasks import async_task
+
+        from core.models import PackageOperation
+
+        if not cls.missing_requirements(environment):
+            return None
+        operation = PackageOperation.objects.create(
+            environment=environment,
+            operation=PackageOperation.Operation.BULK_INSTALL,
+            package_spec=environment.requirements,
+            created_by=user,
+        )
+        operation.task_id = async_task(
+            "core.tasks.execute_package_operation",
+            str(operation.id),
+            task_name=f"pkg-bulk-{operation.id}",
+            timeout=cls.task_timeout(PackageOperation.Operation.BULK_INSTALL),
+        )
+        operation.save(update_fields=["task_id"])
+        return operation
+
+    @classmethod
     def delete_environment(cls, environment) -> tuple[bool, str]:
         """
         Delete an environment's venv folder.

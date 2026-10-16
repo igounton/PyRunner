@@ -333,6 +333,49 @@ def execute_package_operation(operation_id: str) -> dict:
     }
 
 
+def rebuild_environments_task() -> dict:
+    """Bring every environment back to its saved state after a restore.
+
+    A backup carries environments as rows plus their saved ``requirements``,
+    never the venv folders. For each environment: recreate the venv when its
+    folder (or interpreter) is missing, then queue a bulk install of any saved
+    requirement that isn't installed. Healthy, complete environments are left
+    alone, so a restore onto the same instance costs one ``pip list`` each.
+    """
+    from core.models import Environment
+    from core.services.environment_service import EnvironmentService
+
+    report = []
+    for environment in Environment.objects.order_by("created_at"):
+        entry = {"environment": environment.name, "recreated": False, "install_queued": False}
+        if not (environment.exists() and environment.python_exists()):
+            ok, message = EnvironmentService.recreate_environment(environment)
+            entry["recreated"] = ok
+            if not ok:
+                entry["error"] = message
+                logger.warning(f"Could not recreate environment {environment.name}: {message}")
+                report.append(entry)
+                continue
+            logger.info(f"Recreated environment {environment.name} after a restore")
+        try:
+            operation = EnvironmentService.queue_requirements_install(environment)
+        except Exception as e:  # one environment must not stop the others
+            entry["error"] = str(e)
+            logger.exception(f"Could not queue the package reinstall for {environment.name}")
+        else:
+            entry["install_queued"] = operation is not None
+        report.append(entry)
+    return {"environments": report}
+
+
+def queue_environment_rebuild() -> str:
+    """Queue ``rebuild_environments_task`` (after a restore: console and CLI)."""
+    return async_task(
+        "core.tasks.rebuild_environments_task",
+        task_name="restore-rebuild-environments",
+    )
+
+
 def cleanup_old_runs_task() -> dict:
     """
     Clean up old runs based on retention settings.

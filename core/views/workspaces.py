@@ -29,9 +29,25 @@ from core.views.decorators import superuser_required
 MAX_NAME_LEN = 100
 
 # Scoped models a workspace "owns" — used by the delete-block so SET_NULL never
-# silently orphans tenant data (reverse accessors of the workspace FK).
-# Environments are SHARED infra, excluded here.
-_OWNED_RELATIONS = ("scripts", "secrets", "runs", "datastores", "schedules", "brains")
+# silently orphans tenant data (reverse accessor of the workspace FK, then the
+# singular and plural label for the refusal message). Every SET_NULL workspace
+# FK except Environment (shared infra, listed instance-wide) belongs here: an
+# orphaned row is invisible under strict scoping, an orphaned Database keeps its
+# schema and role on the data server, and an orphaned datastore token falls back
+# to the default workspace on the datastore API.
+_OWNED_RELATIONS = (
+    ("scripts", "script", "scripts"),
+    ("runs", "run", "runs"),
+    ("schedules", "schedule", "schedules"),
+    ("secrets", "secret", "secrets"),
+    ("datastores", "data store", "data stores"),
+    ("libraries", "library", "libraries"),
+    ("databases", "database", "databases"),
+    ("vector_collections", "vector collection", "vector collections"),
+    ("brains", "brain", "brains"),
+    ("channels", "channel", "channels"),
+    ("api_tokens", "API token", "API tokens"),
+)
 
 
 def _membership(user, workspace):
@@ -68,14 +84,12 @@ def _require_owner(request, workspace):
 
 
 def _owned_row_counts(workspace) -> dict:
-    """Count the scoped rows a workspace owns (for the delete-block message)."""
+    """Count the scoped rows a workspace owns, keyed by the message label."""
     counts = {}
-    for rel in _OWNED_RELATIONS:
-        manager = getattr(workspace, rel, None)
-        if manager is not None:
-            n = manager.count()
-            if n:
-                counts[rel] = n
+    for rel, singular, plural in _OWNED_RELATIONS:
+        n = getattr(workspace, rel).count()
+        if n:
+            counts[singular if n == 1 else plural] = n
     return counts
 
 
@@ -87,8 +101,11 @@ def workspace_list_view(request: HttpRequest) -> HttpResponse:
     own workspaces. Management actions are shown per-row only where the caller
     may manage (Owner/Admin or superuser); creating is superuser-only.
     """
+    # Filter by id rather than annotating for_user() directly: for a
+    # non-superuser for_user() joins memberships on the caller, and Count()
+    # would reuse that join and count only the caller's own row.
     workspaces = (
-        Workspace.for_user(request.user)
+        Workspace.objects.filter(pk__in=Workspace.for_user(request.user).values("pk"))
         .annotate(member_count=Count("memberships", distinct=True))
         .order_by("-is_default", "name")
     )
@@ -165,7 +182,7 @@ def workspace_delete_view(request: HttpRequest, pk) -> HttpResponse:
 
     owned = _owned_row_counts(workspace)
     if owned:
-        summary = ", ".join(f"{n} {rel}" for rel, n in owned.items())
+        summary = ", ".join(f"{n} {label}" for label, n in owned.items())
         messages.error(
             request,
             f"Cannot delete '{workspace.name}' — it still owns {summary}. "

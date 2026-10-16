@@ -9,11 +9,15 @@ the last-owner guards (a workspace must always keep an owner) and that a
 non-member targeting a workspace 404s (no existence disclosure).
 """
 
+from django.contrib.messages import get_messages
+from django.db import models
 from django.test import TestCase
 from django.urls import reverse
 
 from core.models import (
+    APIToken,
     Environment,
+    Library,
     Script,
     User,
     Workspace,
@@ -272,6 +276,41 @@ class DeleteTests(_Fixture):
         self.assertEqual(self._delete().status_code, 302)  # redirect w/ error
         self.assertTrue(Workspace.objects.filter(pk=self.ws.id).exists())
 
+    def test_delete_blocked_by_library_and_token(self):
+        # F71: a workspace owning only a library and a datastore token was
+        # deleted — both rows went to workspace=NULL (invisible), and the
+        # token then read the DEFAULT workspace's stores on the datastore API.
+        Library.objects.create(key="f71lib", name="F71", workspace=self.ws)
+        APIToken.objects.create(
+            name="f71", scope="datastores",
+            token=APIToken.generate_token(scope="datastores"), workspace=self.ws,
+        )
+        self._login(self.owner)
+        resp = self._delete()
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(Workspace.objects.filter(pk=self.ws.id).exists())
+        msgs = [str(m) for m in get_messages(resp.wsgi_request)]
+        self.assertEqual(
+            msgs,
+            ["Cannot delete 'Acme' — it still owns 1 library, 1 API token. "
+             "Move or delete its resources first."],
+        )
+        self.assertFalse(APIToken.objects.filter(workspace__isnull=True).exists())
+
+    def test_every_set_null_workspace_relation_blocks_delete(self):
+        # Any new SET_NULL workspace FK must join the delete-block, or deleting
+        # the workspace orphans its rows. Environments are shared infra.
+        from core.views.workspaces import _OWNED_RELATIONS
+
+        listed = {rel for rel, _one, _many in _OWNED_RELATIONS}
+        set_null = {
+            rel.get_accessor_name()
+            for rel in Workspace._meta.related_objects
+            if rel.on_delete is models.SET_NULL and rel.related_model is not Environment
+        }
+        self.assertTrue(set_null)
+        self.assertEqual(set_null - listed, set())
+
     def test_cannot_delete_default(self):
         default = Workspace.get_default()
         _member(self.owner, default, WorkspaceMembership.ROLE_OWNER)
@@ -311,6 +350,15 @@ class CreateAndListTests(_Fixture):
         body = self.client.get(reverse("cpanel:workspace_list")).content.decode()
         self.assertIn("Acme", body)
         self.assertNotIn("NotMine", body)
+
+    def test_member_count_counts_every_member(self):
+        # F72: a non-superuser saw "1 member" on every workspace — the count
+        # reused for_user()'s join on the caller's own membership.
+        self._login(self.plain)
+        resp = self.client.get(reverse("cpanel:workspace_list"))
+        acme = next(w for w in resp.context["workspaces"] if w.pk == self.ws.pk)
+        self.assertEqual(acme.member_count, 3)
+        self.assertIn("3 members", resp.content.decode())
 
     def test_create_button_superuser_only(self):
         self._login(self.plain)

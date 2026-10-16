@@ -31,6 +31,9 @@ class NotificationService:
     """
 
     WEBHOOK_TIMEOUT = 10  # seconds
+    # A wrong port (465 implicit TLS, a filtered port) otherwise blocks the
+    # sending thread with no limit: a web request on Test, a worker on notify.
+    SMTP_TIMEOUT = 20  # seconds
 
     @staticmethod
     def _subject(text: str) -> str:
@@ -231,6 +234,7 @@ class NotificationService:
                 password=password,
                 use_tls=settings.smtp_use_tls,
                 fail_silently=False,
+                timeout=cls.SMTP_TIMEOUT,
             )
         elif settings.email_backend == GlobalSettings.EmailBackend.RESEND:
             # Use Resend's SMTP gateway
@@ -251,6 +255,7 @@ class NotificationService:
                 password=api_key,
                 use_tls=True,
                 fail_silently=False,
+                timeout=cls.SMTP_TIMEOUT,
             )
         return None
 

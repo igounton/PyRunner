@@ -163,3 +163,16 @@ class BrandingTests(TestCase):
         from core.services.update_service import UpdateService
 
         self.assertIn("hassancs91/PyRun/", UpdateService.GITHUB_TAGS_URL)
+
+
+class SmtpTimeoutTests(TestCase):
+    """A wrong SMTP port must fail within a bound, not hang the sending thread."""
+
+    def test_smtp_and_resend_backends_have_a_timeout(self):
+        gs = GlobalSettings.get_settings()
+        gs.smtp_host, gs.smtp_port = "smtp.example.com", 465
+        for backend in (GlobalSettings.EmailBackend.SMTP, GlobalSettings.EmailBackend.RESEND):
+            gs.email_backend = backend
+            connection = NotificationService._get_email_backend(gs)
+            self.assertIsNotNone(connection.timeout)
+            self.assertLessEqual(connection.timeout, 30)

@@ -114,6 +114,26 @@ class PyAIRuntimeTests(TestCase):
         self.assertEqual(result.text, "You have 3 scripts.")
         self.assertEqual(ClaudeUsage.objects.filter(source=ClaudeUsage.Source.PYAI).count(), 1)
 
+    def test_provider_http_error_is_raised_not_returned_as_answer(self):
+        """F49: the CLI puts "API Error: 400 …" in the result text; that must be an error."""
+        canned = PyAIResult(text="API Error: 400 anthropic/x is not a valid model ID",
+                            is_error=True, error="API error (HTTP 400)", api_error_status=400)
+        with mock.patch.object(ClaudeService, "is_configured", return_value=True), \
+                mock.patch.object(ClaudeService, "get_script_env", return_value={"ANTHROPIC_API_KEY": "x"}), \
+                mock.patch.object(PyAIService, "_drive", new=mock.AsyncMock(return_value=canned)):
+            with self.assertRaises(PyAIError) as cm:
+                PyAIService.respond("hi", workspace=self.ws)
+        self.assertIn("HTTP 400", str(cm.exception))
+        self.assertIn("not a valid model ID", str(cm.exception))
+
+    def test_error_without_provider_status_keeps_partial_text(self):
+        canned = PyAIResult(text="Partial answer before the turn limit.", is_error=True, error="error_max_turns")
+        with mock.patch.object(ClaudeService, "is_configured", return_value=True), \
+                mock.patch.object(ClaudeService, "get_script_env", return_value={"ANTHROPIC_API_KEY": "x"}), \
+                mock.patch.object(PyAIService, "_drive", new=mock.AsyncMock(return_value=canned)):
+            result = PyAIService.respond("hi", workspace=self.ws)
+        self.assertEqual(result.text, "Partial answer before the turn limit.")
+
     def test_respond_raises_when_disabled(self):
         self.s.pyai_enabled = False
         self.s.save()
@@ -223,6 +243,26 @@ class PyAIViewTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["text"], "2 scripts.")
         self.assertEqual(self.client.session["pyai_history"][-1]["text"], "2 scripts.")
+
+    def test_send_provider_error_is_502_and_not_stored(self):
+        self._login(self.admin)
+        canned = PyAIResult(text="API Error: 400 bad model", is_error=True, api_error_status=400)
+        with mock.patch.object(PyAIService, "is_available", return_value=True), \
+                mock.patch.object(ClaudeService, "is_configured", return_value=True), \
+                mock.patch.object(ClaudeService, "get_script_env", return_value={"ANTHROPIC_API_KEY": "x"}), \
+                mock.patch.object(PyAIService, "_drive", new=mock.AsyncMock(return_value=canned)):
+            s = GlobalSettings.get_settings()
+            s.pyai_enabled = True
+            s.claude_enabled = True
+            s.save()
+            resp = self.client.post(
+                reverse("cpanel:pyai_send"),
+                data=json.dumps({"message": "hi"}),
+                content_type="application/json",
+            )
+        self.assertEqual(resp.status_code, 502)
+        self.assertIn("HTTP 400", resp.json()["error"])
+        self.assertNotIn("pyai_history", self.client.session)
 
     def test_settings_enable_blocked_without_claude(self):
         self._login(self.admin)

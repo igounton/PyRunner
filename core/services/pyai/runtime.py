@@ -45,6 +45,7 @@ class PyAIResult:
     num_turns: int = 0
     duration_ms: int = 0
     cost_usd: float | None = None
+    api_error_status: int | None = None  # set when the provider answered with an HTTP error
 
 
 def _describe_error(message) -> str:
@@ -120,6 +121,14 @@ class PyAIService:
         args = (cls._build_prompt(message, history), system, model, env, workspace)
         result = _run(cls._drive(*args) if agent == "pyai" else cls._drive(*args, agent=agent))
         cls._record_usage(result)
+        if result.is_error and result.api_error_status:
+            # The CLI turns a provider HTTP error (bad model id, quota, outage) into
+            # the run's "answer" text ("API Error: 400 …"); surface it as an error
+            # so it is shown as one (502), never stored or replayed as Py AI's reply.
+            raise PyAIError(
+                f"The AI provider returned an error (HTTP {result.api_error_status}): "
+                f"{result.text or result.error or 'no details'}"
+            )
         if result.is_error and not result.text:
             raise PyAIError(result.error or "Py AI run failed.")
         return result
@@ -190,6 +199,7 @@ class PyAIService:
                     if getattr(msg, "is_error", False):
                         result.is_error = True
                         result.error = _describe_error(msg)
+                        result.api_error_status = getattr(msg, "api_error_status", None)
         except Exception as exc:  # noqa: BLE001 — trailing ProcessError after error result
             if not result.error:
                 result.error = str(exc)

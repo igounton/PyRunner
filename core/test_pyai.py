@@ -92,9 +92,35 @@ class PyAIToolsTests(TestCase):
 
     def test_build_tools_and_allowed(self):
         tools = pyai_tools.build_tools(self.ws)
-        self.assertEqual(len(tools), 7)
-        self.assertEqual(len(pyai_tools.ALLOWED_TOOLS), 7)
+        self.assertEqual(len(tools), 8)
+        self.assertEqual(len(pyai_tools.ALLOWED_TOOLS), 8)
         self.assertTrue(all(n.startswith("mcp__pyai__") for n in pyai_tools.ALLOWED_TOOLS))
+
+    def test_get_run_error_returns_exit_code_and_stderr_tail(self):
+        # F48: Py AI could say which script failed but never why.
+        Run.objects.create(
+            script=self.s1, workspace=self.ws, status=Run.Status.FAILED, exit_code=3,
+            stderr="x" * 5000 + "Traceback ...\nValueError: bad input",
+        )
+        Run.objects.create(script=self.s2, workspace=self.other,
+                           status=Run.Status.FAILED, exit_code=1, stderr="other ws")
+        out = pyai_tools._get_run_error(self.ws, "alpha")
+        failed = out["failed_run"]
+        self.assertEqual(failed["exit_code"], 3)
+        self.assertTrue(failed["stderr_tail"].endswith("ValueError: bad input"))
+        self.assertEqual(len(failed["stderr_tail"]), pyai_tools.RUN_ERROR_TAIL_CHARS)
+        self.assertTrue(failed["stderr_truncated"])
+        # Workspace-scoped: the other workspace's script is invisible.
+        self.assertFalse(pyai_tools._get_run_error(self.ws, "beta")["found"])
+        # A script that never failed says so.
+        Script.objects.create(name="gamma", code="x", environment=self.env, workspace=self.ws)
+        self.assertIsNone(pyai_tools._get_run_error(self.ws, "gamma")["failed_run"])
+
+    def test_get_run_error_is_console_only(self):
+        console = {t.name for t in pyai_tools.build_tools(self.ws)}
+        channel = {t.name for t in pyai_tools.build_tools(self.ws, agent="telegram:1")}
+        self.assertIn("get_run_error", console)
+        self.assertNotIn("get_run_error", channel)
 
 
 class PyAIRuntimeTests(TestCase):

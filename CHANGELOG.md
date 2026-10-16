@@ -152,6 +152,11 @@ begins tracking at the current release; earlier history is in the git log.
   list. Each bar links to its run. Rendered server-side, no JavaScript.
 
 ### Changed
+- **Py AI can say why a script failed.** The console Py AI gets a read-only
+  `get_run_error` tool: the exit code and the last 2,000 characters of stderr of
+  a script's most recent failed or timed-out run, in the current workspace. The
+  stored output was already masked for the run's secrets. Py AI stays limited to
+  workspace owners and admins; Py AI on chat channels doesn't get this tool.
 - **Large run output keeps its ending.** stdout and stderr are each stored up
   to 1 MB per run (unchanged). Beyond that a run used to keep only the first
   1 MB, losing the end of the output, which is where a result line or a

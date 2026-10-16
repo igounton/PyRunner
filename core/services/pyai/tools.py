@@ -3,7 +3,10 @@ Workspace introspection and granted Brain tools for Py AI's in-process MCP serve
 
 Introspection wraps existing workspace-scoped reads. Brain tools recheck grants;
 remember only captures a proposal for human approval. No tool runs scripts,
-reveals secrets or applies note changes. ORM access is wrapped in
+reveals secrets or applies note changes. ``get_run_error`` (the end of a failed
+run's stderr, already secret-masked when the run was stored) is given to the
+console Py AI only, which is limited to workspace owners/admins — not to chat
+channels, whose approved senders need not be either. ORM access is wrapped in
 ``sync_to_async`` because handlers run inside the SDK's event loop.
 """
 
@@ -85,6 +88,44 @@ def _recent_runs(ws, limit) -> dict:
     }
 
 
+# How much of a failed run's stderr Py AI sees: the end, where the traceback is.
+RUN_ERROR_TAIL_CHARS = 2000
+
+
+def _get_run_error(ws, name: str) -> dict:
+    """The most recent failed (or timed-out) run of one script: exit code + stderr tail.
+
+    Workspace-scoped like ``_get_script``. The stored stderr was masked for the
+    run's injected secrets and AI credential before it was saved, so this
+    returns nothing the run page doesn't already show an owner/admin.
+    """
+    from core.models import Run, Script
+
+    qs = Script.objects.for_workspace(ws).filter(archived_at__isnull=True)
+    s = qs.filter(name__iexact=name).first() or qs.filter(name__icontains=name).first()
+    if s is None:
+        return {"found": False, "name": name}
+    run = (
+        s.runs.filter(status__in=[Run.Status.FAILED, Run.Status.TIMEOUT])
+        .order_by("-created_at")
+        .first()
+    )
+    if run is None:
+        return {"found": True, "script": s.name, "failed_run": None}
+    stderr = run.stderr or ""
+    return {
+        "found": True,
+        "script": s.name,
+        "failed_run": {
+            "status": run.status,
+            "at": run.created_at,
+            "exit_code": run.exit_code,
+            "stderr_tail": stderr[-RUN_ERROR_TAIL_CHARS:],
+            "stderr_truncated": len(stderr) > RUN_ERROR_TAIL_CHARS,
+        },
+    }
+
+
 def _list_schedules(ws) -> dict:
     from core.models import ScriptSchedule
 
@@ -161,12 +202,28 @@ def build_tools(workspace, *, agent="pyai"):
             )
         )
 
-    return [count_scripts, list_scripts, get_script, recent_runs,
-            list_schedules, list_datastores, query_datastore] + brain_tools(workspace, agent=agent)
+    tools = [count_scripts, list_scripts, get_script, recent_runs,
+             list_schedules, list_datastores, query_datastore]
+
+    if agent == "pyai":
+        # Console Py AI only (owners/admins): say WHY a script failed.
+        @tool(
+            "get_run_error",
+            "Get why a script failed: exit code and the end of stderr (the "
+            "traceback) of its most recent failed or timed-out run, by script name.",
+            {"name": str},
+        )
+        async def get_run_error(args):
+            return _ok(await sync_to_async(_get_run_error)(workspace, args.get("name", "")))
+
+        tools.append(get_run_error)
+
+    return tools + brain_tools(workspace, agent=agent)
 
 
 TOOL_NAMES = [
     "count_scripts", "list_scripts", "get_script", "recent_runs",
     "list_schedules", "list_datastores", "query_datastore",
+    "get_run_error",  # console Py AI only (see build_tools)
 ]
 ALLOWED_TOOLS = [f"mcp__{SERVER_NAME}__{n}" for n in TOOL_NAMES]

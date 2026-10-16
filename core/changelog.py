@@ -106,6 +106,17 @@ CHANGELOG = [
                 ),
             },
             {
+                "tag": "Improved",
+                "title": "Py AI can say why a script failed",
+                "body": (
+                    "In the console, Py AI can now read the exit code and the end of "
+                    "the error output of a script's most recent failed run, so "
+                    "\"why did it fail?\" gets an answer. It stays read-only and "
+                    "limited to workspace owners and admins; chat channels don't get "
+                    "this tool."
+                ),
+            },
+            {
                 "tag": "Fixed",
                 "title": "Runs interrupted by a restart fail right away",
                 "body": (

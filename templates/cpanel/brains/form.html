@@ -1,4 +1,5 @@
 {% extends "cpanel/brains/base.html" %}
+{% load workspace_tags %}
 {% block heading %}{{ heading }}{% endblock %}
 {% block brain_content %}
 <form method="post" enctype="multipart/form-data" class="rounded-2xl border border-line bg-panel p-5 space-y-5 max-w-4xl" data-brain-form>
@@ -6,4 +7,24 @@
     {% include "cpanel/brains/fields.html" %}
     <button class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm font-medium">{{ submit }}</button>
 </form>
+{% if delete_zone and brain %}
+<section class="rounded-2xl border border-fail/30 bg-fail/[0.04] p-5 space-y-3 max-w-4xl mt-6" aria-labelledby="brain-delete-heading">
+    <h3 id="brain-delete-heading" class="text-base font-semibold text-text">Delete this brain</h3>
+    {% if brain.owner_plugin %}
+    <p class="text-sm text-muted">This brain is managed by the <span class="font-mono">{{ brain.owner_plugin }}</span> plugin. Remove it from the plugin (or delete the plugin with its data).</p>
+    {% elif not can_delete %}
+    <p class="text-sm text-muted">Only a workspace owner can delete a brain.</p>
+    {% else %}
+    <p class="text-sm text-muted">Deletes every note, revision, grant, feed and reader job of <span class="font-mono">{{ brain.slug }}</span>, its GitHub sync settings and its search chunks{% if bound_tokens %}, and the <strong>{{ bound_tokens }}</strong> API token{{ bound_tokens|pluralize }} bound to it{% endif %}. This cannot be undone; export a ZIP first if you may need it.</p>
+    <form method="post" action="{% ws_url 'cpanel:brain_delete' brain.pk %}" class="flex flex-wrap items-end gap-3">
+        {% csrf_token %}
+        <label class="block text-sm">
+            <span class="block text-[13px] font-medium text-text mb-1.5">Type <span class="font-mono">{{ brain.slug }}</span> to confirm</span>
+            <input name="confirm_slug" autocomplete="off" required class="w-64 bg-ink border border-line rounded-lg p-2 text-sm font-mono">
+        </label>
+        <button type="submit" class="px-3.5 py-2 rounded-lg border border-fail/40 bg-fail/10 text-fail text-sm font-medium hover:bg-fail/20">Delete brain</button>
+    </form>
+    {% endif %}
+</section>
+{% endif %}
 {% endblock %}

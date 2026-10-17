@@ -19,6 +19,45 @@ TEMPLATE = Path(__file__).with_name("template")
 
 class BrainService:
     @staticmethod
+    def delete(workspace, brain_id):
+        """Delete a brain with everything that belongs to it (F56).
+
+        Revisions, blobs, notes, grants, feeds, reader jobs, the GitHub sync
+        config and the API tokens bound to it go with the row (FK cascades);
+        its search chunks are removed from the vector collection afterwards
+        (best effort — the collection itself is the user's and stays).
+        Plugin-owned brains are refused: the plugin manages them.
+        Returns ``{"tokens": <bound tokens deleted>, "warning": str}``.
+        """
+        with transaction.atomic():
+            brain = BrainService.get(workspace, brain_id, lock=True)
+            if brain.owner_plugin:
+                raise ValidationError(
+                    f"This brain is managed by the {brain.owner_plugin} plugin; "
+                    "remove it from the plugin instead."
+                )
+            collection = brain.vector_collection
+            brain_key = str(brain.pk)
+            tokens = brain.api_tokens.count()
+            brain.delete()
+        warning = ""
+        if collection is not None:
+            from core.vectors.service import VectorService
+
+            try:
+                VectorService.handle(collection).delete(filter={"brain_id": brain_key})
+            except Exception as exc:  # noqa: BLE001 — the brain is gone either way
+                log.warning(
+                    "brain_delete_vector_purge_failed brain=%s error_type=%s",
+                    brain_key, type(exc).__name__,
+                )
+                warning = (
+                    f"Its search chunks could not be removed from the vector collection "
+                    f"'{collection.name}' (the store is unreachable); clear them there."
+                )
+        return {"tokens": tokens, "warning": warning}
+
+    @staticmethod
     def get(workspace, brain_id, *, lock=False):
         scope = Brain.objects.for_workspace(workspace)
         if lock:

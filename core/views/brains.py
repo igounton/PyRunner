@@ -19,7 +19,7 @@ from core.brain.imports import export_zip, import_github, import_zip
 from core.brain.paths import MAX_IMPORT_BYTES, MAX_NOTE_BYTES, MAX_RAW_BYTES, validate_path
 from core.brain.service import BrainService
 from core.models import Brain, BrainGrant, WorkspaceMembership
-from core.views.workspaces import _require_manage
+from core.views.workspaces import _require_manage, _require_owner
 from core.templatetags.workspace_tags import ws_url
 from core.brain import approval, feeder, intake
 
@@ -422,11 +422,42 @@ def brain_settings_view(request, brain_id):
             enqueue(request.workspace.pk, brain.pk)
         messages.success(request, "Brain settings saved.")
         return redirect(_url(request, "brain_settings", brain_id=brain.pk))
+    is_owner = request.user.is_superuser or WorkspaceMembership.objects.filter(
+        user=request.user, workspace=request.workspace, role=WorkspaceMembership.ROLE_OWNER
+    ).exists()
     return render(
         request,
         "cpanel/brains/form.html",
-        _context(request, brain, form=form, heading="Brain settings", submit="Save settings"),
+        _context(
+            request, brain, form=form, heading="Brain settings", submit="Save settings",
+            delete_zone=True, can_delete=is_owner and not brain.owner_plugin,
+            bound_tokens=brain.api_tokens.count(),
+        ),
     )
+
+
+@login_required
+@require_POST
+def brain_delete_view(request, brain_id):
+    """Owner-only: delete a brain after its slug is typed to confirm (F56)."""
+    brain = _brain(request, brain_id)
+    _require_owner(request, request.workspace)
+    if request.POST.get("confirm_slug", "").strip() != brain.slug:
+        messages.error(request, f"Type the brain's slug ({brain.slug}) to confirm the delete.")
+        return redirect(_url(request, "brain_settings", brain_id=brain.pk))
+    try:
+        result = BrainService.delete(request.workspace, brain.pk)
+    except ValidationError as exc:
+        messages.error(request, "; ".join(exc.messages))
+        return redirect(_url(request, "brain_settings", brain_id=brain.pk))
+    note = ""
+    if result["tokens"]:
+        n = result["tokens"]
+        note = f" {n} API token{'s' if n != 1 else ''} bound to it {'were' if n != 1 else 'was'} deleted too."
+    messages.success(request, f"Brain '{brain.name}' deleted.{note}")
+    if result["warning"]:
+        messages.warning(request, result["warning"])
+    return redirect(_url(request, "brain_list"))
 
 
 @login_required

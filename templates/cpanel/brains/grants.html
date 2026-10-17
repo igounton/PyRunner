@@ -3,7 +3,7 @@
 {% block brain_content %}
 <h2 class="font-semibold">Access grants</h2>
 <p class="text-sm text-muted">Without a grant, consumers cannot read this brain. Token access also respects its permissions and tier ceiling.</p>
-{% for grant in grants %}<div class="rounded-2xl border border-line bg-panel p-5 flex flex-wrap items-center justify-between gap-4"><div class="text-sm min-w-0"><p class="break-words">{{ grant.subject_label }}</p><p class="text-xs text-muted mt-1">{{ grant.get_subject_kind_display }} · {{ grant.max_tier }}{% if grant.can_propose %} · Can propose{% endif %}</p></div><form method="post" action="{% ws_url 'cpanel:brain_grant_delete' brain.pk grant.pk %}">{% csrf_token %}<button class="text-sm text-fail">Revoke</button></form></div>{% empty %}<p class="text-sm text-muted">No external grants.</p>{% endfor %}
+{% for grant in grants %}<div class="rounded-2xl border border-line bg-panel p-5 flex flex-wrap items-center justify-between gap-4"><div class="text-sm min-w-0"><p class="break-words{% if grant.subject_missing %} text-muted{% endif %}">{{ grant.subject_label }}{% if grant.subject_missing %} <span class="font-mono text-xs text-faint">{{ grant.subject_id|truncatechars:13 }}</span>{% endif %}</p><p class="text-xs text-muted mt-1">{{ grant.get_subject_kind_display }} · {{ grant.get_max_tier_display }}{% if grant.can_propose %} · Can propose{% endif %}</p></div><form method="post" action="{% ws_url 'cpanel:brain_grant_delete' brain.pk grant.pk %}">{% csrf_token %}<button class="text-sm text-fail">Revoke</button></form></div>{% empty %}<p class="text-sm text-muted">No external grants.</p>{% endfor %}
 <form method="post" class="rounded-2xl border border-line bg-panel p-5 space-y-5 max-w-4xl" data-brain-form id="grant-form">
     {% csrf_token %}
     <h3 class="font-semibold">Add or update a grant</h3>
@@ -40,6 +40,7 @@
     const inputClass = original.className;
     const initialValue = original.value;
     const nouns = {script: 'script', token: 'API token'};
+    const articles = {script: 'a', token: 'an'};
 
     function filterChoices(selected) {
         const control = document.getElementById('id_subject_id');
@@ -47,7 +48,7 @@
         const noun = nouns[kind.value];
         const query = search.value.trim().toLocaleLowerCase();
         const matches = all.filter(item => item.label.toLocaleLowerCase().includes(query));
-        control.replaceChildren(new Option(`Choose a ${noun}…`, ''));
+        control.replaceChildren(new Option(`Choose ${articles[kind.value]} ${noun}…`, ''));
         for (const item of matches) control.add(new Option(item.label, item.id));
         control.value = matches.some(item => item.id === selected) ? selected : '';
         if (!all.length) {

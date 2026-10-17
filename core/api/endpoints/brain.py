@@ -42,7 +42,13 @@ def list_brains(ctx, params):
     }
 
 
-@endpoint("brain.ping", title="Ping brain", input=brain_input(), permission="brain:read")
+@endpoint(
+    "brain.ping",
+    title="Ping brain",
+    description="Check that this token can reach the brain; returns your tier.",
+    input=brain_input(),
+    permission="brain:read",
+)
 def ping(ctx, params):
     _, access = resolve(ctx, params)
     return {"pong": True, "service": "pyrunner", "tier": access.tier}

@@ -1,0 +1,11 @@
+{# One token's status: an expired token is not "Active" whatever its switch says (U62). #}
+{% if token.expired %}
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-warn/10 text-warn"><span class="w-1.5 h-1.5 rounded-full bg-warn"></span>Expired</span>
+{% elif token.is_active %}
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Active</span>
+{% else %}
+<span class="px-2 py-0.5 text-xs rounded-md bg-panel-hi text-muted">Inactive</span>
+{% endif %}
+{% if token.expires_at %}
+<span class="block text-xs {% if token.expired %}text-warn{% else %}text-faint{% endif %} mt-1">{% if token.expired %}Expired{% else %}Expires{% endif %} {{ token.expires_at|date:"M d, Y" }}</span>
+{% endif %}

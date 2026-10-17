@@ -1,0 +1,19 @@
+{# One token's scope (table cell and phone card): plugin state, store, unified API kind/tier + bound brain (U62). #}
+{% if token.scope == "plugin" %}
+<span class="px-2 py-0.5 rounded-md text-xs bg-warn/10 text-warn">Plugin: {{ token.plugin_slug }}</span>
+{% if token.plugin_slug not in loaded_plugin_slugs %}
+{% if token.plugin_slug in installed_plugin_slugs %}
+<span class="block text-xs text-warn mt-1">Plugin inactive</span>
+{% else %}
+<span class="block text-xs text-fail mt-1">Plugin not installed</span>
+{% endif %}
+{% endif %}
+{% elif token.datastore %}
+<span class="px-2 py-0.5 rounded-md text-xs bg-info/10 text-info">{{ token.datastore.name }}</span>
+{% elif token.scope == "api" %}
+<span class="px-2 py-0.5 rounded-md text-xs bg-info/10 text-info">{{ token.scope_display }}</span>
+<span class="block text-xs text-muted mt-1">{{ token.get_kind_display }} · {{ token.get_brain_tier_display }}</span>
+{% if token.brain %}<span class="block text-xs text-muted mt-0.5">Brain: <span class="text-text">{{ token.brain.name }}</span></span>{% endif %}
+{% else %}
+<span class="px-2 py-0.5 rounded-md text-xs bg-accent/10 text-accent">All datastores</span>
+{% endif %}

@@ -21,6 +21,9 @@ class CoreConfig(AppConfig):
         # A deleted script's working folder goes with it.
         self._register_script_workdir_cleanup()
 
+        # A revoked (deleted) API token's brain grants go with it (U65).
+        self._register_token_grant_cleanup()
+
         # Use post_migrate signal to ensure heartbeat schedule exists after migrations
         # This avoids database access during app initialization
         from django.db.models.signals import post_migrate
@@ -36,6 +39,25 @@ class CoreConfig(AppConfig):
         self._ensure_heartbeat_schedule()
         self._ensure_update_check_schedule()
         self._ensure_resync_schedule()
+
+    def _register_token_grant_cleanup(self):
+        """Delete the brain grants of an API token when the token is deleted.
+
+        Grants name a token by its id (no FK), so revoking a token left grants
+        that showed only a bare UUID on the brain's Grants page.
+        """
+        from django.db.models.signals import post_delete
+
+        def drop_grants(sender, instance, **kwargs):
+            from core.models import BrainGrant
+
+            BrainGrant.objects.filter(subject_kind="token", subject_id=str(instance.pk)).delete()
+
+        from core.models import APIToken
+
+        post_delete.connect(
+            drop_grants, sender=APIToken, dispatch_uid="drop_token_brain_grants", weak=False
+        )
 
     def _register_script_workdir_cleanup(self):
         """Remove ``workdir/<script id>/`` once a script deletion commits.

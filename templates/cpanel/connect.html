@@ -11,14 +11,14 @@
             </div>
             <div class="rounded-2xl border border-line bg-panel p-6 space-y-3">
                 <h2 class="font-semibold">MCP endpoint</h2>
-                <code class="block p-2 bg-ink rounded-lg text-xs overflow-x-auto">{{ mcp_url }}</code>
+                <div class="flex items-start gap-2"><code class="copy-src flex-1 min-w-0 block p-2 bg-ink rounded-lg text-xs break-all">{{ mcp_url }}</code><button type="button" class="copy-btn flex-shrink-0 text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors" aria-label="Copy the MCP URL">Copy</button></div>
                 <p class="text-sm text-muted">Create a Unified API token with the permissions and Brain tier your client needs. Tokens select the workspace; the endpoint URL is shared.</p>
                 <a href="{% url 'cpanel:api_token_create' %}" class="text-sm text-ok">Create a token</a>
                 <span class="text-faint"> · </span><a href="{% url 'cpanel:api_token_list' %}" class="text-sm text-ok">Manage tokens</a>
                 <h3 class="text-sm font-medium">Claude Code</h3>
-                <pre class="p-3 bg-ink rounded-lg text-xs overflow-x-auto">claude mcp add --transport http pyrun {{ mcp_url }} --header "Authorization: Bearer YOUR_TOKEN"</pre>
+                <div class="flex items-start gap-2"><pre class="copy-src flex-1 min-w-0 p-3 bg-ink rounded-lg text-xs whitespace-pre-wrap break-all">claude mcp add --transport http pyrun {{ mcp_url }} --header "Authorization: Bearer YOUR_TOKEN"</pre><button type="button" class="copy-btn flex-shrink-0 text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors" aria-label="Copy the Claude Code command">Copy</button></div>
                 <h3 class="text-sm font-medium">REST catalog</h3>
-                <pre class="p-3 bg-ink rounded-lg text-xs overflow-x-auto">curl -H "Authorization: Bearer YOUR_TOKEN" {{ api_url }}/_catalog</pre>
+                <div class="flex items-start gap-2"><pre class="copy-src flex-1 min-w-0 p-3 bg-ink rounded-lg text-xs whitespace-pre-wrap break-all">curl -H "Authorization: Bearer YOUR_TOKEN" {{ api_url }}/_catalog</pre><button type="button" class="copy-btn flex-shrink-0 text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors" aria-label="Copy the curl command">Copy</button></div>
                 <p class="text-sm text-muted">Use the same header with <code>/_health</code> or <code>/_openapi.json</code>. OpenAPI includes only endpoints available to that token.</p>
             </div>
             <div class="rounded-2xl border border-line bg-panel p-6 space-y-3">
@@ -26,7 +26,7 @@
                 <p class="text-sm text-muted">URL tokens are {% if url_tokens_enabled %}enabled{% else %}disabled{% endif %} on this instance. They require an expiry (90 days by default) and read-only permissions.</p>
                 {% if url_tokens_enabled %}
                 <p class="text-sm text-muted">Create a token with kind “MCP URL”, then add a custom connector with this URL, replacing YOUR_URL_TOKEN with the value shown once at creation. Use a public HTTPS address.</p>
-                <code class="block p-2 bg-ink rounded-lg text-xs overflow-x-auto">{{ mcp_url }}/k/YOUR_URL_TOKEN/</code>
+                <div class="flex items-start gap-2"><code class="copy-src flex-1 min-w-0 block p-2 bg-ink rounded-lg text-xs break-all">{{ mcp_url }}/k/YOUR_URL_TOKEN/</code><button type="button" class="copy-btn flex-shrink-0 text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors" aria-label="Copy the connector URL">Copy</button></div>
                 {% endif %}
                 <p class="text-sm text-muted">The URL is a credential. Keep connector configurations private and redact this path in proxy access logs. Revoke the token if exposed.</p>
                 {% if user.is_superuser %}
@@ -43,7 +43,7 @@
                     <label for="catalog-token" class="block text-sm text-muted">Preview endpoints by token</label>
                     <select id="catalog-token" name="token" class="w-full bg-ink border border-line rounded-lg p-2 text-sm">
                         <option value="">Select a token</option>
-                        {% for token in tokens %}<option value="{{ token.pk }}" {% if selected.pk == token.pk %}selected{% endif %}>{{ token.name }}{% if not token.is_active %} (revoked){% endif %}</option>{% endfor %}
+                        {% for token in tokens %}<option value="{{ token.pk }}" {% if selected.pk == token.pk %}selected{% endif %}>{{ token.name }}{% if not token.is_active %} (disabled){% endif %}</option>{% endfor %}
                     </select>
                     <button class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-line">Show endpoints</button>
                 </form>
@@ -58,4 +58,22 @@
         </div>
     </div>
 </div>
+<script>
+// Copy buttons next to each URL/command (U63).
+document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        const src = btn.parentElement.querySelector('.copy-src');
+        const text = src ? src.textContent.trim() : '';
+        const done = function (label) {
+            btn.textContent = label;
+            setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { done('Copied'); }, function () { done('Copy failed'); });
+        } else {
+            done('Copy failed');
+        }
+    });
+});
+</script>
 {% endblock %}

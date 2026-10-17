@@ -484,7 +484,12 @@ def brain_grants_view(request, brain_id):
         "subject_kind", "subject_id"
     ))
     for grant in grants:
-        grant.subject_label = labels.get((grant.subject_kind, grant.subject_id), grant.subject_id)
+        label = labels.get((grant.subject_kind, grant.subject_id))
+        if label is None and grant.subject_kind in ("token", "script"):
+            # Its token/script is gone (grants made before U65 outlived revoked tokens).
+            label = f"Deleted {'API token' if grant.subject_kind == 'token' else 'script'}"
+            grant.subject_missing = True
+        grant.subject_label = label or grant.subject_id
     return render(
         request,
         "cpanel/brains/grants.html",

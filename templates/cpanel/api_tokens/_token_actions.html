@@ -1,0 +1,8 @@
+<form method="post" action="{% url 'cpanel:api_token_toggle' pk=token.pk %}" class="inline">
+    {% csrf_token %}
+    <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">{% if token.is_active %}Disable{% else %}Enable{% endif %}</button>
+</form>
+<form method="post" action="{% url 'cpanel:api_token_revoke' pk=token.pk %}" onsubmit="return confirm('Are you sure you want to revoke the token &quot;{{ token.name|escapejs }}&quot;? This action cannot be undone.');" class="inline">
+    {% csrf_token %}
+    <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Revoke</button>
+</form>

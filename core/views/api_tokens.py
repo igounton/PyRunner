@@ -7,10 +7,11 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from core.forms import APITokenForm
-from core.models import DataStore, APIToken, PluginPublicPage
+from core.models import DataStore, APIToken, Plugin, PluginPublicPage
 
 
 def _token_scope(request):
@@ -26,10 +27,14 @@ def _token_scope(request):
 @login_required
 def api_token_list_view(request: HttpRequest) -> HttpResponse:
     """List the active workspace's API tokens."""
-    tokens = (
+    tokens = list(
         APIToken.objects.filter(_token_scope(request))
-        .select_related("datastore", "created_by")
+        .select_related("datastore", "created_by", "brain")
     )
+    # An expired token is refused at auth whatever its switch says (U62).
+    now = timezone.now()
+    for token in tokens:
+        token.expired = bool(token.expires_at and token.expires_at <= now)
 
     # Loaded plugin slugs so the list can badge plugin tokens whose plugin has
     # since been removed (plugin_slug is not an FK — orphans 404 harmlessly).
@@ -47,6 +52,8 @@ def api_token_list_view(request: HttpRequest) -> HttpResponse:
         {
             "tokens": tokens,
             "loaded_plugin_slugs": {p.slug for p in all_plugins()},
+            # Installed but not loaded = inactive, not "not installed" (U62).
+            "installed_plugin_slugs": set(Plugin.objects.values_list("slug", flat=True)),
             "public_pages": public_pages,
         },
     )

@@ -112,7 +112,7 @@
                 </div>
 
                 <nav class="flex items-center gap-1.5">
-                    {% if user.is_authenticated %}
+                    {% if user.is_superuser %}
                     {# Pinned system resources — container-aware mini meters, populated + polled by JS (see headerResources script) #}
                     <a id="headerResources" href="{% url 'cpanel:dashboard' %}" aria-label="System resources"
                        title="System resources — open dashboard"
@@ -145,8 +145,11 @@
                             </span>
                         </span>
                     </a>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                    {# Hidden below sm so the header fits a 390 px phone (F20); the changelog stays in the sidebar footer. #}
                     <a href="{% url 'cpanel:changelog' %}" title="What's new"
-                       class="w-9 h-9 grid place-items-center rounded-lg border transition-colors {% if request.resolver_match.url_name == 'changelog' %}border-ok/40 text-ok bg-ok/10{% else %}border-line text-muted hover:text-text hover:border-faint{% endif %}">
+                       class="w-9 h-9 hidden sm:grid place-items-center rounded-lg border transition-colors {% if request.resolver_match.url_name == 'changelog' %}border-ok/40 text-ok bg-ok/10{% else %}border-line text-muted hover:text-text hover:border-faint{% endif %}">
                         <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-4.51 2.51a6 6 0 01-3.42-3.42 6 6 0 014.32-7.7m-1.27 9.65l2.45-2.45m-2.45 2.45l.01.01"/></svg>
                     </a>
                     {% endif %}
@@ -160,7 +163,7 @@
                             <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
                         </svg>
                     </a>
-                    <a href="https://pyrun.ai/docs/" target="_blank" rel="noopener noreferrer"
+                    <a href="https://github.com/hassancs91/PyRun#readme" target="_blank" rel="noopener noreferrer"
                        class="w-9 h-9 hidden md:grid place-items-center rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors" title="Docs">
                         <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.25v13M12 6.25C10.83 5.48 9.25 5 7.5 5S4.17 5.48 3 6.25v13C4.17 18.48 5.75 18 7.5 18s3.33.48 4.5 1.25m0-13C13.17 5.48 14.75 5 16.5 5S19.83 5.48 21 6.25v13C19.83 18.48 18.25 18 16.5 18s-3.33.48-4.5 1.25"/>
@@ -182,7 +185,7 @@
                     </a>
                     {% endcomment %}
                     {% if user.is_authenticated %}
-                        <span class="w-px h-6 bg-line mx-1.5"></span>
+                        <span class="w-px h-6 bg-line mx-1.5 hidden sm:block"></span>
                         <a href="{% url 'auth:change_password' %}" title="Change password" aria-label="Change password"
                            class="w-9 h-9 grid place-items-center rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">
                             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
@@ -275,11 +278,7 @@
             });
             // Reset drawer state when crossing into desktop so it never stays "open"
             window.matchMedia('(min-width: 1024px)').addEventListener('change', function (e) {
-                if (e.matches) {
-                    var o = overlay();
-                    if (o) o.classList.add('hidden');
-                    document.body.classList.remove('overflow-hidden');
-                }
+                if (e.matches) window.closeSidebar();
             });
         })();
 
@@ -308,9 +307,39 @@
                 meter[1].style.width = Math.min(percent, 100) + '%';
             }
 
+            var leaving = false, stopped = false, timer = null;
+            window.addEventListener('pagehide', function () { leaving = true; });
+            window.addEventListener('beforeunload', function () { leaving = true; });
+
+            function sessionEnded() {
+                stopped = true;
+                if (timer) clearInterval(timer);
+                if (document.getElementById('sessionEndedNotice')) return;
+                var box = document.createElement('div');
+                box.id = 'sessionEndedNotice';
+                box.setAttribute('role', 'alert');
+                box.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-[60] max-w-[90vw] rounded-lg border border-warn/30 bg-panel px-4 py-3 text-sm text-text shadow-xl';
+                box.appendChild(document.createTextNode('Your session ended. '));
+                var link = document.createElement('a');
+                link.href = '{% url "auth:login" %}?next=' + encodeURIComponent(location.pathname + location.search);
+                link.className = 'text-info hover:underline';
+                link.textContent = 'Sign in again';
+                box.appendChild(link);
+                document.body.appendChild(box);
+            }
+
             function refresh() {
-                fetch('{% url "cpanel:system_resources_api" %}')
-                    .then(function (r) { return r.ok ? r.json() : null; })
+                if (stopped) return;
+                fetch('{% url "cpanel:system_resources_api" %}', {headers: {'Accept': 'application/json'}})
+                    .then(function (r) {
+                        var json = (r.headers.get('Content-Type') || '').indexOf('application/json') !== -1;
+                        // A signed-out session is redirected to the login page (HTML).
+                        if (r.redirected || r.status === 401 || r.status === 403 || (r.ok && !json)) {
+                            sessionEnded();
+                            return null;
+                        }
+                        return r.ok ? r.json() : null;
+                    })
                     .then(function (data) {
                         if (!data) return;
                         paint(meters.cpu, data.cpu.percent);
@@ -327,7 +356,9 @@
                         root.title = tip;
                     })
                     .catch(function (error) {
-                        console.error('Failed to refresh header resources:', error);
+                        // Navigating away aborts the in-flight poll: not an error.
+                        if (leaving) return;
+                        console.debug('Header resources refresh failed:', error);
                     });
             }
 
@@ -336,7 +367,7 @@
                 if (!document.hidden) refresh();
             });
             refresh();
-            setInterval(function () { if (!document.hidden) refresh(); }, 30000);
+            timer = setInterval(function () { if (!document.hidden) refresh(); }, 30000);
         })();
     </script>
     {% block extra_scripts %}{% endblock %}

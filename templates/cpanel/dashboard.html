@@ -3,6 +3,7 @@
 {% block title %}Dashboard - {{ instance_name }}{% endblock %}
 
 {% block content %}
+{% load time_tags %}
 <div class="flex">
     {% include "cpanel/_sidebar.html" %}
 
@@ -17,8 +18,13 @@
                 </svg>
                 <div class="text-sm">
                     <span class="font-medium text-fail">Workers stopped</span>
-                    <span class="text-muted"> — scheduled scripts and queued tasks will not run. Start the worker with </span>
+                    <span class="text-muted"> — scheduled scripts and queued tasks will not run. </span>
+                    {% if in_container %}
+                    <span class="text-muted">{% if user.is_superuser %}Restart them under <a href="{% url 'cpanel:settings' %}#workers" class="text-info hover:underline">Settings → Workers</a>, or restart the container.{% else %}Ask an administrator to restart the workers or the container.{% endif %}</span>
+                    {% else %}
+                    <span class="text-muted">Start the worker with </span>
                     <code class="font-mono text-text bg-panel-hi px-1.5 py-0.5 rounded">python manage.py qcluster</code>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -31,7 +37,7 @@
                 <div class="text-sm">
                     <span class="font-medium text-warn">Schedules paused</span>
                     <span class="text-muted"> — all scheduled script executions are paused. </span>
-                    {% if user.is_superuser %}<a href="{% url 'cpanel:settings' %}" class="text-info hover:underline">Resume in Settings</a>{% else %}<span class="text-muted">An administrator can resume them.</span>{% endif %}
+                    {% if user.is_superuser %}<a href="{% url 'cpanel:settings' %}#schedules" class="text-info hover:underline">Resume in Settings → Schedules</a>{% else %}<span class="text-muted">An administrator can resume them.</span>{% endif %}
                 </div>
             </div>
             {% endif %}
@@ -41,16 +47,20 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-5 px-6 pt-6 pb-5">
                     <div class="flex items-center gap-4">
                         {% if system_health.worker_status == 'running' %}
+                        {% if system_health.schedules_paused %}
+                        <span class="w-3.5 h-3.5 rounded-full bg-warn"></span>
+                        {% else %}
                         <span class="relative grid place-items-center w-3.5 h-3.5">
                             <span class="absolute inset-0 rounded-full bg-ok/40 live-ring"></span>
                             <span class="w-3.5 h-3.5 rounded-full bg-ok live-dot"></span>
                         </span>
+                        {% endif %}
                         <div>
-                            <h1 class="text-[22px] font-semibold tracking-tight leading-none">All systems operational</h1>
+                            <h1 class="text-[22px] font-semibold tracking-tight leading-none">{% if system_health.schedules_paused %}Schedules paused{% else %}All systems operational{% endif %}</h1>
                             <p class="text-sm text-muted mt-1.5">
                                 Workers {{ system_health.worker_status_text|lower }} ·
                                 <span class="font-mono tnum text-text">{{ queue_size }}</span> queued
-                                {% if recent_runs.0 %}· last run <span class="text-text">{{ recent_runs.0.created_at|timesince }} ago</span>{% endif %}
+                                {% if recent_runs.0 %}· last run <span class="text-text">{{ recent_runs.0.created_at|ago }}</span>{% endif %}
                             </p>
                         </div>
                         {% elif system_health.worker_status == 'stopped' %}
@@ -84,8 +94,9 @@
                         <span class="eyebrow text-faint">Run pulse · last {{ run_pulse|length }} run{{ run_pulse|length|pluralize }}</span>
                         <div class="hidden sm:flex items-center gap-4 eyebrow text-faint">
                             <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-[2px] bg-ok"></span>Success</span>
-                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-[2px] bg-fail"></span>Failed</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-[2px] bg-fail"></span>Failed / timeout</span>
                             <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-[2px] bg-warn"></span>Running</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-[2px] bg-faint"></span>Cancelled / queued</span>
                         </div>
                     </div>
                     {% if run_pulse %}
@@ -135,7 +146,7 @@
             </section>
 
             <!-- ============ BODY: ACTIVITY FEED + STATUS RAIL ============ -->
-            <div class="grid lg:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
                 <!-- LEFT: primary activity feed -->
                 <section class="lg:col-span-2 rounded-2xl border border-line bg-panel flex flex-col">
@@ -151,7 +162,7 @@
                             <span class="flex-1 text-[13.5px] font-medium truncate text-text">{{ run.script.name }}</span>
                             <span class="text-xs font-mono w-20 {% if run.status == 'success' %}text-ok{% elif run.status == 'failed' or run.status == 'timeout' %}text-fail{% elif run.status == 'running' %}text-warn{% else %}text-faint{% endif %}">{{ run.get_status_display|lower }}</span>
                             <span class="text-xs text-muted font-mono tnum w-16 text-right">{% if run.duration_display %}{{ run.duration_display }}{% else %}—{% endif %}</span>
-                            <span class="text-xs text-faint w-20 text-right">{{ run.created_at|timesince }} ago</span>
+                            <span class="text-xs text-faint w-28 text-right whitespace-nowrap">{{ run.created_at|ago }}</span>
                         </a>
                         {% endfor %}
                     </div>
@@ -162,7 +173,11 @@
                                 <svg class="w-6 h-6 text-faint" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </div>
                             <p class="text-sm text-muted mb-2">No runs yet</p>
+                            {% if scripts_count %}
                             <a href="{% url 'cpanel:script_list' %}" class="text-sm text-info hover:underline">Run a script</a>
+                            {% else %}
+                            <a href="{% url 'cpanel:script_create' %}" class="text-sm text-info hover:underline">Create your first script</a>
+                            {% endif %}
                         </div>
                     </div>
                     {% endif %}
@@ -171,7 +186,8 @@
                 <!-- RIGHT: status rail -->
                 <div class="space-y-5">
 
-                    <!-- System resources -->
+                    <!-- System resources (superusers only, F22) -->
+                    {% if system_resources %}
                     <section class="rounded-2xl border border-line bg-panel">
                         <div class="flex items-center justify-between px-6 py-4 border-b border-line-soft">
                             <h2 class="text-sm font-semibold">System resources</h2>
@@ -224,6 +240,7 @@
                             </div>
                         </div>
                     </section>
+                    {% endif %}
 
                     <!-- Needs attention -->
                     <section class="rounded-2xl border border-line bg-panel">
@@ -240,7 +257,7 @@
                                     <div class="text-[13.5px] font-medium text-text truncate">{{ run.script.name }}</div>
                                     <div class="text-xs text-faint font-mono mt-0.5">{{ run.get_status_display|lower }}{% if run.duration_display %} · {{ run.duration_display }}{% endif %}</div>
                                 </div>
-                                <span class="text-xs text-faint flex-shrink-0">{{ run.created_at|timesince }} ago</span>
+                                <span class="text-xs text-faint flex-shrink-0">{{ run.created_at|ago }}</span>
                             </a>
                             {% endfor %}
                         </div>
@@ -258,7 +275,7 @@
                     <section class="rounded-2xl border border-line bg-panel">
                         <div class="flex items-center justify-between px-6 py-4 border-b border-line-soft">
                             <h2 class="text-sm font-semibold">Upcoming runs</h2>
-                            <a href="{% url 'cpanel:script_list' %}" class="text-xs text-info hover:underline">Schedule</a>
+                            <a href="{% if scripts_count %}{% url 'cpanel:script_list' %}{% else %}{% url 'cpanel:script_create' %}{% endif %}" class="text-xs text-info hover:underline">Schedule</a>
                         </div>
                         {% if upcoming_runs %}
                         <div class="divide-y divide-line-soft">
@@ -269,7 +286,7 @@
                                     <div class="text-[13.5px] font-medium truncate text-text">{{ schedule.script.name }}</div>
                                     <div class="text-xs text-faint font-mono">{{ schedule.schedule_display }}</div>
                                 </div>
-                                <span class="text-xs font-mono text-muted flex-shrink-0">in {{ schedule.next_run|timeuntil }}</span>
+                                <span class="text-xs font-mono text-muted flex-shrink-0">{{ schedule.next_run|until }}</span>
                             </a>
                             {% endfor %}
                         </div>
@@ -280,7 +297,11 @@
                             </div>
                             <div>
                                 <p class="text-sm text-muted">No scheduled runs</p>
+                                {% if scripts_count %}
                                 <a href="{% url 'cpanel:script_list' %}" class="text-xs text-info hover:underline">Schedule a script</a>
+                                {% else %}
+                                <a href="{% url 'cpanel:script_create' %}" class="text-xs text-info hover:underline">Create your first script</a>
+                                {% endif %}
                             </div>
                         </div>
                         {% endif %}
@@ -319,6 +340,7 @@
     }
 
     async function fetchResources() {
+        if (document.hidden) return;
         try {
             const response = await fetch('{% url "cpanel:system_resources_api" %}');
             if (!response.ok) throw new Error('Failed to fetch');
@@ -340,7 +362,7 @@
                     data.host.memory.total_display + ' · ' + data.host.memory.percent.toFixed(1) + '%';
             }
         } catch (error) {
-            console.error('Failed to refresh system resources:', error);
+            console.debug('System resources refresh failed:', error);
         }
     }
 

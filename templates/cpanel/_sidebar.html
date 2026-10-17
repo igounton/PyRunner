@@ -71,13 +71,15 @@
             <span>Runs</span>
         </a>
 
-        <!-- Py AI -->
+        <!-- Py AI (owners/admins of the workspace; members are refused by the view) -->
+        {% if user_can_manage_workspace %}
         <a href="{% url 'cpanel:pyai' %}"
            class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'pyai' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'pyai' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.847-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>
             <span>Py AI</span>
         </a>
+        {% endif %}
 
         <!-- Tasks -->
         <a href="{% url 'cpanel:tasks' %}"
@@ -231,6 +233,8 @@
 
     <!-- Footer (Fixed at bottom) -->
     <div class="flex-shrink-0 border-t border-line p-3 space-y-2">
+        {# Phones: the header hides What's new and the version label (F20). #}
+        <a href="{% url 'cpanel:changelog' %}" class="sm:hidden block text-xs text-muted hover:text-text transition-colors">What's new · v{{ pyrunner_version }}</a>
         <!-- Developer Links -->
         <div class="flex items-center gap-2 text-xs">
             <span class="text-faint">Developer:</span>

@@ -1,6 +1,8 @@
 """
 Dashboard view for the control panel.
 """
+import os
+
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -8,6 +10,10 @@ from django.shortcuts import render
 from core.models import Environment, Run, Script
 from core.services.dashboard_service import DashboardService
 from core.services.system_info_service import SystemInfoService
+
+
+def _in_container() -> bool:
+    return os.path.exists("/.dockerenv") or os.environ.get("PYRUNNER_IN_CONTAINER") == "1"
 
 
 @login_required
@@ -33,7 +39,7 @@ def dashboard_view(request):
     # Recent activity
     recent_runs = ws_runs.select_related("script", "triggered_by").order_by(
         "-created_at"
-    )[:5]
+    )[:8]
     recent_scripts = Script.objects.for_workspace(ws).select_related(
         "environment"
     ).order_by("-updated_at")[:5]
@@ -52,7 +58,10 @@ def dashboard_view(request):
     recent_failures = DashboardService.get_recent_failures(workspace=ws)
     upcoming_runs = DashboardService.get_upcoming_scheduled_runs(workspace=ws)
     system_health = DashboardService.get_system_health()
-    system_resources = SystemInfoService.get_system_resources()
+    # Host-wide numbers: superusers only (F22, like Settings → System).
+    system_resources = (
+        SystemInfoService.get_system_resources() if request.user.is_superuser else None
+    )
 
     context = {
         # Statistics cards
@@ -77,12 +86,15 @@ def dashboard_view(request):
         "system_health": system_health,
         # System resources (CPU, RAM, Storage)
         "system_resources": system_resources,
+        "in_container": _in_container(),
     }
     return render(request, "cpanel/dashboard.html", context)
 
 
 @login_required
 def system_resources_api(request):
-    """AJAX endpoint for system resource metrics."""
+    """AJAX endpoint for system resource metrics (superusers only, F22)."""
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Permission denied."}, status=403)
     resources = SystemInfoService.get_system_resources()
     return JsonResponse(resources)

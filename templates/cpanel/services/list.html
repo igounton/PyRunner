@@ -39,7 +39,7 @@
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
                             {% endif %}
 
-                            <button type="button" onclick="toggleS3Config()" id="s3-toggle-btn" class="p-2 text-muted hover:text-text transition-colors">
+                            <button type="button" onclick="toggleS3Config()" id="s3-toggle-btn" aria-label="Show or hide the object storage settings" class="p-2 text-muted hover:text-text transition-colors">
                                 <svg id="s3-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                         </div>
@@ -282,7 +282,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
                             {% endif %}
 
-                            <button type="button" onclick="toggleClaudeConfig()" id="claude-toggle-btn" class="p-2 text-muted hover:text-text transition-colors">
+                            <button type="button" onclick="toggleClaudeConfig()" id="claude-toggle-btn" aria-label="Show or hide the AI provider settings" class="p-2 text-muted hover:text-text transition-colors">
                                 <svg id="claude-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                         </div>
@@ -493,7 +493,7 @@ print(answer)</code></pre>
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
                             {% endif %}
 
-                            <button type="button" onclick="toggleSecretProvidersConfig()" class="p-2 text-muted hover:text-text transition-colors">
+                            <button type="button" onclick="toggleSecretProvidersConfig()" aria-label="Show or hide the secret provider settings" class="p-2 text-muted hover:text-text transition-colors">
                                 <svg id="sp-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                         </div>
@@ -630,7 +630,7 @@ print(answer)</code></pre>
                             {% else %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
                             {% endif %}
-                            <button type="button" onclick="toggleEmbeddingConfig()" class="p-2 text-muted hover:text-text transition-colors">
+                            <button type="button" onclick="toggleEmbeddingConfig()" aria-label="Show or hide the embedding provider settings" class="p-2 text-muted hover:text-text transition-colors">
                                 <svg id="embedding-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                         </div>
@@ -775,7 +775,7 @@ print(answer)</code></pre>
                             {% else %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
                             {% endif %}
-                            <button type="button" onclick="toggleVectorConfig()" class="p-2 text-muted hover:text-text transition-colors">
+                            <button type="button" onclick="toggleVectorConfig()" aria-label="Show or hide the vector store settings" class="p-2 text-muted hover:text-text transition-colors">
                                 <svg id="vector-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                         </div>

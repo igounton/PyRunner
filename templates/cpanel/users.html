@@ -47,10 +47,10 @@
                 <h3 class="text-base font-semibold text-text mb-4">Pending invites</h3>
                 <div class="space-y-3">
                     {% for invite in pending_invites %}
-                    <div class="flex items-center justify-between gap-3 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
                         <div class="flex-1 min-w-0">
                             <p class="text-text font-medium truncate">{{ invite.email }}{% if not invite.is_valid %} <span class="ml-1 align-middle text-[11px] font-medium px-2 py-0.5 rounded-full border border-warn/30 bg-warn/10 text-warn">Expired</span>{% endif %}</p>
-                            <p class="text-xs text-faint">Invited {{ invite.created_at|timesince }} ago by {{ invite.created_by.email }} &bull; {% if invite.is_valid %}Expires in {{ invite.expires_at|timeuntil }}{% else %}Expired {{ invite.expires_at|timesince }} ago{% endif %}</p>
+                            <p class="text-xs text-faint [overflow-wrap:anywhere]">Invited {{ invite.created_at|timesince }} ago by {{ invite.created_by.email }} &bull; {% if invite.is_valid %}Expires in {{ invite.expires_at|timeuntil }}{% else %}Expired {{ invite.expires_at|timesince }} ago{% endif %}</p>
                         </div>
                         <div class="flex items-center gap-2 flex-shrink-0">
                             {% if invite.is_valid %}

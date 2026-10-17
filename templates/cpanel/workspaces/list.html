@@ -21,7 +21,8 @@
                 <h3 class="text-base font-semibold text-text mb-4">All workspaces</h3>
                 <div class="space-y-3">
                     {% for ws in workspaces %}
-                    <div class="flex items-center justify-between gap-3 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                    {# Below xl the actions wrap onto their own line under the name (F95: at 390 px the row was 526 px wide and covered the name). #}
+                    <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
                         <div class="flex items-center gap-3 min-w-0">
                             <div class="w-10 h-10 rounded-lg bg-info/10 grid place-items-center flex-shrink-0">
                                 <span class="text-info font-semibold">{{ ws.name|first|upper }}</span>
@@ -34,7 +35,7 @@
                                 <p class="text-xs text-faint">{{ ws.member_count }} member{{ ws.member_count|pluralize }}</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 flex-shrink-0">
+                        <div class="flex flex-wrap items-center gap-2 xl:flex-shrink-0">
                             <a href="{% url 'cpanel_ws:dashboard' workspace_id=ws.id %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Open</a>
                             {% if ws.user_can_manage %}
                             <form method="post" action="{% url 'cpanel:workspace_sandbox_policy' pk=ws.id %}" class="flex items-center">

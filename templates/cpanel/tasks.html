@@ -101,13 +101,6 @@
             </section>
             {% endif %}
 
-            <!-- Filter -->
-            <div class="inline-flex flex-wrap max-w-full items-center gap-1 p-1 rounded-lg border border-line bg-panel">
-                <a href="{% url 'cpanel:tasks' %}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if not status_filter %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text{% endif %}">All</a>
-                <a href="?status=success" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'success' %}bg-ok/10 text-ok font-medium{% else %}text-muted hover:text-text{% endif %}">Success</a>
-                <a href="?status=failed" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'failed' %}bg-fail/10 text-fail font-medium{% else %}text-muted hover:text-text{% endif %}">Failed</a>
-            </div>
-
             <!-- Queued tasks -->
             {% if queued_tasks %}
             <section class="rounded-2xl border border-line bg-panel overflow-hidden">
@@ -148,7 +141,14 @@
             <!-- Task history -->
             <div>
                 <div class="flex items-center justify-between mb-3">
+                    <div class="flex flex-wrap items-center gap-3">
                     <h2 class="text-sm font-semibold">Task history</h2>
+                    <div class="inline-flex flex-wrap max-w-full items-center gap-1 p-1 rounded-lg border border-line bg-panel">
+                <a href="{% url 'cpanel:tasks' %}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if not status_filter %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text{% endif %}">All</a>
+                <a href="?status=success" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'success' %}bg-ok/10 text-ok font-medium{% else %}text-muted hover:text-text{% endif %}">Success</a>
+                <a href="?status=failed" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'failed' %}bg-fail/10 text-fail font-medium{% else %}text-muted hover:text-text{% endif %}">Failed</a>
+            </div>
+                    </div>
                     <p class="text-xs text-faint">Showing <span class="font-mono tnum text-muted">{{ completed_tasks|length }}</span> of <span class="font-mono tnum text-muted">{{ total_completed }}</span></p>
                 </div>
 

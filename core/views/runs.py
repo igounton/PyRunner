@@ -104,4 +104,39 @@ def run_detail_view(request: HttpRequest, pk) -> HttpResponse:
         workspace=request.workspace,
     )
 
-    return render(request, "cpanel/runs/detail.html", {"run": run})
+    return render(request, "cpanel/runs/detail.html", {
+        "run": run,
+        "isolation_note": isolation_note(run),
+        "output_truncated": "[OUTPUT TRUNCATED" in (run.stdout or ""),
+        "stderr_truncated": "[OUTPUT TRUNCATED" in (run.stderr or ""),
+    })
+
+
+def host_sandbox_tier() -> str:
+    """The host's sandbox tier: the cached probe, else this process's detection."""
+    from core.models import GlobalSettings
+
+    cap = GlobalSettings.get_settings().sandbox_capability
+    if cap in ("full", "rlimits_only", "none"):
+        return cap
+    from core.executor_backends.sandboxed import runtime_tier
+
+    return runtime_tier()
+
+
+def isolation_note(run) -> str:
+    """Say when a run's policy wants the sandbox but this host can't provide it (U77).
+
+    Describes the host as it is now (the tier isn't stored per run); the standard
+    Docker image's tier doesn't change between runs.
+    """
+    try:
+        from core.executor import resolve_isolation
+
+        if not resolve_isolation(run).sandbox:
+            return ""
+        if host_sandbox_tier() == "full":
+            return ""
+    except Exception:
+        return ""
+    return "Resource limits only — this host can't provide the sandbox the isolation policy asks for."

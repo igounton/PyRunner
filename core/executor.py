@@ -447,6 +447,31 @@ def _run_resource_limits() -> dict | None:
     return limits
 
 
+def limit_hint(exit_code, stderr: str, limits: dict | None) -> str | None:
+    """One line naming the resource limit that most likely stopped a run (U70, F30).
+
+    A run killed by a cap otherwise ends with CPython's fatal MemoryError dump or
+    with exit -9 and empty stderr — indistinguishable from a crash.
+    """
+    if not limits or exit_code in (0, None):
+        return None
+    stderr = stderr or ""
+    mem = limits.get("memory_bytes")
+    if mem and "MemoryError" in stderr:
+        return f"[Stopped by the {mem // (1024 * 1024)} MB memory limit (Settings → Isolation)]"
+    fsize = limits.get("fsize_bytes")
+    if fsize and (exit_code in (-25, 153) or "File too large" in stderr):
+        return f"[Stopped by the {fsize // (1024 * 1024)} MB file-size limit (Settings → Isolation)]"
+    cpu = limits.get("cpu_seconds")
+    if cpu and exit_code in (-9, -24, 137, 152):
+        sig = 24 if exit_code in (-24, 152) else 9
+        return (
+            f"[Killed by signal {sig} — most likely the {cpu} s CPU-time limit "
+            "(Settings → Isolation)]"
+        )
+    return None
+
+
 def _resolve_run_limits() -> dict | None:
     """Resolve the posix resource caps for a run, dashboard-managed (DB) first.
 
@@ -836,6 +861,9 @@ def execute_run(run: Run, webhook_data: dict | None = None) -> None:
                 run.status = (
                     Run.Status.SUCCESS if result.exit_code == 0 else Run.Status.FAILED
                 )
+                hint = limit_hint(result.exit_code, run.stderr, spec.limits)
+                if hint:
+                    run.stderr = f"{run.stderr}\n\n{hint}" if run.stderr else hint
 
         except subprocess.SubprocessError as e:
             # Handle other subprocess errors

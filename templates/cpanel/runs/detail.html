@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+{% load time_tags %}
 <div class="flex">
     {% include "cpanel/_sidebar.html" %}
 
@@ -64,7 +65,10 @@
                                 <svg class="w-4 h-4 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 stdout
                             </span>
-                            {% if run.stdout %}<span class="eyebrow text-faint">{{ run.stdout|length }} chars</span>{% endif %}
+                            <span class="flex items-center gap-2">
+                                {% if output_truncated %}<span class="text-[11px] font-medium px-2 py-0.5 rounded-full border border-warn/30 bg-warn/10 text-warn" title="Over the 1 MB cap: the first 200 KB and the last ~800 KB are kept">Truncated — start and end kept</span>{% endif %}
+                                {% if run.stdout %}<span class="eyebrow text-faint">{{ run.stdout|length|thousands }} chars</span>{% endif %}
+                            </span>
                         </div>
                         <div class="bg-ink max-h-[28rem] overflow-auto">
                             {% if run.stdout %}
@@ -77,18 +81,39 @@
 
                     <!-- stderr -->
                     {% if run.stderr %}
+                    {% if run.status == 'success' %}
+                    <section class="rounded-2xl border border-line bg-panel overflow-hidden">
+                        <div class="flex items-center justify-between px-4 h-11 border-b border-line-soft bg-panel-hi/40">
+                            <span class="text-[13px] font-medium text-muted flex items-center gap-2">
+                                <svg class="w-4 h-4 text-warn" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                stderr <span class="text-faint font-normal">(warnings / log output)</span>
+                            </span>
+                            <span class="flex items-center gap-2">
+                                {% if stderr_truncated %}<span class="text-[11px] font-medium px-2 py-0.5 rounded-full border border-warn/30 bg-warn/10 text-warn">Truncated — start and end kept</span>{% endif %}
+                                <span class="eyebrow text-faint">{{ run.stderr|length|thousands }} chars</span>
+                            </span>
+                        </div>
+                        <div class="bg-ink max-h-[28rem] overflow-auto">
+                            <pre class="text-muted font-mono text-[13px] leading-relaxed whitespace-pre-wrap p-4">{{ run.stderr }}</pre>
+                        </div>
+                    </section>
+                    {% else %}
                     <section class="rounded-2xl border border-fail/30 bg-panel overflow-hidden">
                         <div class="flex items-center justify-between px-4 h-11 border-b border-fail/30 bg-fail/10">
                             <span class="text-[13px] font-medium text-fail flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                 stderr
                             </span>
-                            <span class="eyebrow text-fail/70">{{ run.stderr|length }} chars</span>
+                            <span class="flex items-center gap-2">
+                                {% if stderr_truncated %}<span class="text-[11px] font-medium px-2 py-0.5 rounded-full border border-warn/30 bg-warn/10 text-warn">Truncated — start and end kept</span>{% endif %}
+                                <span class="eyebrow text-fail/70">{{ run.stderr|length|thousands }} chars</span>
+                            </span>
                         </div>
                         <div class="bg-ink max-h-[28rem] overflow-auto">
                             <pre class="text-fail font-mono text-[13px] leading-relaxed whitespace-pre-wrap p-4">{{ run.stderr }}</pre>
                         </div>
                     </section>
+                    {% endif %}
                     {% endif %}
 
                     <!-- code snapshot -->
@@ -140,6 +165,12 @@
                                 <dt class="text-muted">Triggered by</dt>
                                 <dd class="text-text truncate">{% if run.triggered_by %}{{ run.triggered_by.email }}{% else %}<span class="text-faint">System</span>{% endif %}</dd>
                             </div>
+                            {% if isolation_note %}
+                            <div class="flex items-start justify-between gap-3">
+                                <dt class="text-muted flex-shrink-0">Isolation</dt>
+                                <dd class="text-warn text-xs text-right">{{ isolation_note }} <a href="{% url 'cpanel:settings' %}#isolation" class="text-info hover:underline">Settings → Isolation</a></dd>
+                            </div>
+                            {% endif %}
                         </dl>
                     </section>
 

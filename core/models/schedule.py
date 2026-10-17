@@ -232,7 +232,8 @@ class ScriptSchedule(models.Model):
             return f"Cron: {expr}"
         elif self.run_mode == self.RunMode.YEARLY:
             if self.yearly_month and self.yearly_day and self.yearly_time:
-                return f"Yearly on {self.yearly_month:02d}/{self.yearly_day:02d} at {self.yearly_time} ({self.timezone})"
+                month = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()[self.yearly_month - 1]
+                return f"Yearly on {self.yearly_day} {month} at {self.yearly_time} ({self.timezone})"
             return "Yearly (not configured)"
         return "Unknown"
 

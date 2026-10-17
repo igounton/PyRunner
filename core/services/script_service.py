@@ -79,9 +79,28 @@ FORK_SCHEDULE_RESET_FIELDS = (
 NAME_MAX_LENGTH = Script._meta.get_field("name").max_length
 
 
-def fork_name(source_name: str) -> str:
-    """Default name for a fork, trimmed to the column width."""
-    return f"Copy of {source_name}"[:NAME_MAX_LENGTH]
+def fork_name(source_name: str, workspace=None) -> str:
+    """Default name for a fork, trimmed to the column width.
+
+    A repeat fork in the same workspace is numbered ("Copy of X (2)") so the
+    copies can be told apart in lists and pickers (U24).
+    """
+    base = f"Copy of {source_name}"[:NAME_MAX_LENGTH]
+    if workspace is None:
+        return base
+    taken = set(
+        Script.objects.filter(workspace=workspace, name__startswith=base[:NAME_MAX_LENGTH - 6])
+        .values_list("name", flat=True)
+    )
+    if base not in taken:
+        return base
+    n = 2
+    while True:
+        suffix = f" ({n})"
+        candidate = base[: NAME_MAX_LENGTH - len(suffix)] + suffix
+        if candidate not in taken:
+            return candidate
+        n += 1
 
 
 @transaction.atomic
@@ -94,7 +113,7 @@ def fork_script(source: Script, *, user, name: str | None = None) -> Script:
     Runs are never copied — history belongs to the original.
     """
     fork = Script(
-        name=name or fork_name(source.name),
+        name=name or fork_name(source.name, source.workspace),
         workspace=source.workspace,
         created_by=user,
     )

@@ -36,6 +36,22 @@
 
             <!-- Body -->
             <div class="px-5 lg:px-8 py-6 max-w-[1440px] mx-auto">
+                {% if form.errors or schedule_form.errors %}
+                <div id="form-error-summary" role="alert" tabindex="-1" class="mb-5 p-4 rounded-xl border border-fail/30 bg-fail/10 text-sm">
+                    <p class="font-medium text-fail">Not saved — fix the highlighted fields.</p>
+                    {% for error in form.non_field_errors %}<p class="text-fail mt-1">{{ error }}</p>{% endfor %}
+                    {% for error in schedule_form.non_field_errors %}<p class="text-fail mt-1">Schedule: {{ error }}</p>{% endfor %}
+                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var first = document.querySelector('.text-fail.text-xs, .errorlist');
+                        var target = first ? (first.closest('div') || first) : document.getElementById('form-error-summary');
+                        if (target && target.scrollIntoView) target.scrollIntoView({block: 'center'});
+                        var field = target && target.querySelector('input, select, textarea');
+                        if (field) field.focus({preventScroll: true});
+                    });
+                </script>
+                {% endif %}
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                     <div class="lg:col-span-2">
                         {% include "cpanel/scripts/_form_main.html" %}

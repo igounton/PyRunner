@@ -270,11 +270,16 @@ def script_detail_view(request: HttpRequest, pk) -> HttpResponse:
         defaults={"created_by": request.user, "workspace": script.workspace},
     )
 
+    from core.executor import script_workdir
+    from core.models import GlobalSettings
+
     return render(request, "cpanel/scripts/detail.html", {
         "script": script,
         "recent_runs": recent_runs,
         "schedule": schedule,
         "duration_chart": duration_chart(chart_runs),
+        "working_folder": str(script_workdir(script.pk)),
+        "schedules_globally_paused": GlobalSettings.get_settings().schedules_paused,
     })
 
 

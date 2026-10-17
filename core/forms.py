@@ -348,7 +348,7 @@ class ScheduleForm(forms.ModelForm):
             }
         ),
         label="Cron Expression",
-        help_text="5 fields: minute hour day-of-month month day-of-week, in the selected timezone",
+        help_text="5 fields: minute hour day-of-month month day-of-week, in the selected timezone.",
     )
 
     yearly_month = forms.TypedChoiceField(
@@ -364,7 +364,7 @@ class ScheduleForm(forms.ModelForm):
         widget=forms.TimeInput(
             attrs={"class": INPUT_CLASS, "type": "time"}, format="%H:%M"
         ),
-        label="Run time", help_text="24-hour format (HH:MM)",
+        label="Run time", help_text="24-hour format (HH:MM).",
     )
 
     timezone = forms.ChoiceField(

@@ -296,7 +296,7 @@
                             <h3 class="text-base font-semibold text-text mb-3">Choosing a backend</h3>
                             <div class="space-y-3 text-sm text-muted">
                                 <p><span class="text-text font-medium">SMTP</span> — works with any provider (Gmail, Mailgun, your own server). Needs host, port, and credentials.</p>
-                                <p><span class="text-text font-medium">Resend</span> — a hosted email API. Needs only an API key and a verified sender address.</p>
+                                <p><span class="text-text font-medium">Resend</span> — Resend's SMTP gateway (smtp.resend.com, port 587). Needs only an API key and a verified sender address.</p>
                                 <p class="text-xs text-faint pt-1">After saving, use <span class="text-text">Send test email</span> to confirm delivery to your default address.</p>
                             </div>
                         </div>
@@ -312,7 +312,7 @@
                         {% csrf_token %}
                         <div class="bg-panel border border-line rounded-2xl p-6">
                             <h3 class="text-base font-semibold text-text mb-1">Retention policy</h3>
-                            <p class="text-sm text-muted mb-5">Control how long run logs are kept. Runs matching either condition are deleted.</p>
+                            <p class="text-sm text-muted mb-5">Control how long run logs are kept. A run is kept while it is newer than the age limit <em>or</em> among its script's last N runs; only runs outside both are deleted. 0 turns a rule off (both 0 keeps everything).</p>
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-[13px] font-medium text-text mb-1.5">{{ retention_form.retention_days.label }}</label>
@@ -380,6 +380,7 @@
                                     <label class="block text-[13px] font-medium text-text mb-1.5">{{ worker_form.q_retry.label }}</label>
                                     {{ worker_form.q_retry }}
                                     <p class="mt-1.5 text-xs text-faint">{{ worker_form.q_retry.help_text }}</p>
+                                    {% if effective_retry %}<p class="mt-1.5 text-xs text-info">Effective now: {{ effective_retry }} s (raised at worker start above the longest script or package timeout).</p>{% endif %}
                                     {% if worker_form.q_retry.errors %}<p class="mt-1.5 text-xs text-fail">{{ worker_form.q_retry.errors.0 }}</p>{% endif %}
                                 </div>
                                 <div>
@@ -434,7 +435,7 @@
                         {% csrf_token %}
                         <div class="bg-panel border border-line rounded-2xl p-6">
                             <h3 class="text-base font-semibold text-text mb-1">Execution &amp; isolation</h3>
-                            <p class="text-sm text-muted mb-5">Contain what one script run can do to this instance. Resource limits apply immediately to every run; the filesystem/network sandbox arrives in a later release. All limits are POSIX-only and have no effect on Windows.</p>
+                            <p class="text-sm text-muted mb-5">Contain what one script run can do to this instance. Resource limits apply immediately to every run. Scripts whose isolation policy asks for the sandbox run in the filesystem/network sandbox (bubblewrap or nsjail) when this host supports it — use Test now below to check. All limits are POSIX-only and have no effect on Windows.</p>
 
                             <div class="space-y-4">
                                 <div>
@@ -496,7 +497,7 @@
                                         <span class="mt-0.5 w-2 h-2 rounded-full bg-ok flex-shrink-0"></span>
                                         <div>
                                             <p class="text-text font-medium text-sm">Resource limits active</p>
-                                            <p class="text-xs text-muted">Per-run memory / CPU / process / file-size caps are enforced (POSIX hosts).</p>
+                                            <p class="text-xs text-muted">{% if nproc_not_enforced %}Per-run memory / CPU / file-size caps are enforced (POSIX hosts); the process cap is not enforced while scripts run as root.{% else %}Per-run memory / CPU / process / file-size caps are enforced (POSIX hosts).{% endif %}</p>
                                         </div>
                                     {% else %}
                                         <span class="mt-0.5 w-2 h-2 rounded-full bg-faint flex-shrink-0"></span>
@@ -531,7 +532,7 @@
                                 </button>
                                 <div id="sandbox-test-result" class="hidden mt-3 text-xs"></div>
                             </div>
-                            <p class="mt-4 text-xs text-faint">The isolation default and fail-closed switch are stored now and take effect once the filesystem/network sandbox ships in a later release. Resource limits apply on every POSIX host regardless of the sandbox tier.</p>
+                            <p class="mt-4 text-xs text-faint">The isolation default decides which runs use the sandbox; with fail closed on, a run that needs the sandbox fails instead of running with resource limits only when the host can't provide it. Resource limits apply on every POSIX host regardless of the sandbox tier.</p>
                         </div>
                     </div>
                 </div>
@@ -559,7 +560,8 @@
                 <!-- Create Backup -->
                 <div class="bg-panel border border-line rounded-2xl p-6">
                     <h3 class="text-base font-semibold text-text mb-4">📦 Create backup</h3>
-                    <p class="text-sm text-muted mb-4">Export a complete backup of your PyRun instance including scripts, secrets, settings, and execution history.</p>
+                    <p class="text-sm text-muted mb-2">Export a backup of your PyRun instance: scripts, secrets, settings, libraries, data stores, brains and execution history.</p>
+                    <p class="text-xs text-faint mb-4">Not included: AI providers, channels, object-storage connections, API tokens, installed plugin files and script working folders — recreate them after restoring on a new server.</p>
                     <form method="post" action="{% url 'cpanel:backup_create' %}" id="backup-create-form">
                         {% csrf_token %}
                         <div class="space-y-4 mb-6">
@@ -620,7 +622,11 @@
                 <div class="bg-panel border border-line rounded-2xl p-6 mt-5">
                     <h3 class="text-base font-semibold text-text mb-4">☁️ Scheduled S3 backups</h3>
                     <p class="text-sm text-muted mb-4">Automatically backup your PyRun instance to S3-compatible storage on a schedule.</p>
-                    {% if not backup_schedule_status.s3_enabled or not backup_schedule_status.s3_configured %}
+                    {% if backup_schedule_status.s3_configured and not backup_schedule_status.s3_enabled %}
+                    <div class="p-4 bg-warn/10 border border-warn/30 rounded-lg mb-4">
+                        <p class="text-sm text-warn">⚠ <strong>Backup storage switched off:</strong> the connection “{{ backup_schedule_status.connection_name }}” is turned off — turn it on in <a href="{% url 'cpanel:services' %}" class="underline hover:text-text">Services</a> to run backups.</p>
+                    </div>
+                    {% elif not backup_schedule_status.s3_configured %}
                     <div class="p-4 bg-warn/10 border border-warn/30 rounded-lg mb-4">
                         <p class="text-sm text-warn">⚠ <strong>S3 not configured:</strong> You must first configure and enable S3 storage in the <a href="{% url 'cpanel:services' %}" class="underline hover:text-text">Services</a> page.</p>
                     </div>
@@ -668,8 +674,9 @@
                         </div>
                         <div class="flex gap-3">
                             <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed" {% if not backup_schedule_status.s3_configured %}disabled{% endif %}>Save schedule</button>
-                            <button type="button" onclick="runBackupNow()" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-ok/40 bg-ok/10 text-ok hover:bg-ok/20 transition disabled:opacity-40 disabled:cursor-not-allowed" {% if not backup_schedule_status.s3_configured %}disabled{% endif %}>Run backup now</button>
+                            <button type="button" id="backup-run-now-btn" onclick="runBackupNow()" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-ok/40 bg-ok/10 text-ok hover:bg-ok/20 transition disabled:opacity-40 disabled:cursor-not-allowed" {% if not backup_schedule_status.s3_configured or not backup_schedule_status.s3_enabled %}disabled{% endif %}>Run backup now</button>
                         </div>
+                        <p id="backup-run-now-result" class="hidden mt-3 text-sm" role="status"></p>
                     </form>
 
                     {% if backup_schedule_status.last_run %}
@@ -702,7 +709,8 @@
                     <!-- Primary column: access & tokens -->
                     <div class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
                         <h3 class="text-base font-semibold text-text mb-1">API access</h3>
-                        <p class="text-sm text-muted mb-5">PyRun exposes a read-only REST API for your datastores. Create a token to let external applications fetch entries.</p>
+                        <p class="text-sm text-muted mb-3">PyRun exposes a read-only REST API for your datastores. Create a token to let external applications fetch entries.</p>
+                        <p class="text-sm text-muted mb-5">Brains are available over the Unified API (REST) and MCP — see <a href="{% url 'cpanel:connect' %}" class="text-info hover:underline">Connect</a> for the MCP URL, ready-made client snippets and the token catalog.</p>
                         <a href="{% url 'cpanel:api_token_list' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                             Manage API tokens
@@ -724,6 +732,13 @@
                             <p><span class="text-ok">GET</span> /api/v1/datastores/{name}/</p>
                             <p><span class="text-ok">GET</span> /api/v1/datastores/{name}/entries/</p>
                             <p><span class="text-ok">GET</span> /api/v1/datastores/{name}/entries/{key}/</p>
+                        </div>
+                        <h3 class="text-base font-semibold text-text mt-5 mb-3">Unified API and MCP</h3>
+                        <div class="p-4 bg-ink border border-line-soft rounded-lg space-y-2 text-[13px] font-mono text-muted">
+                            <p><span class="text-ok">GET</span> /api/v1/_catalog</p>
+                            <p><span class="text-ok">GET</span> /api/v1/_openapi.json</p>
+                            <p>/api/v1/brain.* <span class="text-faint">(methods in _catalog)</span></p>
+                            <p><span class="text-info">POST</span> /mcp</p>
                         </div>
                     </div>
                 </div>
@@ -991,8 +1006,7 @@ function handleBackupUpload(event) {
             showRestorePreview(data.preview, data.warnings);
         } else {
             let errorHtml = '<div class="p-4 bg-fail/10 border border-fail/30 rounded-lg">';
-            errorHtml += '<p class="text-sm text-fail font-semibold mb-2">Validation failed:</p>';
-            errorHtml += '<p class="text-sm text-fail">' + escapeHtml(data.error || 'Unknown error') + '</p>';
+            errorHtml += '<p class="text-sm text-fail font-semibold">' + escapeHtml(data.error || 'Validation failed') + '</p>';
             if (data.errors && data.errors.length > 0) {
                 errorHtml += '<ul class="text-xs text-fail/80 mt-2 ml-4 space-y-1">';
                 data.errors.forEach(err => {
@@ -1164,10 +1178,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function runBackupNow() {
-    if (!confirm('Run a backup to S3 now?')) {
-        return;
+    const btn = document.getElementById('backup-run-now-btn');
+    const out = document.getElementById('backup-run-now-result');
+    function say(text, tone) {
+        out.textContent = text;
+        out.className = 'mt-3 text-sm ' + (tone || 'text-muted');
     }
-
+    btn.disabled = true;
+    say('Queuing the backup…');
     fetch('{% url "cpanel:backup_run_now" %}', {
         method: 'POST',
         headers: {
@@ -1177,15 +1195,38 @@ function runBackupNow() {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            alert('Backup task queued successfully! Check back shortly for the result.');
-            setTimeout(() => window.location.reload(), 2000);
-        } else {
-            alert('Error: ' + (data.error || 'Unknown error'));
+        if (!data.success) {
+            say('Error: ' + (data.error || 'Unknown error'), 'text-fail');
+            btn.disabled = false;
+            return;
         }
+        say('Backup queued — waiting for the result…');
+        const before = {{ backup_schedule_status.last_run|date:"U"|default:"0" }};
+        let tries = 0;
+        const poll = setInterval(() => {
+            tries += 1;
+            fetch('{% url "cpanel:backup_schedule_status" %}')
+                .then(r => r.json())
+                .then(d => {
+                    const st = (d && d.status) || {};
+                    const last = st.last_run ? Date.parse(st.last_run) / 1000 : 0;
+                    if (last > before) {
+                        clearInterval(poll);
+                        say(st.last_status === 'success' ? 'Backup finished. Reloading…' : 'Backup failed: ' + (st.last_error || 'see the status below') + ' Reloading…',
+                            st.last_status === 'success' ? 'text-ok' : 'text-fail');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else if (tries >= 40) {
+                        clearInterval(poll);
+                        say('Still running — the status below updates when it finishes (reload the page later).');
+                        btn.disabled = false;
+                    }
+                })
+                .catch(() => {});
+        }, 3000);
     })
     .catch(error => {
-        alert('Error: ' + error.message);
+        say('Error: ' + error.message, 'text-fail');
+        btn.disabled = false;
     });
 }
 

@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 from core.forms import BackupCreateForm, BackupRestoreForm
 from core.services.backup_service import BackupService
 from core.views.decorators import superuser_required
+from core.views.settings import flash_form_errors, settings_tab
 
 
 @login_required
@@ -56,10 +57,12 @@ def backup_create_view(request):
 
             except Exception as e:
                 messages.error(request, f"Failed to create backup: {str(e)}")
-                return redirect("cpanel:settings")
+                return settings_tab("backup")
+        else:
+            # U72: say why nothing downloaded (was a silent reload).
+            flash_form_errors(request, form)
 
-    # GET request - redirect to settings
-    return redirect("cpanel:settings")
+    return settings_tab("backup")
 
 
 @login_required
@@ -106,7 +109,7 @@ def backup_upload_view(request):
         if not validation_result["valid"]:
             return JsonResponse({
                 "success": False,
-                "error": "Backup validation failed",
+                "error": "This backup can't be restored here:",
                 "errors": validation_result["errors"],
                 "warnings": validation_result["warnings"],
             })
@@ -169,7 +172,7 @@ def backup_restore_view(request):
     backup_data = request.session.get("pending_backup")
     if not backup_data:
         messages.error(request, "No backup data found. Please upload a file first.")
-        return redirect("cpanel:settings")
+        return settings_tab("backup")
 
     # Validate form (confirmation checkbox)
     restore_runs = request.POST.get("restore_runs") == "on"
@@ -177,7 +180,7 @@ def backup_restore_view(request):
 
     if not confirm_delete:
         messages.error(request, "You must confirm data deletion to proceed with restore.")
-        return redirect("cpanel:settings")
+        return settings_tab("backup")
 
     try:
         # Create automatic backup before restore
@@ -279,11 +282,9 @@ def backup_schedule_settings_view(request):
         form.save(settings)
         messages.success(request, "Backup schedule settings saved successfully.")
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field}: {error}")
+        flash_form_errors(request, form)
 
-    return redirect("cpanel:settings")
+    return settings_tab("backup")
 
 
 @login_required

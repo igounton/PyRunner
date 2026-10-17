@@ -799,14 +799,18 @@ class BackupService:
                 with gzip.GzipFile(fileobj=io.BytesIO(data)) as gz:
                     json_str = gz.read().decode("utf-8")
             except Exception as e:
-                raise ValueError(f"Failed to decompress gzip backup: {e}")
+                # U75: a readable reason, not zlib's "Not a gzipped file (b'\\xf7f')".
+                raise ValueError("This file isn't a PyRun backup (it is neither a gzip-compressed nor a plain JSON backup).") from e
         else:
-            json_str = data.decode("utf-8")
+            try:
+                json_str = data.decode("utf-8")
+            except UnicodeDecodeError as e:
+                raise ValueError("This file isn't a PyRun backup (it is neither a gzip-compressed nor a plain JSON backup).") from e
 
         try:
             return json.loads(json_str)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in backup: {e}")
+            raise ValueError(f"This file isn't a valid PyRun backup (invalid JSON: {e}).") from e
 
     @classmethod
     def get_file_extension(cls, format: str) -> str:
@@ -868,7 +872,9 @@ class BackupService:
         if not cls.validate_encryption_key(backup_data):
             errors.append(
                 "ENCRYPTION_KEY mismatch: Backup was created with a different encryption key. "
-                "Encrypted secrets and credentials will be unreadable."
+                "Encrypted secrets and credentials will be unreadable. To restore it here, set this "
+                "server's ENCRYPTION_KEY to the source server's key (and restart), then upload it "
+                "again — see Backup & Restore in DEPLOYMENT.md."
             )
 
         # Validate foreign key references

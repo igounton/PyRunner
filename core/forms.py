@@ -1336,7 +1336,7 @@ class LogRetentionForm(forms.Form):
             }
         ),
         label="Retention Days",
-        help_text="Delete runs older than this many days (0 = keep forever)",
+        help_text="Runs newer than this many days are always kept (0 = no age rule)",
     )
 
     retention_count = forms.IntegerField(
@@ -1349,7 +1349,7 @@ class LogRetentionForm(forms.Form):
             }
         ),
         label="Retention Count",
-        help_text="Keep only the last N runs per script (0 = unlimited)",
+        help_text="Each script's last N runs are always kept (0 = no count rule)",
     )
 
     auto_cleanup_enabled = forms.BooleanField(

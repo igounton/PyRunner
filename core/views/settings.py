@@ -67,8 +67,43 @@ def settings_view(request: HttpRequest) -> HttpResponse:
             "backup_schedule_status": backup_schedule_status,
             "recaptcha_form": recaptcha_form,
             "nproc_not_enforced": _scripts_run_as_root(),
+            "effective_retry": _effective_retry(settings),
         },
     )
+
+
+def _effective_retry(settings):
+    """The retry window the running cluster booted with, when it differs (U31)."""
+    from django.core.cache import cache
+
+    from core.services.worker_config import EFFECTIVE_RETRY_CACHE_KEY
+
+    try:
+        value = cache.get(EFFECTIVE_RETRY_CACHE_KEY)
+    except Exception:
+        return None
+    if not value or int(value) == int(settings.q_retry):
+        return None
+    return int(value)
+
+
+def flash_form_errors(request: HttpRequest, form) -> None:
+    """Flash a refused settings form's errors with each field's label (U69).
+
+    Was the raw field name ("retention_days: Ensure this value…").
+    """
+    for field, errors in form.errors.items():
+        label = ""
+        if field != "__all__" and field in form.fields:
+            label = form.fields[field].label or field.replace("_", " ").capitalize()
+        for error in errors:
+            messages.error(request, f"{label}: {error}" if label else str(error))
+
+
+def settings_tab(tab: str) -> HttpResponse:
+    """Redirect back to the Settings tab that was just saved (U9)."""
+    url = reverse("cpanel:settings")
+    return redirect(f"{url}#{tab}" if tab else url)
 
 
 def _scripts_run_as_root() -> bool:
@@ -95,7 +130,7 @@ def toggle_global_pause_view(request: HttpRequest) -> HttpResponse:
         count = ScheduleService.pause_all_schedules(user=request.user)
         messages.warning(request, f"All schedules paused. {count} schedules deactivated.")
 
-    return redirect("cpanel:settings")
+    return settings_tab("schedules")
 
 
 @login_required
@@ -110,11 +145,9 @@ def notification_settings_view(request: HttpRequest) -> HttpResponse:
         form.save(settings)
         messages.success(request, "Notification settings saved successfully.")
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field}: {error}")
+        flash_form_errors(request, form)
 
-    return redirect("cpanel:settings")
+    return settings_tab("notifications")
 
 
 @login_required
@@ -139,24 +172,47 @@ def test_email_view(request: HttpRequest) -> JsonResponse:
         })
 
     recipient = settings.default_notification_email
+    fallback = False
+    if not recipient:
+        # U10: no default yet — send to the admin who clicked.
+        recipient = request.user.email
+        fallback = True
     if not recipient:
         return JsonResponse({
             "success": False,
-            "error": "No default notification email configured.",
+            "error": "No default notification email configured, and your account has no email address.",
         })
 
     try:
         NotificationService.send_test_email(recipient)
+        note = " (your address — no default notification email is set)" if fallback else ""
         return JsonResponse({
             "success": True,
-            "message": f"Test email sent to {recipient}",
+            "message": f"Test email sent to {recipient}{note}",
         })
     except Exception as e:
         logger.exception("Failed to send test email")
         return JsonResponse({
             "success": False,
-            "error": str(e),
+            "error": describe_email_failure(settings, e),
         })
+
+
+def describe_email_failure(settings, exc: Exception) -> str:
+    """One readable line for a failed test email (U71): server, port, cause, hint."""
+    if settings.email_backend == GlobalSettings.EmailBackend.RESEND:
+        host, port = "smtp.resend.com", 587
+    else:
+        host, port = settings.smtp_host or "(no host)", settings.smtp_port
+    text = str(exc) or exc.__class__.__name__
+    message = f"Couldn't send through {host}:{port}: {text}."
+    if port == 465:
+        message += (
+            " Port 465 needs implicit TLS, which PyRun doesn't support — use 587 (STARTTLS)."
+        )
+    elif "timed out" in text.lower():
+        message += " Check the host and port, and that this server may connect out on that port."
+    return message
 
 
 @login_required
@@ -181,11 +237,9 @@ def general_settings_view(request: HttpRequest) -> HttpResponse:
                 "only works once PyRun has been restarted.",
             )
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field}: {error}")
+        flash_form_errors(request, form)
 
-    return redirect("cpanel:settings")
+    return settings_tab("")
 
 
 @login_required
@@ -200,11 +254,9 @@ def recaptcha_settings_view(request: HttpRequest) -> HttpResponse:
         form.save(settings)
         messages.success(request, "reCAPTCHA settings saved successfully.")
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field}: {error}")
+        flash_form_errors(request, form)
 
-    return redirect("cpanel:settings")
+    return settings_tab("security")
 
 
 @login_required
@@ -219,11 +271,9 @@ def retention_settings_view(request: HttpRequest) -> HttpResponse:
         form.save(settings)
         messages.success(request, "Log retention settings saved successfully.")
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field}: {error}")
+        flash_form_errors(request, form)
 
-    return redirect("cpanel:settings")
+    return settings_tab("retention")
 
 
 @login_required
@@ -240,11 +290,9 @@ def worker_settings_view(request: HttpRequest) -> HttpResponse:
             request, "Worker settings saved. Restart workers for changes to take effect."
         )
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field}: {error}")
+        flash_form_errors(request, form)
 
-    return redirect("cpanel:settings")
+    return settings_tab("workers")
 
 
 @login_required
@@ -263,11 +311,9 @@ def execution_isolation_settings_view(request: HttpRequest) -> HttpResponse:
         form.save(settings)
         messages.success(request, "Execution & isolation settings saved successfully.")
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field}: {error}")
+        flash_form_errors(request, form)
 
-    return redirect(reverse("cpanel:settings") + "#isolation")
+    return settings_tab("isolation")
 
 
 @login_required
@@ -379,7 +425,7 @@ def manual_cleanup_view(request: HttpRequest) -> HttpResponse:
         logger.exception("Manual cleanup failed")
         messages.error(request, f"Cleanup failed: {e}")
 
-    return redirect("cpanel:settings")
+    return settings_tab("retention")
 
 
 @login_required

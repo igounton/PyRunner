@@ -106,7 +106,7 @@ class SettingsAuthzTests(TestCase):
         self.client.force_login(self.superuser)
         resp = self.client.post(reverse("cpanel:notification_settings"), {})
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp["Location"], reverse("cpanel:settings"))
+        self.assertEqual(resp["Location"], reverse("cpanel:settings") + "#notifications")
 
 
 class EnvironmentAuthzTests(TestCase):

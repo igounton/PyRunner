@@ -72,10 +72,11 @@ def resolve_secrets_for_run(run) -> dict:
       * a USER script (``owner_plugin`` NULL) gets ONLY its granted secrets —
         what the script form promises ("Selected = only the secrets you attach").
         Before 2.0 it also got every unowned secret, i.e. the same set as 'all'.
-      * a PLUGIN script (the SDK's default) also gets explicitly-global
-        (owner-NULL) and same-owner secrets, the documented SDK contract.
-        Precedence on a clean-name clash: global < same-owner < explicit grant
-        (the most specific wins).
+      * a PLUGIN script (the SDK's default) also gets its own plugin's
+        (same-owner) secrets. Unowned user secrets reach it only when attached:
+        before 2.0 it also got every unowned secret (F51, decision D9).
+        Precedence on a clean-name clash: same-owner < explicit grant (the most
+        specific wins).
 
     Returns:
         Dict of {clean_name: decrypted_value}.
@@ -102,12 +103,10 @@ def resolve_secrets_for_run(run) -> dict:
             owner = getattr(run.script, "owner_plugin", None)
 
         if mode == "selected":
-            # Build by precedence so an owner's own / granted secret wins a
-            # clean-name clash with a global one.
+            # Build by precedence so an explicitly granted secret wins a
+            # clean-name clash with the plugin's own one.
             chosen = {}  # clean_name -> Secret
             if owner:
-                for s in _ws_scope(Secret.objects.filter(owner_plugin__isnull=True)):
-                    chosen[s.get_clean_name()] = s
                 for s in _ws_scope(Secret.objects.filter(owner_plugin=owner)):
                     chosen[s.get_clean_name()] = s
             granted = Secret.objects.filter(

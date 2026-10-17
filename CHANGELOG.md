@@ -14,8 +14,10 @@ begins tracking at the current release; earlier history is in the git log.
   received every unowned workspace secret, which is the same set *All* gives, so
   the setting narrowed nothing. After upgrading, open each script that uses
   *Selected*, attach the secrets it reads (*Auto-detect from code* finds them) or
-  switch it to *All*. Plugin scripts are unchanged: they keep their plugin's own
-  secrets, unowned secrets and their grants.
+  switch it to *All*. Plugin scripts in *Selected* mode (the SDK default) get
+  their own plugin's secrets and the secrets attached to them; a user's unowned
+  secret no longer reaches them unless it is attached (the bundled example
+  plugins only use their own secrets).
 - **Each script has its own working folder.** A run's current directory is now
   `/app/data/workdir/<script id>/` (the id is in the script's URL) instead of the
   folder every script shared. Files a run writes there are there for the script's

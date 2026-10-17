@@ -462,7 +462,7 @@ class ScriptAPI:
         ``key`` is the stable per-owner handle (required for owned scripts). The
         human-facing ``name`` is auto-derived from it if omitted. Plugin-owned
         scripts default to ``injection_mode='selected'`` (so they receive only
-        granted/same-owner/global secrets); ``isolation_mode`` is left at the model
+        granted and same-owner secrets); ``isolation_mode`` is left at the model
         default ``'inherit'`` so ``resolve_isolation`` (the sandbox policy) decides.
         """
         from core.models import Script

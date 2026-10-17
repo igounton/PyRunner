@@ -21,9 +21,9 @@ CHANGELOG = [
                 "body": (
                     "Selected secret injection now means what the script form says: "
                     "a script in Selected mode gets only the secrets attached to it "
-                    "(plugin scripts also keep their plugin's own and unowned "
-                    "secrets). Before 2.0 a Selected user script received every "
-                    "workspace secret, so attach the ones it uses or switch it to All. "
+                    "(plugin scripts also keep their own plugin's secrets). Before "
+                    "2.0 a Selected script also received every unowned workspace "
+                    "secret, so attach the ones it uses or switch it to All. "
                     "Each script now runs in its own working folder, "
                     "/app/data/workdir/<script id>/, kept between its runs and removed "
                     "with the script; files written to the shared folder before 2.0 "

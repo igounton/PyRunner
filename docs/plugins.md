@@ -653,8 +653,10 @@ resources are:
 - `'all'` (the default for user scripts, and the literal pre-v2 behavior) — inject
   every user secret in the workspace.
 - `'selected'` (the SDK default for plugin scripts) — inject only **granted**
-  secrets + **same-owner** secrets + **explicitly-global** (unowned) secrets, by
-  clean name. Use `SecretAPI(OWNER).grant(script, secret)` to attach one.
+  secrets + **same-owner** secrets, by clean name. Use
+  `SecretAPI(OWNER).grant(script, secret)` to attach one. Since 2.0 a user's
+  unowned secret reaches a plugin script only when it is attached (before 2.0
+  every unowned secret was injected too).
 
 This is purely additive: existing scripts stay `'all'`, byte-for-byte.
 

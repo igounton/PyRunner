@@ -5,9 +5,9 @@ Covers the data-model + executor half of WS3:
   * Secret uniqueness re-scoped to (workspace, owner_plugin) — user secrets keep
     their exact per-workspace rule; owned secrets get their own per-owner rule.
   * The executor's injection-mode resolution: 'all' (default) = user secrets only
-    (byte-identical to pre-v2); 'selected' = global + same-owner + granted for a
-    plugin script, by clean name, with global < same-owner < grant precedence,
-    and granted-only for a user script (F24, 2.0).
+    (byte-identical to pre-v2); 'selected' = same-owner + granted for a plugin
+    script (F51, 2.0: no unowned secrets unless attached), by clean name, with
+    same-owner < grant precedence, and granted-only for a user script (F24, 2.0).
   * DataStore name stays per-workspace unique regardless of owner.
   * PYRUNNER_OWNER_PLUGIN exposed to an owned script's run env.
 """
@@ -109,15 +109,26 @@ class InjectionModeTests(TestCase):
         self.assertNotIn("OWNED_KEY", out)   # plugin secret never leaks into a user script
         self.assertNotIn("OTHER_KEY", out)
 
-    def test_selected_includes_global_and_same_owner_only(self):
+    def test_selected_plugin_script_gets_same_owner_not_unowned(self):
+        # F51 (D9): a plugin script in Selected mode no longer receives every
+        # unowned user secret — only its own plugin's secrets and attached ones.
         out = resolve_secrets_for_run(self.owned_run)
-        self.assertEqual(out.get("GLOBAL_KEY"), "g")     # explicitly-global injected
+        self.assertNotIn("GLOBAL_KEY", out)               # unowned, not attached
         self.assertEqual(out.get("OWNED_KEY"), "owned-a")  # same-owner injected
         self.assertNotIn("OTHER_KEY", out)               # other plugin's secret excluded
+        self.assertEqual(out.get("SHARED"), "plugin-a-val")  # its own copy, not the user's
 
-    def test_selected_same_owner_overrides_global_on_clean_name_clash(self):
+    def test_selected_plugin_script_gets_an_attached_unowned_secret(self):
+        glob = Secret.objects.get(key="GLOBAL_KEY", owner_plugin__isnull=True)
+        SecretGrant.objects.create(script=self.owned_script, secret=glob)
         out = resolve_secrets_for_run(self.owned_run)
-        self.assertEqual(out.get("SHARED"), "plugin-a-val")  # same-owner wins
+        self.assertEqual(out.get("GLOBAL_KEY"), "g")
+
+    def test_selected_grant_overrides_same_owner_on_clean_name_clash(self):
+        shared_user = Secret.objects.get(key="SHARED", owner_plugin__isnull=True)
+        SecretGrant.objects.create(script=self.owned_script, secret=shared_user)
+        out = resolve_secrets_for_run(self.owned_run)
+        self.assertEqual(out.get("SHARED"), "global-val")  # explicit grant wins
 
     def test_selected_injects_active_grant_and_skips_inactive(self):
         # Grant plugin_b's secret to plugin_a's script (it would not inject otherwise).

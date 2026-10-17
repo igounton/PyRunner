@@ -86,12 +86,17 @@
                                     {% endif %}
                                 </div>
                                 <p class="text-xs text-faint">Joined {{ user.date_joined|timesince }} ago{% if user.last_login %} &bull; Last login {{ user.last_login|timesince }} ago{% endif %}</p>
+                                {% if user.memberships_sorted %}
+                                <p class="text-xs text-muted mt-1">Workspaces: {% for m in user.memberships_sorted %}<span class="whitespace-nowrap">{{ m.workspace.name }} ({{ m.get_role_display }})</span>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+                                {% else %}
+                                <p class="text-xs text-faint mt-1">No workspaces</p>
+                                {% endif %}
                             </div>
                         </div>
                         {% if user.pk != request.user.pk %}
                         <form method="post" action="{% url 'cpanel:delete_user' pk=user.pk %}" class="inline flex-shrink-0">
                             {% csrf_token %}
-                            <button type="submit" onclick="return confirm('Delete user {{ user.email }}? This cannot be undone.')" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
+                            <button type="submit" onclick="return confirm('Delete user {{ user.email|escapejs }}? This cannot be undone.{% if user.sole_owned %} They are the only owner of: {{ user.sole_owned|join:', '|escapejs }}; the delete will be refused until another member owns it.{% endif %}')" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
                         </form>
                         {% else %}
                         <span class="text-xs text-faint flex-shrink-0">(You)</span>

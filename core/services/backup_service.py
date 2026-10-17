@@ -962,13 +962,20 @@ class BackupService:
             "secret_providers": len(backup_data.get("secret_providers", [])),
             "secrets": len(backup_data.get("secrets", [])),
             "runs": len(backup_data.get("runs", [])),
-            "schedules": len(backup_data.get("script_schedules", [])),
+            # Manual rows exist for every script; count real schedules (U43).
+            "schedules": sum(
+                1
+                for row in backup_data.get("script_schedules", [])
+                if row.get("run_mode", "manual") != "manual" and row.get("is_active", True)
+            ),
             "users": len(backup_data.get("users", [])),
             "package_operations": len(backup_data.get("package_operations", [])),
             "datastores": len(datastores),
             "datastore_entries": sum(len(ds.get("entries", [])) for ds in datastores),
             "vector_collections": len(backup_data.get("vector_collections", [])),
             "brains": len(backup_data.get("brains", [])),
+            "libraries": len(backup_data.get("libraries", [])),
+            "databases": len(backup_data.get("databases", [])),
         }
 
         return {
@@ -977,7 +984,38 @@ class BackupService:
             "created_by_email": metadata.get("created_by_email", "Unknown"),
             "counts": counts,
             "warnings": warnings,
+            "tokens_removed": cls.tokens_removed_by_restore(),
         }
+
+    @staticmethod
+    def tokens_removed_by_restore() -> list:
+        """API tokens a restore deletes on THIS instance (F61).
+
+        Backups don't carry API tokens and a restore leaves the token table
+        alone, but it deletes every Brain and DataStore first, and a token bound
+        to a brain or scoped to one store goes with it (FK cascade) — even when
+        the restored brain/store comes back with the same id. Unbound tokens
+        survive. The preview names them so a same-instance rollback doesn't
+        silently break the connectors using them.
+        """
+        from django.db.models import Q
+
+        from core.models import APIToken
+
+        rows = (
+            APIToken.objects.filter(Q(brain__isnull=False) | Q(datastore__isnull=False))
+            .select_related("brain", "datastore")
+            .order_by("name")
+        )
+        return [
+            {
+                "name": token.name,
+                "bound_to": (
+                    f"brain {token.brain.name}" if token.brain_id else f"data store {token.datastore.name}"
+                ),
+            }
+            for token in rows
+        ]
 
     # =====================================================================
     # RESTORE METHODS

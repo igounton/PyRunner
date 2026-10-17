@@ -1030,17 +1030,34 @@ function showRestorePreview(preview, warnings) {
     html += '<div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg">';
     html += '<p class="text-sm text-muted mb-2">This backup contains:</p>';
     html += '<div class="grid grid-cols-2 gap-2 text-sm text-text">';
-    html += '<div>• Scripts: <strong>' + escapeHtml(String(preview.counts.scripts)) + '</strong></div>';
-    html += '<div>• Environments: <strong>' + escapeHtml(String(preview.counts.environments)) + '</strong></div>';
-    html += '<div>• Secrets: <strong>' + escapeHtml(String(preview.counts.secrets)) + '</strong></div>';
-    html += '<div>• Secret providers: <strong>' + escapeHtml(String(preview.counts.secret_providers || 0)) + '</strong></div>';
-    html += '<div>• Runs: <strong>' + escapeHtml(String(preview.counts.runs)) + '</strong></div>';
-    html += '<div>• Schedules: <strong>' + escapeHtml(String(preview.counts.schedules)) + '</strong></div>';
-    html += '<div>• Users: <strong>' + escapeHtml(String(preview.counts.users)) + '</strong></div>';
-    html += '<div>• DataStores: <strong>' + escapeHtml(String(preview.counts.datastores || 0)) + '</strong></div>';
-    html += '<div>• DataStore entries: <strong>' + escapeHtml(String(preview.counts.datastore_entries || 0)) + '</strong></div>';
+    const kinds = [
+        ['Workspaces', 'workspaces'], ['Users', 'users'], ['Scripts', 'scripts'],
+        ['Schedules (active)', 'schedules'], ['Runs', 'runs'], ['Environments', 'environments'],
+        ['Libraries', 'libraries'], ['Secrets', 'secrets'], ['Secret providers', 'secret_providers'],
+        ['Data stores', 'datastores'], ['Data store entries', 'datastore_entries'],
+        ['Databases', 'databases'], ['Vector collections', 'vector_collections'], ['Brains', 'brains'],
+    ];
+    kinds.forEach(([label, key]) => {
+        html += '<div>• ' + label + ': <strong>' + escapeHtml(String(preview.counts[key] || 0)) + '</strong></div>';
+    });
     html += '</div>';
+    if (preview.counts.databases) {
+        html += '<p class="text-xs text-muted mt-2">Databases: each one\'s schema is dropped and re-created from the dump in the backup.</p>';
+    }
     html += '</div>';
+
+    const removed = preview.tokens_removed || [];
+    if (removed.length) {
+        html += '<div class="p-4 bg-warn/10 border border-warn/30 rounded-lg">';
+        html += '<p class="text-sm text-warn font-semibold mb-2">This restore deletes ' + removed.length + ' API token' + (removed.length === 1 ? '' : 's') + ':</p>';
+        html += '<ul class="text-xs text-warn/80 ml-4 space-y-1">';
+        removed.forEach(t => {
+            html += '<li>• ' + escapeHtml(String(t.name)) + ' (bound to ' + escapeHtml(String(t.bound_to)) + ')</li>';
+        });
+        html += '</ul>';
+        html += '<p class="text-xs text-warn/80 mt-2">Tokens bound to a brain or to one data store are removed with it, even when the backup brings it back. Create new tokens afterwards and update the connectors that use them. Other tokens are kept.</p>';
+        html += '</div>';
+    }
 
     if (warnings && warnings.length > 0) {
         html += '<div class="p-4 bg-warn/10 border border-warn/30 rounded-lg">';

@@ -317,7 +317,7 @@ class RestDatastoreListScopingTests(TestCase):
         )
 
     def _auth(self):
-        return {"HTTP_AUTHORIZATION": f"Bearer {self.token_a.token}"}
+        return {"HTTP_AUTHORIZATION": f"Bearer {self.token_a.raw_token}"}
 
     def test_list_only_token_workspace_stores(self):
         resp = self.client.get("/api/v1/datastores/", **self._auth())

@@ -18,6 +18,12 @@ begins tracking at the current release; earlier history is in the git log.
   their own plugin's secrets and the secrets attached to them; a user's unowned
   secret no longer reaches them unless it is attached (the bundled example
   plugins only use their own secrets).
+- **Datastore and plugin API tokens are stored hashed.** Like Unified API
+  tokens, they are kept only as a SHA-256 digest; the upgrade (migration 0065)
+  hashes the existing ones. Tokens keep working unchanged; the list shows the
+  first 8 and last 4 characters. A database copy or dump no longer contains
+  usable tokens. Rolling back to 1.x after upgrading invalidates them (create
+  new ones there).
 - **Each script has its own working folder.** A run's current directory is now
   `/app/data/workdir/<script id>/` (the id is in the script's URL) instead of the
   folder every script shared. Files a run writes there are there for the script's

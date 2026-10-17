@@ -158,7 +158,9 @@ class RESTTests(TestCase):
         legacy = APIToken.objects.create(
             name="old", token=APIToken.generate_token(), workspace=self.ws
         )
-        self.assertEqual(self.get(raw=legacy.token).status_code, 403)
+        self.assertEqual(self.get(raw=legacy.raw_token).status_code, 403)
+        self.assertEqual(legacy.token, APIToken.digest(legacy.raw_token))  # F53
+        self.assertEqual(self.get(raw=legacy.token).status_code, 401)
         for url in ("/api/v1/datastores/", "/api/v1/plugins/"):
             self.assertIn(self.client.get(url, HTTP_X_API_KEY=self.raw).status_code, (401, 403))
             self.assertIn(

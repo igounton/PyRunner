@@ -31,7 +31,10 @@ CHANGELOG = [
                     "The Coolify compose file now caps the container at 2048 "
                     "processes and threads; the per-run process limit can't stop a "
                     "fork bomb while scripts run as root, and Settings → Isolation "
-                    "now says so."
+                    "now says so. Datastore and plugin API tokens are now stored "
+                    "hashed, like Unified API tokens: existing tokens keep working, "
+                    "the list shows only their first and last characters, and "
+                    "going back to 1.x after the upgrade invalidates them."
                 ),
             },
             {

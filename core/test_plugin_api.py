@@ -92,7 +92,7 @@ class DatastoreApiRegressionTests(TestCase):
     # -- reach ---------------------------------------------------------------
 
     def test_global_token_lists_only_its_workspace_stores(self):
-        resp = self.client.get("/api/v1/datastores/", **_auth(self.global_token.token))
+        resp = self.client.get("/api/v1/datastores/", **_auth(self.global_token.raw_token))
         self.assertEqual(resp.status_code, 200)
         body = resp.json()
         names = {d["name"] for d in body["datastores"]}
@@ -105,27 +105,27 @@ class DatastoreApiRegressionTests(TestCase):
         )
 
     def test_scoped_token_lists_only_its_store(self):
-        resp = self.client.get("/api/v1/datastores/", **_auth(self.scoped_token.token))
+        resp = self.client.get("/api/v1/datastores/", **_auth(self.scoped_token.raw_token))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual([d["name"] for d in resp.json()["datastores"]], ["alpha"])
 
     def test_scoped_token_other_store_in_workspace_403(self):
         resp = self.client.get(
-            "/api/v1/datastores/alpha_two/", **_auth(self.scoped_token.token)
+            "/api/v1/datastores/alpha_two/", **_auth(self.scoped_token.raw_token)
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(resp.json()["error"]["code"], "FORBIDDEN")
 
     def test_cross_workspace_store_404(self):
         resp = self.client.get(
-            "/api/v1/datastores/beta/", **_auth(self.global_token.token)
+            "/api/v1/datastores/beta/", **_auth(self.global_token.raw_token)
         )
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(resp.json()["error"]["code"], "NOT_FOUND")
 
     def test_entries_and_single_entry(self):
         resp = self.client.get(
-            "/api/v1/datastores/alpha/entries/", **_auth(self.global_token.token)
+            "/api/v1/datastores/alpha/entries/", **_auth(self.global_token.raw_token)
         )
         self.assertEqual(resp.status_code, 200)
         body = resp.json()
@@ -133,7 +133,7 @@ class DatastoreApiRegressionTests(TestCase):
         self.assertEqual(body["entries"][0]["key"], "k")
 
         resp = self.client.get(
-            "/api/v1/datastores/alpha/entries/k/", **_auth(self.global_token.token)
+            "/api/v1/datastores/alpha/entries/k/", **_auth(self.global_token.raw_token)
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["value"], "a-value")
@@ -142,7 +142,7 @@ class DatastoreApiRegressionTests(TestCase):
         # Pre-tenancy legacy fallback for datastore-scoped tokens stays.
         store_d = DataStore.objects.create(name="dstore", workspace=self.default)
         bare = APIToken.objects.create(name="bare", token=APIToken.generate_token())
-        resp = self.client.get("/api/v1/datastores/", **_auth(bare.token))
+        resp = self.client.get("/api/v1/datastores/", **_auth(bare.raw_token))
         self.assertEqual(resp.status_code, 200)
         self.assertIn(store_d.name, {d["name"] for d in resp.json()["datastores"]})
 
@@ -160,13 +160,13 @@ class DatastoreApiRegressionTests(TestCase):
     def test_expired_token_401(self):
         self.global_token.expires_at = timezone.now() - timedelta(minutes=1)
         self.global_token.save(update_fields=["expires_at"])
-        resp = self.client.get("/api/v1/datastores/", **_auth(self.global_token.token))
+        resp = self.client.get("/api/v1/datastores/", **_auth(self.global_token.raw_token))
         self.assertEqual(resp.status_code, 401)
 
     def test_inactive_token_401(self):
         self.global_token.is_active = False
         self.global_token.save(update_fields=["is_active"])
-        resp = self.client.get("/api/v1/datastores/", **_auth(self.global_token.token))
+        resp = self.client.get("/api/v1/datastores/", **_auth(self.global_token.raw_token))
         self.assertEqual(resp.status_code, 401)
 
     def test_rate_limit_path_still_wired(self):
@@ -174,13 +174,13 @@ class DatastoreApiRegressionTests(TestCase):
             "core.views.api.decorators.rate_limit_exceeded", return_value=True
         ):
             resp = self.client.get(
-                "/api/v1/datastores/", **_auth(self.global_token.token)
+                "/api/v1/datastores/", **_auth(self.global_token.raw_token)
             )
         self.assertEqual(resp.status_code, 429)
         self.assertEqual(resp.json()["error"]["code"], "RATE_LIMITED")
 
     def test_last_used_stamped(self):
-        self.client.get("/api/v1/datastores/", **_auth(self.global_token.token))
+        self.client.get("/api/v1/datastores/", **_auth(self.global_token.raw_token))
         self.global_token.refresh_from_db()
         self.assertIsNotNone(self.global_token.last_used_at)
 
@@ -213,7 +213,7 @@ class PluginScopeRejectionTests(TestCase):
             "/api/v1/datastores/alpha/entries/",
             "/api/v1/datastores/alpha/entries/k/",
         ):
-            resp = self.client.get(url, **_auth(self.plugin_token.token))
+            resp = self.client.get(url, **_auth(self.plugin_token.raw_token))
             self.assertEqual(resp.status_code, 403, url)
             self.assertEqual(resp.json()["error"]["code"], "SCOPE_MISMATCH", url)
 
@@ -223,7 +223,7 @@ class PluginScopeRejectionTests(TestCase):
         # dispatcher must 403 it — either way, never a success.
         for token in (self.global_token, self.scoped_token):
             resp = self.client.get(
-                "/api/v1/plugins/brand_tracker/mentions/", **_auth(token.token)
+                "/api/v1/plugins/brand_tracker/mentions/", **_auth(token.raw_token)
             )
             self.assertIn(resp.status_code, (403, 404))
 
@@ -557,7 +557,7 @@ class _PluginFixtureBase(TestCase):
         )
 
     def _get(self, url, token=None, **extra):
-        return self.client.get(url, **_auth(token or self.token.token), **extra)
+        return self.client.get(url, **_auth(token or self.token.raw_token), **extra)
 
 
 class DispatcherHappyPathTests(_PluginFixtureBase):
@@ -658,7 +658,7 @@ class DispatcherAuthAndScopeTests(_PluginFixtureBase):
         )
         for token in (legacy_global, legacy_scoped):
             for url in ("/api/v1/plugins/", "/api/v1/plugins/fixture_plugin/mentions/"):
-                resp = self._get(url, token=token.token)
+                resp = self._get(url, token=token.raw_token)
                 self.assertEqual(resp.status_code, 403, url)
                 self.assertEqual(resp.json()["error"]["code"], "SCOPE_MISMATCH")
                 self.assertEqual(resp["Access-Control-Allow-Origin"], "*")
@@ -671,7 +671,7 @@ class DispatcherAuthAndScopeTests(_PluginFixtureBase):
             plugin_slug="other_plugin",
             workspace=self.ws,
         )
-        resp = self._get("/api/v1/plugins/fixture_plugin/mentions/", token=other.token)
+        resp = self._get("/api/v1/plugins/fixture_plugin/mentions/", token=other.raw_token)
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(resp.json()["error"]["code"], "SCOPE_MISMATCH")
 
@@ -692,7 +692,7 @@ class DispatcherAuthAndScopeTests(_PluginFixtureBase):
             plugin_slug="ghost_plugin",
             workspace=self.ws,
         )
-        resp = self._get("/api/v1/plugins/ghost_plugin/mentions/", token=ghost.token)
+        resp = self._get("/api/v1/plugins/ghost_plugin/mentions/", token=ghost.raw_token)
         self.assertEqual(resp.status_code, 404)
 
     def test_unloaded_plugin_discovery_is_empty_200(self):
@@ -703,7 +703,7 @@ class DispatcherAuthAndScopeTests(_PluginFixtureBase):
             plugin_slug="ghost_plugin",
             workspace=self.ws,
         )
-        resp = self._get("/api/v1/plugins/", token=ghost.token)
+        resp = self._get("/api/v1/plugins/", token=ghost.raw_token)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json(), {"plugins": [], "count": 0})
 
@@ -736,14 +736,14 @@ class DispatcherResourceRulesTests(_PluginFixtureBase):
 
     def test_post_405(self):
         resp = self.client.post(
-            "/api/v1/plugins/fixture_plugin/mentions/", **_auth(self.token.token)
+            "/api/v1/plugins/fixture_plugin/mentions/", **_auth(self.token.raw_token)
         )
         self.assertEqual(resp.status_code, 405)
         self.assertEqual(resp["Access-Control-Allow-Origin"], "*")
 
     def test_head_405(self):
         resp = self.client.head(
-            "/api/v1/plugins/fixture_plugin/mentions/", **_auth(self.token.token)
+            "/api/v1/plugins/fixture_plugin/mentions/", **_auth(self.token.raw_token)
         )
         self.assertEqual(resp.status_code, 405)
 
@@ -828,7 +828,7 @@ class DispatcherRateLimitTests(_PluginFixtureBase):
             workspace=self.ws,
         )
         self.assertEqual(self._get(url).status_code, 200)
-        self.assertEqual(self._get(url, token=other.token).status_code, 200)
+        self.assertEqual(self._get(url, token=other.raw_token).status_code, 200)
         resp = self._get(url)
         self.assertEqual(resp.status_code, 429)
         self.assertIn("Retry-After", resp)

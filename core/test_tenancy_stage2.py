@@ -160,7 +160,7 @@ class PublicRestIsolationTests(TestCase):
 
     def test_scoped_token_resolves_its_workspace_store(self):
         resp = self.client.get(
-            "/api/v1/datastores/shared/entries/k/", **_auth(self.token_a.token)
+            "/api/v1/datastores/shared/entries/k/", **_auth(self.token_a.raw_token)
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["value"], "a-value")  # WS-A, never WS-B

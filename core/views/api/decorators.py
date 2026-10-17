@@ -51,9 +51,12 @@ def api_token_required(view_func):
 
         # Validate token
         try:
-            api_token = APIToken.objects.select_related("datastore").get(
-                token=token,
-                is_active=True,
+            # Stored as a SHA-256 digest (F53); Unified API tokens never
+            # authenticate here, so a stored digest isn't a usable credential.
+            api_token = (
+                APIToken.objects.select_related("datastore")
+                .exclude(scope=APIToken.Scope.API)
+                .get(token=APIToken.digest(token), is_active=True)
             )
         except APIToken.DoesNotExist:
             logger.warning(f"API request with invalid token: {token[:8]}...")

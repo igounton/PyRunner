@@ -41,7 +41,9 @@ class APIToken(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Legacy scopes keep their token; API scope stores only its SHA-256 digest.
+    # Every scope stores only the SHA-256 digest of its token (API scope since
+    # 2.0's Unified API; datastore/plugin scopes since F53 — migration 0065
+    # hashed the plaintext rows written by 1.x). The raw value is shown once.
     token = models.CharField(
         max_length=64,
         unique=True,
@@ -197,6 +199,16 @@ class APIToken(models.Model):
                     kwargs["update_fields"] = set(kwargs["update_fields"]) | {"token", "token_hint"}
             elif not re.fullmatch(r"[a-f0-9]{64}", self.token):
                 raise ValidationError("Generate API tokens with scope='api'.")
+        elif self.token and not self.token_hint:
+            # Datastore/plugin tokens (F53): a row without a hint still holds
+            # its raw value — keep a display hint and store only the digest.
+            # ``raw_token`` stays on this instance only (never stored), so the
+            # creator can hand the value out once.
+            self.raw_token = self.token
+            self.token_hint = self.legacy_hint(self.token)
+            self.token = self.digest(self.token)
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = set(kwargs["update_fields"]) | {"token", "token_hint"}
         super().save(*args, **kwargs)
 
     def clean(self):
@@ -222,6 +234,13 @@ class APIToken(models.Model):
         return hashlib.sha256(raw.encode()).hexdigest()
 
     @staticmethod
+    def legacy_hint(raw) -> str:
+        """Display hint for a datastore/plugin token: first 8 + last 4 characters."""
+        if len(raw) <= 12:
+            return "*" * len(raw)
+        return f"{raw[:8]}...{raw[-4:]}"
+
+    @staticmethod
     def generate_token(*, scope="datastores", kind="bearer") -> str:
         """Generate a URL-safe credential; unified API tokens include a kind prefix."""
         prefix = ("mcpurl_" if kind == "url" else "pyrun_") if scope == "api" else ""
@@ -231,9 +250,7 @@ class APIToken(models.Model):
         """Return a masked version of the token for display."""
         if self.scope == self.Scope.API:
             return f"{self.token_hint or 'pyrun'}..."
-        if len(self.token) <= 12:
-            return "*" * len(self.token)
-        return f"{self.token[:8]}...{self.token[-4:]}"
+        return self.token_hint or "********"
 
     @property
     def is_global(self) -> bool:

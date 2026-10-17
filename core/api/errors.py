@@ -62,9 +62,11 @@ def authenticate(request, *, scope="plugin", raw=None, kind="bearer"):
     raw = _extract_token(request) if raw is None else raw
     if not raw:
         return fail("API token required")
-    lookup = ~Q(scope="api") & Q(token=raw)
+    # Every scope stores the SHA-256 digest (F53 for datastore/plugin tokens).
+    digest = APIToken.digest(raw)
+    lookup = ~Q(scope="api") & Q(token=digest)
     if raw.startswith(("pyrun_", "mcpurl_")):
-        lookup |= Q(scope="api", token=APIToken.digest(raw))
+        lookup |= Q(scope="api", token=digest)
     token = (
         APIToken.objects.select_related("workspace", "brain").filter(lookup, is_active=True).first()
     )

@@ -88,19 +88,29 @@ def access_for(ctx, brain):
     return Access(TIERS[rank], rank >= 1 and (owned or any(g.can_propose for g in entries)))
 
 
+def _with_slug(scope, slug):
+    """Narrow ``scope`` to ``slug``: the exact slug, else a unique case-insensitive
+    match (F55 — a pre-2.0 mixed-case slug typed in another case). Ambiguous case
+    twins match nothing, so the caller gets the same "unknown brain" answer."""
+    if scope.filter(slug=slug).exists() or not isinstance(slug, str):
+        return scope.filter(slug=slug)
+    pks = list(scope.filter(slug__iexact=slug).values_list("pk", flat=True)[:2])
+    return scope.filter(pk=pks[0]) if len(pks) == 1 else scope.none()
+
+
 def resolve(ctx, params, *, lock=False):
     scope = Brain.objects.for_workspace(ctx.workspace)
-    if lock:
-        scope = scope.select_for_update()
     slug = params.get("brain")
     if ctx.resource is not None:
         scope = scope.filter(pk=ctx.resource.pk)
         if slug is not None:
-            scope = scope.filter(slug=slug)
+            scope = _with_slug(scope, slug)
     elif slug:
-        scope = scope.filter(slug=slug)
+        scope = _with_slug(scope, slug)
     else:
         raise unknown()
+    if lock:
+        scope = scope.select_for_update()
     brain = scope.first()
     if brain is None:
         raise unknown()

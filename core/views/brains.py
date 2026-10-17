@@ -37,7 +37,8 @@ class StyledForm:
 class CreateBrainForm(StyledForm, forms.Form):
     name = forms.CharField(max_length=150)
     slug = forms.SlugField(
-        max_length=64, help_text="A stable name used by connectors in this workspace."
+        max_length=64,
+        help_text="A stable name used by connectors in this workspace. Saved in lowercase.",
     )
     source = forms.ChoiceField(
         choices=[
@@ -50,6 +51,10 @@ class CreateBrainForm(StyledForm, forms.Form):
         required=False, help_text="UTF-8 text ZIP, up to 50 MB compressed and expanded."
     )
     github_url = forms.URLField(required=False, label="GitHub repository URL")
+
+    def clean_slug(self):
+        # F55: slugs are lowercase so connectors can't miss a brain by case.
+        return self.cleaned_data["slug"].lower()
 
     def clean(self):
         data = super().clean()

@@ -4,6 +4,7 @@ import hashlib
 import logging
 from pathlib import Path
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from core.api.errors import ApiError
@@ -57,6 +58,12 @@ class BrainService:
     def create(workspace, slug, *, name=None, author=None, files=None, **ownership):
         if set(ownership) - {"owner_plugin", "owner_key"}:
             raise TypeError("Unknown ownership fields")
+        # F55: new slugs are lowercase and unique regardless of case, so a slug
+        # typed in another case can't reach (or create) a different brain.
+        # Mixed-case slugs from before 2.0 (or restored from a backup) keep working.
+        slug = (slug or "").lower()
+        if Brain.objects.filter(workspace=workspace, slug__iexact=slug).exists():
+            raise ValidationError({"slug": "A brain with this slug already exists in this workspace."})
         if files is None:
             files = {
                 path.relative_to(TEMPLATE).as_posix(): path.read_text(encoding="utf-8")

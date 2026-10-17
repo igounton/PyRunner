@@ -134,6 +134,10 @@ class BackupService:
     # 1.13.0 — GitHub Brain sync configuration/baseline; jobs omitted, polling paused.
     BACKUP_VERSION = "1.13.0"
     MAX_BACKUP_SIZE_MB = 100
+    # Default cap on a gzip backup's expanded size (F92, zip-bomb guard);
+    # PYRUNNER_BACKUP_MAX_EXPANDED_MB overrides it. The default is above the
+    # upload cap, so any backup accepted as plain JSON also loads gzipped.
+    MAX_BACKUP_EXPANDED_MB = 256
 
     # Backup format constants
     FORMAT_JSON = "json"
@@ -772,6 +776,12 @@ class BackupService:
             return json_str.encode("utf-8"), "application/json"
 
     @classmethod
+    def max_expanded_bytes(cls) -> int:
+        """Largest expanded size of a gzip backup accepted by the web restore."""
+        mb = int(getattr(settings, "PYRUNNER_BACKUP_MAX_EXPANDED_MB", cls.MAX_BACKUP_EXPANDED_MB))
+        return max(mb, 1) * 1024 * 1024
+
+    @classmethod
     def deserialize_backup(cls, data: bytes, filename: str = "") -> dict:
         """
         Deserialize backup data from bytes.
@@ -795,12 +805,31 @@ class BackupService:
             is_gzip = True
 
         if is_gzip:
+            limit = cls.max_expanded_bytes()
+            expanded = bytearray()
             try:
+                # F92: read in chunks and stop at the cap — a few hundred KB of
+                # gzipped zeros must not inflate to gigabytes in the web worker.
                 with gzip.GzipFile(fileobj=io.BytesIO(data)) as gz:
-                    json_str = gz.read().decode("utf-8")
+                    while len(expanded) <= limit:
+                        chunk = gz.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        expanded += chunk
             except Exception as e:
                 # U75: a readable reason, not zlib's "Not a gzipped file (b'\\xf7f')".
                 raise ValueError("This file isn't a PyRun backup (it is neither a gzip-compressed nor a plain JSON backup).") from e
+            if len(expanded) > limit:
+                raise ValueError(
+                    f"This backup expands to more than {limit // (1024 * 1024)} MB, so it can't be "
+                    "restored from the browser. Restore it on the server with "
+                    "`python manage.py restore_backup`, or raise PYRUNNER_BACKUP_MAX_EXPANDED_MB."
+                )
+            try:
+                json_str = expanded.decode("utf-8")
+            except UnicodeDecodeError as e:
+                raise ValueError("This file isn't a PyRun backup (it is neither a gzip-compressed nor a plain JSON backup).") from e
+            del expanded
         else:
             try:
                 json_str = data.decode("utf-8")

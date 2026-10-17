@@ -589,6 +589,10 @@ PYRUNNER_VECTOR_CACHE_MB = int(os.environ.get("PYRUNNER_VECTOR_CACHE_MB", "256")
 # but skipped with a warning, so a big index can't make the archive unloadable
 # through the web restore path (MAX_BACKUP_SIZE_MB) or the session store.
 PYRUNNER_VECTOR_BACKUP_MAX_MB = int(os.environ.get("PYRUNNER_VECTOR_BACKUP_MAX_MB", "50"))
+# Largest expanded size (MB) of a gzip backup the web restore will read; bigger
+# ones are refused before they can exhaust memory (zip-bomb guard). The CLI
+# `manage.py restore_backup` is not capped.
+PYRUNNER_BACKUP_MAX_EXPANDED_MB = int(os.environ.get("PYRUNNER_BACKUP_MAX_EXPANDED_MB", "256"))
 
 LOGGING = {
     "version": 1,

@@ -286,6 +286,28 @@ begins tracking at the current release; earlier history is in the git log.
   GitHub README.
 
 ### Security
+- **External secret providers can no longer reach private hosts.** The custom,
+  Vault and Infisical secret backends fetched whatever endpoint their config
+  named with no SSRF check, so one pointed at the cloud-metadata address
+  (`169.254.169.254`) returned the instance's credentials as "secret values".
+  They now apply the same `PYRUNNER_ALLOW_PRIVATE_NETWORK` guard as storage,
+  webhooks and vector stores; the metadata range stays blocked either way.
+- **Delete and archive confirmations escape the item's name.** The
+  confirmation dialogs on scripts, tags, data stores, entries, secrets,
+  libraries, packages, channels and invites built their text as a JavaScript
+  string with HTML escaping only, so a quote in a name broke the dialog (and a
+  crafted name could run in it). Those names are now JavaScript-escaped.
+- **A gzip backup can't exhaust memory on restore.** Settings → Backup unpacked
+  an uploaded `.json.gz` completely before checking it, so a few hundred KB of
+  gzipped zeros grew the web process by hundreds of MB (and the 100 MB upload
+  cap allowed far more). The upload is now unpacked in chunks and refused past
+  `PYRUNNER_BACKUP_MAX_EXPANDED_MB` (default 256 MB, above the 100 MB upload
+  cap, so any backup that loads as plain JSON still loads gzipped); restore a
+  larger backup on the server with `python manage.py restore_backup`.
+- **A malformed chat webhook payload returns 400, not a 500.** An inbound
+  Telegram update with the right secret but an unexpected shape raised an error
+  inside the public `/channels/<token>/` endpoint; it is now ignored or answered
+  with a 400.
 - **A run always uses its script's workspace.** A run started by plugin code
   that set no workspace (the bundled Sales Dashboard's *Run collector now*)
   ran its script with the default workspace's data stores and every

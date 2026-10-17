@@ -202,6 +202,19 @@ CHANGELOG = [
                 ),
             },
             {
+                "tag": "Security",
+                "title": "Hardening from the 2.0 release test",
+                "body": (
+                    "External secret providers (custom, Vault, Infisical) now apply "
+                    "the same SSRF guard as the rest of the app, so one can't be "
+                    "pointed at the cloud-metadata endpoint. Delete and archive "
+                    "confirmations escape the item's name. A malformed chat webhook "
+                    "payload is answered with a 400 instead of an error. A gzip "
+                    "backup that would unpack to more than 256 MB is refused "
+                    "instead of filling memory (PYRUNNER_BACKUP_MAX_EXPANDED_MB)."
+                ),
+            },
+            {
                 "tag": "Fixed",
                 "title": "Workspaces stay put",
                 "body": (

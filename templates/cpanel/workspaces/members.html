@@ -42,7 +42,7 @@
                             <div class="w-10 h-10 rounded-full bg-info/10 grid place-items-center flex-shrink-0">
                                 <span class="text-info font-semibold">{{ m.user.email|first|upper }}</span>
                             </div>
-                            <p class="text-text font-medium truncate">{{ m.user.email }}</p>
+                            <p class="text-text font-medium truncate">{{ m.user.email }}{% if m.user_id == request.user.id %} <span class="text-xs font-normal text-faint">(you)</span>{% endif %}</p>
                         </div>
                         <div class="flex items-center gap-2 flex-shrink-0">
                             {% if m.role == 'owner' and owner_count == 1 %}
@@ -57,7 +57,7 @@
                                     {% for value, label in role_choices %}{% if value != 'owner' or can_manage_owners %}<option value="{{ value }}"{% if value == m.role %} selected{% endif %}>{{ label }}</option>{% endif %}{% endfor %}
                                 </select>
                             </form>
-                            <form method="post" action="{% url 'cpanel:workspace_member_remove' pk=workspace.id membership_id=m.id %}" onsubmit="return confirm('Remove {{ m.user.email|escapejs }} from this workspace?');">
+                            <form method="post" action="{% url 'cpanel:workspace_member_remove' pk=workspace.id membership_id=m.id %}" onsubmit="return confirm({% if m.user_id == request.user.id %}'Remove yourself from this workspace? You will lose access to it.'{% else %}'Remove {{ m.user.email|escapejs }} from this workspace?'{% endif %});">
                                 {% csrf_token %}
                                 <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Remove</button>
                             </form>

@@ -229,8 +229,16 @@ def workspace_members_view(request: HttpRequest, pk) -> HttpResponse:
     workspace = get_object_or_404(Workspace, pk=pk)
     caller = _require_manage(request, workspace)
 
-    memberships = workspace.memberships.select_related("user").order_by(
-        "role", "user__email"
+    # Owner first, then admins, then members (U78): the stored values sort
+    # alphabetically (admin, member, owner), which listed the Owner last.
+    rank = {
+        WorkspaceMembership.ROLE_OWNER: 0,
+        WorkspaceMembership.ROLE_ADMIN: 1,
+        WorkspaceMembership.ROLE_MEMBER: 2,
+    }
+    memberships = sorted(
+        workspace.memberships.select_related("user"),
+        key=lambda m: (rank.get(m.role, 3), m.user.email.lower()),
     )
     owner_count = sum(1 for m in memberships if m.role == WorkspaceMembership.ROLE_OWNER)
     return render(

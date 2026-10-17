@@ -18,7 +18,12 @@
                 <div class="flex items-center gap-4">
                     <span class="text-sm text-muted font-mono tnum">{{ log_files_count }} file(s), {{ total_size|filesizeformat }}</span>
                     {% if request.user.is_superuser %}
-                    <button type="button" onclick="clearLogs()" id="clear-logs-btn" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-fail text-ink hover:opacity-90 transition">Clear logs</button>
+                    <button type="button" onclick="askClearLogs(true)" id="clear-logs-btn" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-fail text-ink hover:opacity-90 transition">Clear logs</button>
+                    <div id="clear-logs-confirm" class="hidden items-center gap-2 text-sm" role="group" aria-label="Confirm clearing the logs">
+                        <span class="text-fail">Delete every log file? This can't be undone.</span>
+                        <button type="button" onclick="clearLogs()" id="clear-logs-yes" class="text-[13px] font-medium px-3 py-1.5 rounded-lg bg-fail text-ink hover:opacity-90 transition">Clear logs</button>
+                        <button type="button" onclick="askClearLogs(false)" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text transition-colors">Cancel</button>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -56,7 +61,7 @@
 
             <!-- Results info -->
             <div class="flex items-center justify-between">
-                <p class="text-sm text-muted">Showing {{ entries|length }} of {{ total_count }} entries</p>
+                <p class="text-sm text-muted" id="log-count">Showing {{ entries|length }} of {{ total_count }} entries <span class="text-faint">· click a message to read all of it</span></p>
                 <label class="flex items-center gap-2 text-sm text-muted cursor-pointer">
                     <input type="checkbox" id="auto-refresh" class="w-4 h-4 rounded text-ok bg-ink border-line focus:ring-ok/40 focus:ring-2">
                     <span>Auto-refresh</span>
@@ -89,13 +94,14 @@
                                 </td>
                                 <td class="px-4 py-2 text-muted truncate max-w-[160px]" title="{{ entry.logger }}">{{ entry.logger }}</td>
                                 <td class="px-4 py-2 text-text">
-                                    <div class="truncate max-w-[500px]" title="{{ entry.message }}">{{ entry.message }}</div>
-                                    {% if entry.exception %}
-                                    <details class="mt-1">
-                                        <summary class="text-fail cursor-pointer text-xs">Show exception</summary>
-                                        <pre class="mt-2 p-2 bg-ink border border-line-soft rounded text-xs text-fail overflow-x-auto">{{ entry.exception }}</pre>
+                                    <details class="log-entry">
+                                        <summary class="cursor-pointer list-none"><span class="block truncate max-w-[500px]">{{ entry.message }}</span>{% if entry.exception %}<span class="text-fail text-xs">Has exception</span>{% endif %}</summary>
+                                        <div class="mt-2 space-y-2">
+                                            <pre class="p-2 bg-ink border border-line-soft rounded text-xs text-text whitespace-pre-wrap break-words">{{ entry.message }}</pre>
+                                            <p class="text-xs text-faint break-all">Logger: {{ entry.logger }}</p>
+                                            {% if entry.exception %}<pre class="p-2 bg-ink border border-line-soft rounded text-xs text-fail overflow-x-auto">{{ entry.exception }}</pre>{% endif %}
+                                        </div>
                                     </details>
-                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -108,11 +114,11 @@
             {% if total_pages > 1 %}
             <div class="flex items-center justify-center gap-2">
                 {% if page > 1 %}
-                <a href="?page={{ page|add:'-1' }}{% if level_filter %}&level={{ level_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="px-3 py-1.5 rounded-md border border-line text-sm text-muted hover:text-text hover:border-faint transition-colors">Previous</a>
+                <a href="?page={{ page|add:'-1' }}{% if filter_query %}&{{ filter_query }}{% endif %}" class="px-3 py-1.5 rounded-md border border-line text-sm text-muted hover:text-text hover:border-faint transition-colors">Previous</a>
                 {% endif %}
                 <span class="px-3 py-1.5 text-sm text-muted">Page {{ page }} of {{ total_pages }}</span>
                 {% if page < total_pages %}
-                <a href="?page={{ page|add:'1' }}{% if level_filter %}&level={{ level_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="px-3 py-1.5 rounded-md border border-line text-sm text-muted hover:text-text hover:border-faint transition-colors">Next</a>
+                <a href="?page={{ page|add:'1' }}{% if filter_query %}&{{ filter_query }}{% endif %}" class="px-3 py-1.5 rounded-md border border-line text-sm text-muted hover:text-text hover:border-faint transition-colors">Next</a>
                 {% endif %}
             </div>
             {% endif %}
@@ -138,15 +144,24 @@
 <script>
 let autoRefreshInterval = null;
 const AUTO_REFRESH_KEY = 'pyrunner_logs_auto_refresh';
+const LOGS_PAGE_URL = '{% url "cpanel:logs_api" %}?view=page&page={{ page }}{% if filter_query %}&{{ filter_query|escapejs }}{% endif %}';
+
+function askClearLogs(show) {
+    document.getElementById('clear-logs-btn').classList.toggle('hidden', show);
+    const box = document.getElementById('clear-logs-confirm');
+    box.classList.toggle('hidden', !show);
+    box.classList.toggle('flex', show);
+    if (show) document.getElementById('clear-logs-yes').focus();
+}
+
+function notify(type, message) {
+    if (window.Toast) window.Toast[type](message);
+}
 
 function clearLogs() {
-    if (!confirm('Are you sure you want to clear all logs? This action cannot be undone.')) {
-        return;
-    }
-
-    const btn = document.getElementById('clear-logs-btn');
+    const btn = document.getElementById('clear-logs-yes');
     btn.disabled = true;
-    btn.textContent = 'Clearing...';
+    btn.textContent = 'Clearing…';
 
     fetch('{% url "cpanel:logs_clear" %}', {
         method: 'POST',
@@ -158,26 +173,73 @@ function clearLogs() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
-            window.location.reload();
+            notify('success', data.message);
+            setTimeout(() => window.location.reload(), 900);
         } else {
-            alert('Error: ' + data.error);
+            notify('error', 'Could not clear the logs: ' + data.error);
         }
     })
-    .catch(error => {
-        alert('Error: ' + error.message);
-    })
+    .catch(error => notify('error', 'Could not clear the logs: ' + error.message))
     .finally(() => {
         btn.disabled = false;
         btn.textContent = 'Clear logs';
+        askClearLogs(false);
     });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text == null ? '' : String(text);
+    return div.innerHTML;
+}
+
+function levelClass(level) {
+    if (level === 'ERROR' || level === 'CRITICAL') return 'bg-fail/10 text-fail';
+    if (level === 'WARNING') return 'bg-warn/10 text-warn';
+    if (level === 'INFO') return 'bg-info/10 text-info';
+    return 'bg-panel-hi text-muted';
+}
+
+function formatTime(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return iso;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const pad = n => String(n).padStart(2, '0');
+    return months[d.getMonth()] + ' ' + pad(d.getDate()) + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+
+function rowHtml(entry) {
+    const exc = entry.exception
+        ? '<pre class="p-2 bg-ink border border-line-soft rounded text-xs text-fail overflow-x-auto">' + escapeHtml(entry.exception) + '</pre>' : '';
+    return '<tr class="hover:bg-panel-hi/50 transition-colors">' +
+        '<td class="px-4 py-2 text-faint whitespace-nowrap">' + escapeHtml(formatTime(entry.timestamp)) + '</td>' +
+        '<td class="px-4 py-2"><span class="px-2 py-0.5 text-xs rounded ' + levelClass(entry.level) + '">' + escapeHtml(entry.level) + '</span></td>' +
+        '<td class="px-4 py-2 text-muted truncate max-w-[160px]" title="' + escapeHtml(entry.logger) + '">' + escapeHtml(entry.logger) + '</td>' +
+        '<td class="px-4 py-2 text-text"><details class="log-entry"><summary class="cursor-pointer list-none"><span class="block truncate max-w-[500px]">' + escapeHtml(entry.message) + '</span>' +
+        (entry.exception ? '<span class="text-fail text-xs">Has exception</span>' : '') + '</summary><div class="mt-2 space-y-2">' +
+        '<pre class="p-2 bg-ink border border-line-soft rounded text-xs text-text whitespace-pre-wrap break-words">' + escapeHtml(entry.message) + '</pre>' +
+        '<p class="text-xs text-faint break-all">Logger: ' + escapeHtml(entry.logger) + '</p>' + exc + '</div></details></td></tr>';
+}
+
+// Redraw only the table (U76): the old reload lost the scroll position and any
+// expanded row. Skipped while a row is open so it doesn't close under the reader.
+function refreshLogs() {
+    const body = document.getElementById('log-body');
+    if (!body || body.querySelector('details[open]')) return;
+    fetch(LOGS_PAGE_URL, {headers: {'Accept': 'application/json'}})
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data || !data.success) return;
+            body.innerHTML = data.entries.map(rowHtml).join('');
+            const count = document.getElementById('log-count');
+            if (count) count.firstChild.textContent = 'Showing ' + data.entries.length + ' of ' + data.total_count + ' entries ';
+        })
+        .catch(() => {});
 }
 
 function startAutoRefresh() {
     if (!autoRefreshInterval) {
-        autoRefreshInterval = setInterval(function() {
-            window.location.reload();
-        }, 5000);
+        autoRefreshInterval = setInterval(refreshLogs, 5000);
     }
 }
 
@@ -190,7 +252,8 @@ function stopAutoRefresh() {
 
 document.addEventListener('DOMContentLoaded', function() {
     const checkbox = document.getElementById('auto-refresh');
-    const isEnabled = localStorage.getItem(AUTO_REFRESH_KEY) === 'true';
+    let isEnabled = false;
+    try { isEnabled = localStorage.getItem(AUTO_REFRESH_KEY) === 'true'; } catch (e) {}
 
     checkbox.checked = isEnabled;
 
@@ -199,11 +262,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     checkbox.addEventListener('change', function() {
+        try { localStorage.setItem(AUTO_REFRESH_KEY, this.checked ? 'true' : 'false'); } catch (e) {}
         if (this.checked) {
-            localStorage.setItem(AUTO_REFRESH_KEY, 'true');
             startAutoRefresh();
         } else {
-            localStorage.setItem(AUTO_REFRESH_KEY, 'false');
             stopAutoRefresh();
         }
     });

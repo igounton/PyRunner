@@ -54,28 +54,38 @@
     function renderTabs() {
         tabsBox.innerHTML = '';
         names().forEach(function (filename) {
+            var isActive = filename === active;
+            // A wrapper holds two real buttons (a button can't contain one):
+            // the tab and its remove control, which is focusable and always
+            // visible on the active tab, so touch and keyboard users can use it (U34).
+            var wrap = document.createElement('span');
+            wrap.className = 'group inline-flex items-center rounded-t-md border-b-2 transition-colors ' +
+                (isActive
+                    ? 'border-ok bg-panel-hi'
+                    : 'border-transparent hover:bg-panel-hi/30');
+
             var tab = document.createElement('button');
             tab.type = 'button';
-            tab.className = 'group inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-t-md border-b-2 transition-colors ' +
-                (filename === active
-                    ? 'border-ok text-text bg-panel-hi/60'
-                    : 'border-transparent text-muted hover:text-text hover:bg-panel-hi/30');
+            tab.className = 'px-3 py-1.5 text-xs font-mono ' +
+                (isActive ? 'text-ok font-semibold' : 'text-muted hover:text-text');
+            tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            tab.textContent = filename;
             tab.onclick = function () { switchTo(filename); };
-
-            var label = document.createElement('span');
-            label.textContent = filename;
-            tab.appendChild(label);
+            wrap.appendChild(tab);
 
             // __init__.py is auto-generated when absent, so it must stay
             // removable like any other module — no special-casing here.
-            var x = document.createElement('span');
+            var x = document.createElement('button');
+            x.type = 'button';
             x.textContent = '×';
-            x.className = 'opacity-0 group-hover:opacity-100 hover:text-fail transition-opacity';
-            x.title = 'Remove module';
+            x.className = 'pr-2 pl-0.5 py-1.5 text-xs hover:text-fail focus:text-fail focus:outline-none transition-opacity ' +
+                (isActive ? 'text-muted' : 'text-faint opacity-60 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100');
+            x.title = 'Remove ' + filename;
+            x.setAttribute('aria-label', 'Remove ' + filename);
             x.onclick = function (e) { e.stopPropagation(); removeModule(filename); };
-            tab.appendChild(x);
+            wrap.appendChild(x);
 
-            tabsBox.appendChild(tab);
+            tabsBox.appendChild(wrap);
         });
         emptyNote.classList.toggle('hidden', names().length > 0);
     }

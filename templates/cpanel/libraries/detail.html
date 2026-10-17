@@ -104,12 +104,12 @@
                                         {% endif %}
                                     </td>
                                     <td class="px-5 py-3 text-right font-mono tnum text-sm text-muted">{{ rev.modules|length }}</td>
-                                    <td class="px-5 py-3 text-sm text-muted">{{ rev.created_by.username|default:"—" }}</td>
+                                    <td class="px-5 py-3 text-sm text-muted"><span class="block max-w-[12rem] truncate" title="{{ rev.created_by.username|default:'' }}">{{ rev.created_by.username|default:"—" }}</span></td>
                                     <td class="px-5 py-3 text-right text-xs text-faint whitespace-nowrap">{{ rev.created_at|timesince }} ago</td>
                                     <td class="px-5 py-3">
-                                        <div class="flex items-center justify-end gap-2">
-                                            <a href="{% url 'cpanel:library_revision' pk=library.pk version=rev.version %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">
-                                                {% if rev.version == library.current_version %}View{% else %}View &amp; diff{% endif %}
+                                        <div class="flex items-center justify-end gap-2 whitespace-nowrap">
+                                            <a href="{% url 'cpanel:library_revision' pk=library.pk version=rev.version %}" {% if rev.version != library.current_version %}title="View &amp; diff against the current version"{% endif %} class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">
+                                                {% if rev.version == library.current_version %}View{% else %}Diff{% endif %}
                                             </a>
                                             {% if rev.version != library.current_version %}
                                             <form method="post" action="{% url 'cpanel:library_revision_restore' pk=library.pk version=rev.version %}" onsubmit="return confirm('Restore v{{ rev.version }}? Its content is saved forward as a new version — nothing is overwritten.');" class="inline">

@@ -74,8 +74,9 @@
 
                 {% if revealed_dsn %}
                 <div class="rounded-lg border border-warn/30 bg-warn/5 p-4 space-y-2">
-                    <p class="text-xs text-warn font-medium">Shown once — treat it like a password. Anyone with this string has full access to this database (and only this database).</p>
-                    <code class="block px-3 py-2.5 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text break-all select-all">{{ revealed_dsn }}</code>
+                    <p class="text-xs text-warn font-medium">Not stored in the page — reveal it again whenever you need it. Treat it like a password: anyone with this string has full access to this database (and only this database).</p>
+                    <code id="revealed-dsn" class="block px-3 py-2.5 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text break-all select-all">{{ revealed_dsn }}</code>
+                    <button type="button" onclick="(function(b){var t=document.getElementById('revealed-dsn').textContent;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1500);},function(){b.textContent='Select and copy';});})(this)" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Copy</button>
                 </div>
                 {% elif database.status == "ready" %}
                 <form method="post" action="{% url 'cpanel:database_reveal' pk=database.pk %}">

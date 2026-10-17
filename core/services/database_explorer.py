@@ -25,6 +25,7 @@ with ``ok=False``/availability flags so the pages render with a banner, never a
 """
 
 import logging
+import re
 from dataclasses import dataclass, field
 
 from core.services.database_service import DatabaseService
@@ -34,7 +35,28 @@ logger = logging.getLogger(__name__)
 # The explorer's own leash, independent of the role's default statement
 # timeout: viewer pages should feel instant or fail fast, never hold a slot.
 VIEWER_TIMEOUT_MS = 15000
+_VIEWER_PREFIXES = ("begin", "commit", "rollback", "set ", "show ", "select set_config(")
+_VIEWER_MARKERS = ("pg_catalog.", "information_schema.", "pg_class", "pg_namespace",
+                   "pg_total_relation_size", "pg_index", "pg_attribute")
+_VIEWER_PAGE_RE = re.compile(
+    r'^select \* from "[^"]+"(\."[^"]+")? limit \$\d+ offset \$\d+$', re.IGNORECASE
+)
+
+
+def is_viewer_statement(query: str) -> bool:
+    """Whether a pg_stat_statements entry is PyRun's own explorer traffic (U44):
+    transaction/session statements, catalog reads and the table browser's pages."""
+    q = " ".join((query or "").split()).lower()
+    if q.startswith(_VIEWER_PREFIXES):
+        return True
+    if any(marker in q for marker in _VIEWER_MARKERS):
+        return True
+    return bool(_VIEWER_PAGE_RE.match(q))
+
+
 GRID_PAGE_ROWS = 50
+# Tables up to this size with no planner estimate get an exact count(*) (U40).
+EXACT_COUNT_MAX_BYTES = 8 * 1024 * 1024
 CSV_ROW_CAP = 10000
 LONG_RUNNING_SECONDS = 30
 
@@ -137,17 +159,33 @@ class DatabaseExplorerService:
             (database.schema_name,),
             row_cap=None,
         )
+        from psycopg import sql
+
         from core.services import DatastoreService
 
-        return [
-            {
+        tables = []
+        for name, rows, size in result.rows:
+            entry = {
                 "name": name,
                 "row_estimate": rows,
+                "row_exact": False,
                 "size_bytes": size,
                 "size_display": DatastoreService.format_size(size),
             }
-            for name, rows, size in result.rows
-        ]
+            # A table never analysed reads "~0 rows" (U40): count small ones exactly.
+            if not rows and (size or 0) <= EXACT_COUNT_MAX_BYTES:
+                try:
+                    counted = cls.execute(
+                        database,
+                        sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(name)),
+                        row_cap=None,
+                    )
+                    entry["row_estimate"] = counted.rows[0][0]
+                    entry["row_exact"] = True
+                except Exception:
+                    pass
+            tables.append(entry)
+        return tables
 
     @classmethod
     def table_or_none(cls, database, table_name: str):
@@ -399,7 +437,8 @@ class DatabaseExplorerService:
                     ORDER BY s.total_exec_time DESC
                     LIMIT %s
                     """,
-                    (list(role_map.keys()), int(limit)),
+                    # Fetch extra rows: the explorer's own statements are dropped below.
+                    (list(role_map.keys()), int(limit) * 4),
                 ).fetchall()
         except Exception as e:
             logger.warning("Databases slow-query stats unavailable: %s", e)
@@ -415,5 +454,6 @@ class DatabaseExplorerService:
                 "query": (query or "").strip(),
             }
             for role, calls, total_ms, mean_ms, nrows, query in rows
-        ]
+            if not is_viewer_statement(query)
+        ][: int(limit)]
         return result

@@ -156,7 +156,7 @@
                             </form>
                             {% else %}
                             <div class="rounded-lg bg-panel-hi/40 border border-line-soft p-3">
-                                <p class="text-xs text-muted">{% if environment.is_default %}The default environment can't be deleted.{% else %}Can't delete — {{ environment.script_count }} script{{ environment.script_count|pluralize }} still use it.{% endif %}</p>
+                                <p class="text-xs text-muted">{% if environment.is_default %}The default environment can't be deleted.{% else %}Can't delete — {{ environment.script_count }} script{{ environment.script_count|pluralize }} still use{{ environment.script_count|pluralize:'s,' }} it.{% endif %}</p>
                             </div>
                             {% endif %}
                         </div>

@@ -104,7 +104,9 @@
                                     <td class="px-6 py-3 font-mono text-sm text-text">{{ package.name }}</td>
                                     <td class="px-6 py-3 font-mono text-sm text-muted">{{ package.version }}</td>
                                     <td class="px-6 py-3 text-right">
-                                        {% if user.is_superuser %}
+                                        {% if package.name|lower == "pip" or package.name|lower == "setuptools" %}
+                                        <span class="text-xs text-faint" title="Needed to install packages in this environment">required</span>
+                                        {% elif user.is_superuser %}
                                         <form method="post" action="{% url 'cpanel:package_uninstall' pk=environment.pk %}" onsubmit="return confirm('Uninstall {{ package.name }}?');" class="inline" data-loading-form>
                                             {% csrf_token %}
                                             <input type="hidden" name="package_name" value="{{ package.name }}">

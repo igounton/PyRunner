@@ -333,6 +333,12 @@ def package_uninstall_view(request: HttpRequest, pk) -> HttpResponse:
     if not EnvironmentService.validate_package_spec(package_name):
         messages.error(request, "Invalid package name.")
         return redirect("cpanel:environment_packages", pk=pk)
+    if EnvironmentService.is_protected_package(package_name):
+        messages.error(
+            request,
+            f"{package_name} can't be uninstalled here: the environment needs it to install packages.",
+        )
+        return redirect("cpanel:environment_packages", pk=pk)
 
     # Create operation record
     operation = PackageOperation.objects.create(

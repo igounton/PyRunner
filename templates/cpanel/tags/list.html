@@ -31,7 +31,7 @@
                             <th class="px-6 py-3 eyebrow text-faint font-normal">Tag</th>
                             <th class="px-6 py-3 eyebrow text-faint font-normal">Scripts</th>
                             <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
+                            {% if user.is_superuser %}<th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>{% endif %}
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line-soft">
@@ -44,17 +44,17 @@
                                 <a href="{% url 'cpanel:script_list' %}?tag={{ tag.pk }}" class="text-sm text-info hover:underline">{{ tag.workspace_script_count }} script{{ tag.workspace_script_count|pluralize }}</a>
                             </td>
                             <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ tag.created_at|timesince }} ago</td>
+                            {% if user.is_superuser %}
                             <td class="px-6 py-3.5">
                                 <div class="flex items-center justify-end gap-2">
-                                    {% if user.is_superuser %}
                                     <a href="{% url 'cpanel:tag_edit' pk=tag.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</a>
                                     <form method="post" action="{% url 'cpanel:tag_delete' pk=tag.pk %}" onsubmit="return confirm('Are you sure you want to delete the tag &quot;{{ tag.name }}&quot;? It will be removed from all scripts.');" class="inline">
                                         {% csrf_token %}
                                         <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
                                     </form>
-                                    {% endif %}
                                 </div>
                             </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>

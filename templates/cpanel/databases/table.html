@@ -20,7 +20,7 @@
                         <span class="text-muted">{{ table.name }}</span>
                     </nav>
                     <h1 class="text-[22px] font-semibold tracking-tight font-mono">{{ table.name }}</h1>
-                    <p class="text-sm text-muted mt-1">~{{ table.row_estimate }} rows · {{ table.size_display }} · read-only view</p>
+                    <p class="text-sm text-muted mt-1">{% if not table.row_exact %}~{% endif %}{{ table.row_estimate }} row{{ table.row_estimate|pluralize }} · {{ table.size_display }} · read-only view</p>
                 </div>
                 <a href="{% url 'cpanel:database_table_csv' pk=database.pk table=table.name %}" class="inline-flex items-center gap-2 text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -73,7 +73,7 @@
             <!-- Data grid -->
             <section class="rounded-2xl border border-line bg-panel overflow-hidden">
                 <div class="px-5 pt-4 pb-1 flex items-center justify-between">
-                    <h2 class="text-sm font-medium text-text">Data <span class="text-xs text-faint font-normal">(page {{ page }})</span></h2>
+                    <h2 class="text-sm font-medium text-text">Data <span class="text-xs text-faint font-normal">({% if row_end %}rows {{ row_start }}–{{ row_end }}, {% endif %}page {{ page }})</span></h2>
                     <div class="flex items-center gap-2">
                         {% if has_prev %}
                         <a href="?page={{ page|add:"-1" }}" class="text-[13px] px-3 py-1 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">← Prev</a>

@@ -31,6 +31,13 @@
                 </div>
             </div>
 
+            {% if datastore.owner_plugin %}
+            <div class="rounded-xl border border-warn/30 bg-warn/10 p-4 flex items-start gap-3">
+                <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5.07 19H19a2 2 0 001.75-2.96l-6.93-12a2 2 0 00-3.5 0l-6.93 12A2 2 0 005.07 19z"/></svg>
+                <p class="text-sm text-text">Managed by the “{{ datastore.owner_plugin }}” plugin — the plugin reads and writes these entries; changes made here may be overwritten, and only the plugin (or a superuser's force-delete) can delete the store.</p>
+            </div>
+            {% endif %}
+
             <!-- Stats -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="rounded-2xl border border-line bg-panel p-4">

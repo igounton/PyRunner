@@ -26,6 +26,7 @@ from core.services import (
     DatabaseService,
 )
 from core.views.ownership import owned_block_message, owned_delete_blocked
+from core.services.database_explorer import GRID_PAGE_ROWS
 
 
 def _require_manage(request: HttpRequest) -> None:
@@ -356,6 +357,8 @@ def database_table_view(request: HttpRequest, pk, table: str) -> HttpResponse:
             "indexes": indexes,
             "grid": grid,
             "page": page,
+            "row_start": (page - 1) * GRID_PAGE_ROWS + 1,
+            "row_end": (page - 1) * GRID_PAGE_ROWS + len(grid.rows),
             "has_prev": page > 1,
             "has_next": grid.truncated,
         },

@@ -60,6 +60,13 @@ class EnvironmentService:
 
         return full_path
 
+    # Removing these breaks every later install in the environment (U5).
+    PROTECTED_PACKAGES = frozenset({"pip", "setuptools"})
+
+    @classmethod
+    def is_protected_package(cls, name: str) -> bool:
+        return (name or "").strip().lower().replace("_", "-") in cls.PROTECTED_PACKAGES
+
     @classmethod
     def discover_python_versions(cls) -> list[dict]:
         """
@@ -69,6 +76,12 @@ class EnvironmentService:
         pythons = []
         seen_paths = set()
 
+        def real(path):
+            try:
+                return os.path.realpath(path)
+            except OSError:
+                return path
+
         # On Windows, try the py launcher first
         if os.name == "nt":
             pythons.extend(cls._discover_via_py_launcher())
@@ -77,7 +90,7 @@ class EnvironmentService:
         current_python = sys.executable
         if current_python and os.path.isfile(current_python):
             version = cls._get_python_version(current_python)
-            if version and current_python not in seen_paths:
+            if version and real(current_python) not in seen_paths:
                 pythons.append(
                     {
                         "path": current_python,
@@ -85,14 +98,20 @@ class EnvironmentService:
                         "display": f"Python {version} (current)",
                     }
                 )
-                seen_paths.add(current_python)
+                seen_paths.add(real(current_python))
 
         # Check PATH for python executables
         path_pythons = cls._discover_in_path()
         for p in path_pythons:
-            if p["path"] not in seen_paths:
+            if real(p["path"]) not in seen_paths:
                 pythons.append(p)
-                seen_paths.add(p["path"])
+                seen_paths.add(real(p["path"]))
+
+        # Same version from two different interpreters: show which is which (U36).
+        versions = [p["version"] for p in pythons]
+        for p in pythons:
+            if versions.count(p["version"]) > 1 and p["path"] not in p["display"]:
+                p["display"] = p["display"] + " — " + p["path"]
 
         # Debian/Ubuntu ship /usr/bin/python3 without ensurepip unless
         # python3-venv is installed; offering it produces a create that fails

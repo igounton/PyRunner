@@ -2,7 +2,7 @@
 PyRun version information.
 """
 
-__version__ = "2.0.0-rc20"
+__version__ = "2.0.0-rc21"
 
 # Whole-app beta flag. Flip to False to drop every "Beta" badge across the UI
 # in one place (badges are rendered via templates/_beta_badge.html, gated on the

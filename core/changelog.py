@@ -174,7 +174,9 @@ CHANGELOG = [
                     "The API tokens list shows bound brains and expired tokens, Connect "
                     "has Copy buttons, brain settings show the search index and "
                     "today's spend, and Logs open a message in full. Phones get "
-                    "stacked headers and card lists where tables scrolled sideways."
+                    "stacked headers and card lists where tables scrolled sideways, "
+                    "the header fits tablet and small-laptop widths, and the Services "
+                    "toggles and navigation have accessible names."
                 ),
             },
             {

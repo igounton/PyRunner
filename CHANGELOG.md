@@ -284,6 +284,13 @@ begins tracking at the current release; earlier history is in the git log.
   `manage.py recaptcha status|off` switches reCAPTCHA off from the shell; the
   header resource meters are superuser-only; the header Docs link opens the
   GitHub README.
+- **Every width fits.** The header no longer runs off the screen at the tablet
+  and small-laptop breakpoints (640, 768 and 1024 px): the version label and
+  What's new icon appear from 768 px and the Discord, Docs and GitHub icons from
+  1280 px. On phones the Workspaces list puts each row's actions under the name,
+  and a pending invite's details wrap instead of running under its buttons.
+- **Accessibility.** The Services card toggles have accessible names, and the
+  header and sidebar navigation are labelled landmarks.
 
 ### Security
 - **External secret providers can no longer reach private hosts.** The custom,

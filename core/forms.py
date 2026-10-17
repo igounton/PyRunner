@@ -3071,7 +3071,7 @@ class ChannelForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "class": INPUT_CLASS + " font-mono",
-                "placeholder": "Leave blank to keep current",
+                "placeholder": "Paste the token from @BotFather",
                 "autocomplete": "new-password",
             }
         ),
@@ -3108,6 +3108,8 @@ class ChannelForm(forms.Form):
         ]
 
         if instance is not None:
+            # Only an existing channel has a stored token to keep (U50).
+            self.fields["bot_token"].widget.attrs["placeholder"] = "Leave blank to keep current"
             self.fields["name"].initial = instance.name
             self.fields["provider"].initial = instance.provider
             self.fields["default_target"].initial = instance.default_target
@@ -3286,10 +3288,30 @@ class PyAISettingsForm(forms.Form):
 
     def __init__(self, *args, instance=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._describe_model_field(instance)
         if instance is not None and not self.is_bound:
             self.fields["pyai_enabled"].initial = instance.pyai_enabled
             self.fields["pyai_model"].initial = instance.pyai_model
             self.fields["pyai_system_prompt"].initial = instance.pyai_system_prompt
+
+    def _describe_model_field(self, settings):
+        """Placeholder/help from the ACTIVE provider (U53), not always Claude's."""
+        from core.models import PROVIDER_PRESETS
+
+        provider = getattr(settings, "active_ai_provider", None) if settings else None
+        if provider is None:
+            return
+        preset = PROVIDER_PRESETS.get(provider.provider_type, {})
+        example = provider.default_model or preset.get("model_placeholder", "")
+        example = example.replace(" (optional)", "")
+        field = self.fields["pyai_model"]
+        field.widget.attrs["placeholder"] = f"{example} (optional)" if example else "optional"
+        if provider.default_model:
+            field.help_text = (
+                f"Optional. Blank uses {provider.name}'s default model, {provider.default_model}."
+            )
+        else:
+            field.help_text = f"Optional. Blank uses {provider.name}'s default model."
 
     def save(self, instance):
         instance.pyai_enabled = self.cleaned_data.get("pyai_enabled", False)

@@ -12,12 +12,17 @@ import logging
 
 import requests
 
+from core.net_errors import describe_request_error
+
 from .base import ChannelError, ChannelProvider, InboundMessage, OutboundMessage, register
 
 logger = logging.getLogger(__name__)
 
 _API = "https://api.telegram.org/bot{token}/{method}"
 _TIMEOUT = 10  # seconds
+BAD_TOKEN_MESSAGE = (
+    "Telegram rejected this bot token (Unauthorized) — copy it again from @BotFather."
+)
 
 
 class TelegramProvider(ChannelProvider):
@@ -41,7 +46,9 @@ class TelegramProvider(ChannelProvider):
         try:
             resp = requests.post(url, json=payload or {}, timeout=_TIMEOUT)
         except requests.RequestException as e:
-            raise ChannelError(f"Could not reach Telegram: {e}")
+            # requests puts the URL — bot token included — into its message.
+            text = describe_request_error(e, "Telegram", _TIMEOUT).replace(token, "<bot token>")
+            raise ChannelError(text)
         try:
             data = resp.json()
         except ValueError:
@@ -49,7 +56,9 @@ class TelegramProvider(ChannelProvider):
                 f"Unexpected Telegram response (HTTP {resp.status_code})."
             )
         if not data.get("ok"):
-            # 401 here almost always means a bad/revoked bot token.
+            # 401 means a bad/revoked bot token; Telegram only says "Unauthorized" (U50).
+            if resp.status_code == 401 or data.get("error_code") == 401:
+                raise ChannelError(BAD_TOKEN_MESSAGE)
             raise ChannelError(data.get("description") or "Telegram API error.")
         return data.get("result")
 

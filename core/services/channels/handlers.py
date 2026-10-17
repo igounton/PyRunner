@@ -9,6 +9,7 @@ handler queues a Run that replies later via ``pyrunner_notify.reply()``.
 """
 
 import logging
+import re
 
 from .base import OutboundMessage
 
@@ -118,11 +119,48 @@ def _pyai_handler(channel, msg):
 
     try:
         result = PyAIService.respond(
-            msg.text, workspace=channel.workspace, history=_channel_history(channel, msg), agent=agent
+            msg.text, workspace=channel.workspace, history=_channel_history(channel, msg),
+            agent=agent, plain_text=True,
         )
     except PyAIError as e:
         return OutboundMessage(f"Sorry — {e}", reply_ref=msg.reply_ref)
-    return OutboundMessage(result.text or "(no answer)", reply_ref=msg.reply_ref)
+    return OutboundMessage(markdown_to_plain(result.text) or "(no answer)", reply_ref=msg.reply_ref)
+
+
+_FENCE_RE = re.compile(r"```[a-zA-Z0-9_-]*\n?(.*?)```", re.S)
+# Only ** for bold: "__" also wraps Python names such as __init__.
+_BOLD_RE = re.compile(r"\*\*(?=\S)(.+?)(?<=\S)\*\*")
+_ITALIC_RE = re.compile(r"(?<![\w*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![\w*])")
+_CODE_RE = re.compile(r"`([^`\n]+)`")
+_LINK_RE = re.compile(r"\[([^\]\n]+)\]\((https?://[^)\s]+)\)")
+_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s+", re.M)
+_BULLET_RE = re.compile(r"^(\s*)[*+]\s+", re.M)
+
+
+def markdown_to_plain(text: str) -> str:
+    """Light Markdown -> plain text for chat channels that show text as-is (U55).
+
+    Telegram's sendMessage gets no parse_mode, so ``**name**`` arrived with its
+    asterisks. Keeps the words (code, link text + URL), drops the markers. Code
+    spans are taken out first, so ``25 * 1024 * 1024`` keeps its asterisks.
+    """
+    if not text:
+        return ""
+    text = _FENCE_RE.sub(lambda m: m.group(1).rstrip("\n"), text)
+    spans = []
+
+    def keep(match):
+        spans.append(match.group(1))
+        return f"\x00{len(spans) - 1}\x00"
+
+    text = _CODE_RE.sub(keep, text)
+    text = _LINK_RE.sub(r"\1 (\2)", text)
+    text = _BOLD_RE.sub(r"\1", text)
+    text = _ITALIC_RE.sub(r"\1", text)
+    text = _HEADING_RE.sub("", text)
+    text = _BULLET_RE.sub(r"\1- ", text)
+    text = re.sub(r"\x00(\d+)\x00", lambda m: spans[int(m.group(1))], text)
+    return text.strip()
 
 
 register_handler("script", _script_handler)

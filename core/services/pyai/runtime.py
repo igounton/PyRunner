@@ -19,13 +19,29 @@ logger = logging.getLogger(__name__)
 
 _MAX_TURNS = 12
 _BASE_SYSTEM = (
-    "You are Py AI, a read-only assistant embedded in a PyRun instance. Answer "
-    "questions about THIS instance using the provided tools (scripts, runs, "
-    "schedules, datastores). You can only READ — you cannot create, edit, run, or "
-    "delete anything, and you have no access to secrets. When asked why a script "
-    "failed, use get_run_error if it is available. Be concise and concrete. "
-    "If a tool returns nothing, say so plainly rather than guessing."
+    "You are Py AI, a read-only assistant embedded in PyRun. Answer questions "
+    "about the current workspace{name} using the provided tools (scripts, runs, "
+    "schedules, datastores): every tool only sees this workspace, so say \"in this "
+    "workspace\", never \"in this instance\". You can only READ — you cannot create, "
+    "edit, run, or delete anything, and you have no access to secrets. When asked "
+    "why a script failed, use get_run_error if it is available. Be concise and "
+    "concrete. If a tool returns nothing, say so plainly rather than guessing."
 )
+# Chat channels (Telegram) send the answer as plain text (U55).
+_PLAIN_TEXT_SYSTEM = (
+    "Your answer is sent as a plain-text chat message, so do not use Markdown: no "
+    "**bold**, backticks, # headings or tables. Short lines and simple \"- \" lists "
+    "are fine."
+)
+
+
+def base_system_prompt(workspace, *, plain_text: bool = False) -> str:
+    """The built-in system prompt, naming the workspace the tools are scoped to."""
+    name = getattr(workspace, "name", "") or ""
+    system = _BASE_SYSTEM.format(name=f" ('{name}')" if name else "")
+    if plain_text:
+        system = f"{system}\n\n{_PLAIN_TEXT_SYSTEM}"
+    return system
 
 
 class PyAIError(Exception):
@@ -97,8 +113,13 @@ class PyAIService:
         )
 
     @classmethod
-    def respond(cls, message: str, *, workspace, history=None, agent="pyai") -> PyAIResult:
-        """Answer ``message`` about ``workspace``. Raises PyAIError on config/run failure."""
+    def respond(
+        cls, message: str, *, workspace, history=None, agent="pyai", plain_text=False
+    ) -> PyAIResult:
+        """Answer ``message`` about ``workspace``. Raises PyAIError on config/run failure.
+
+        ``plain_text`` asks for an answer without Markdown (chat channels).
+        """
         s = GlobalSettings.get_settings()
         if not s.pyai_enabled:
             raise PyAIError("Py AI is not enabled.")
@@ -115,7 +136,7 @@ class PyAIService:
         if model:
             env.pop("ANTHROPIC_MODEL", None)  # explicit model kwarg wins
 
-        system = _BASE_SYSTEM
+        system = base_system_prompt(workspace, plain_text=plain_text)
         if s.pyai_system_prompt:
             system = f"{system}\n\n{s.pyai_system_prompt}"
 

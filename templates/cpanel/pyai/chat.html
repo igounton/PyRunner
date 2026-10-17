@@ -40,7 +40,7 @@
                     </span>
                     <div class="min-w-0">
                         <h1 class="text-[17px] font-semibold tracking-tight leading-tight">Py AI</h1>
-                        <p class="text-xs text-muted truncate hidden sm:block">Read-only assistant for this {{ instance_name }} instance</p>
+                        <p class="text-xs text-muted truncate hidden sm:block">Read-only assistant for the {% if active_workspace %}{{ active_workspace.name }} {% endif %}workspace</p>
                     </div>
                     {% if available %}
                     <span class="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-ok/10 text-ok text-[11px] font-medium px-2 py-0.5 leading-none"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Ready</span>
@@ -74,7 +74,7 @@
                         <div class="w-12 h-12 rounded-2xl bg-ok/10 grid place-items-center mx-auto mb-4">
                             <svg class="w-6 h-6 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/></svg>
                         </div>
-                        <h2 class="text-base font-semibold">Ask about your instance</h2>
+                        <h2 class="text-base font-semibold">Ask about {% if active_workspace %}{{ active_workspace.name }}{% else %}this workspace{% endif %}</h2>
                         <p class="text-sm text-muted mt-1.5">Py AI can look at scripts, runs, schedules, and datastores in this workspace. It never runs, edits, or deletes anything, and never sees your secrets.</p>
                         <div class="mt-5 grid gap-2 sm:grid-cols-2 text-left">
                             <button type="button" data-suggest="How many scripts do I have, and which ran most recently?" class="pyai-suggest rounded-xl border border-line bg-panel px-3.5 py-2.5 text-[13px] text-muted hover:text-text hover:border-faint transition-colors text-left">How many scripts do I have?</button>

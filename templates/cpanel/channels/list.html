@@ -85,7 +85,7 @@
                 <h3 class="text-sm font-medium text-text mb-2">Using channels in scripts</h3>
                 <p class="text-sm text-muted mb-3">Send a message to any channel from a script — credentials stay server-side.</p>
                 <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text">import pyrunner_notify<br>pyrunner_notify.send("{% if channels %}{{ channels.0.name }}{% else %}Ops Alerts{% endif %}", "Job finished ✅")</code>
-                <p class="text-xs text-faint mt-3">Inbound chat (replying to messages, Py AI) arrives in a later phase and needs a publicly reachable instance.</p>
+                <p class="text-xs text-faint mt-3">Inbound chat (run a script or ask Py AI from a message) is set up on each channel's page; it needs a publicly reachable HTTPS instance.</p>
             </div>
             {% else %}
             <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">

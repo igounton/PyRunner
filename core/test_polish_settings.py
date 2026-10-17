@@ -176,3 +176,27 @@ class BackupFileMessageTests(TestCase):
         text = " ".join(result["errors"])
         self.assertIn("ENCRYPTION_KEY mismatch", text)
         self.assertIn("set this server's ENCRYPTION_KEY", text)
+
+
+class RestoreToastTests(SettingsBase):
+    def test_restore_reports_one_summary_and_one_warnings_toast(self):
+        session = self.client.session
+        session["pending_backup"] = {"backup_metadata": {}}
+        session.save()
+        result = {
+            "success": True,
+            "counts": {"scripts": 3, "environments": 1, "secrets": 2, "runs": 9},
+            "warnings": ["w-one", "w-two", "w-three", "w-four"],
+        }
+        with mock.patch.object(BackupService, "create_backup", return_value={}), \
+                mock.patch.object(BackupService, "serialize_backup", return_value=(b"x", "application/gzip")), \
+                mock.patch("core.views.backup.open", mock.mock_open(), create=True), \
+                mock.patch.object(BackupService, "restore_backup", return_value=result), \
+                mock.patch("core.tasks.queue_environment_rebuild"):
+            resp = self.client.post(reverse("cpanel:backup_restore"), {"confirm_delete": "on"})
+        texts = self.messages_of(resp)
+        self.assertEqual(len(texts), 2, texts)
+        self.assertIn("Backup restored successfully", texts[0])
+        self.assertIn("auto_backup_", texts[0])
+        self.assertIn("4 items need attention", texts[1])
+        self.assertIn("(4) w-four", texts[1])

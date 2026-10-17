@@ -182,6 +182,9 @@ def backup_restore_view(request):
         messages.error(request, "You must confirm data deletion to proceed with restore.")
         return settings_tab("backup")
 
+    # U75: one summary toast + one warnings toast (a dozen separate messages
+    # pushed "Backup restored" out of the 5 visible toasts).
+    auto_backup_name = None
     try:
         # Create automatic backup before restore
         try:
@@ -210,7 +213,7 @@ def backup_restore_view(request):
             with open(auto_backup_path, "wb") as f:
                 f.write(auto_backup_bytes)
 
-            messages.info(request, f"Automatic backup created: auto_backup_{timestamp}.json.gz")
+            auto_backup_name = f"auto_backup_{timestamp}.json.gz"
 
         except Exception as e:
             messages.warning(request, f"Failed to create automatic backup: {str(e)}")
@@ -228,36 +231,40 @@ def backup_restore_view(request):
                 del request.session["pending_backup"]
 
             counts = result["counts"]
-            messages.success(
-                request,
+            summary = [
                 f"Backup restored successfully! Imported: {counts.get('scripts', 0)} scripts, "
                 f"{counts.get('environments', 0)} environments, {counts.get('secrets', 0)} secrets, "
                 f"{counts.get('runs', 0)} runs."
-            )
+            ]
+            if auto_backup_name:
+                summary.append(f"The previous data was saved first as {auto_backup_name}.")
+            warnings = list(result.get("warnings") or [])
             # Environments come back as rows only: rebuild missing venvs and
             # reinstall saved packages in the background.
             try:
                 from core.tasks import queue_environment_rebuild
 
                 queue_environment_rebuild()
-                messages.info(
-                    request,
+                summary.append(
                     "Environments are being rebuilt in the background: missing folders are "
-                    "recreated and saved packages reinstalled (see each environment's Packages page).",
+                    "recreated and saved packages reinstalled (see each environment's Packages page)."
                 )
             except Exception as e:
-                messages.warning(
-                    request,
+                warnings.insert(0,
                     f"Could not queue the environment rebuild ({e}). Open each environment and "
-                    "use Recreate environment if its folder is missing.",
+                    "use Recreate environment if its folder is missing."
                 )
+            messages.success(request, " ".join(summary))
             # What the restore could not bring back (external vector points,
             # skipped store images, database rows): the operator has to act on it.
-            for warning in result.get("warnings") or []:
-                messages.warning(request, warning)
+            if warnings:
+                numbered = " ".join(f"({i}) {w}" for i, w in enumerate(warnings, 1))
+                noun = "item needs" if len(warnings) == 1 else "items need"
+                messages.warning(request, f"{len(warnings)} {noun} attention after the restore: {numbered}")
         else:
             error_msg = "; ".join(result["errors"])
-            messages.error(request, f"Restore failed: {error_msg}")
+            saved = f" Your data before the attempt was saved as {auto_backup_name}." if auto_backup_name else ""
+            messages.error(request, f"Restore failed: {error_msg}{saved}")
 
     except Exception as e:
         messages.error(request, f"Restore failed: {str(e)}")

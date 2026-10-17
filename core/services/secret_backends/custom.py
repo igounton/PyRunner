@@ -11,7 +11,7 @@ import requests
 
 from core.net_errors import describe_request_error
 
-from .base import SecretBackend, SecretResolutionError, register
+from .base import SecretBackend, SecretResolutionError, guard_endpoint, register
 
 CUSTOM_TIMEOUT = 10  # seconds
 
@@ -50,7 +50,7 @@ class CustomHTTPBackend(SecretBackend):
         url = (profile.config or {}).get("url", "").strip()
         if not url:
             raise SecretResolutionError("Custom endpoint URL is not configured")
-        return url
+        return guard_endpoint(url)
 
     def _headers(self, profile) -> dict:
         token = (profile.get_credentials() or {}).get("token", "").strip()

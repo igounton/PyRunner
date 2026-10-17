@@ -14,7 +14,7 @@ import requests
 
 from core.net_errors import describe_request_error
 
-from .base import SecretBackend, SecretResolutionError, register
+from .base import SecretBackend, SecretResolutionError, guard_endpoint, register
 
 INFISICAL_TIMEOUT = 10  # seconds
 DEFAULT_BASE_URL = "https://app.infisical.com"
@@ -83,7 +83,7 @@ class InfisicalBackend(SecretBackend):
 
     def _base(self, profile) -> str:
         base = (profile.config or {}).get("base_url", "").strip().rstrip("/")
-        return base or DEFAULT_BASE_URL
+        return guard_endpoint(base or DEFAULT_BASE_URL)
 
     def _login(self, profile) -> str:
         creds = profile.get_credentials() or {}

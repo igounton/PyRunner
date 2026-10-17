@@ -11,7 +11,7 @@ import requests
 
 from core.net_errors import describe_request_error
 
-from .base import SecretBackend, SecretResolutionError, register
+from .base import SecretBackend, SecretResolutionError, guard_endpoint, register
 
 # Vault reads are fast; keep the run-start latency bound tight.
 VAULT_TIMEOUT = 10  # seconds
@@ -66,6 +66,7 @@ class VaultBackend(SecretBackend):
         base = (profile.config or {}).get("base_url", "").strip().rstrip("/")
         if not base:
             raise SecretResolutionError("Vault server URL (base_url) is not configured")
+        guard_endpoint(base)
         return base
 
     def _mount(self, profile) -> str:

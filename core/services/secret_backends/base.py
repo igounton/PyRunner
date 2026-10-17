@@ -23,6 +23,23 @@ class SecretResolutionError(Exception):
     """
 
 
+def guard_endpoint(url: str) -> str:
+    """Return ``url`` if it passes the shared SSRF guard, else raise.
+
+    Backends whose endpoint is operator-supplied (custom, Vault, Infisical) call
+    this before every request. Without it, a secret provider pointed at the cloud
+    metadata endpoint would fetch instance credentials and hand them back as
+    "secret values". The same ``PYRUNNER_ALLOW_PRIVATE_NETWORK`` policy as storage,
+    webhooks and vector stores applies; the cloud-metadata range is always blocked.
+    """
+    from core.netguard import is_safe_endpoint_url
+
+    ok, why = is_safe_endpoint_url(url)
+    if not ok:
+        raise SecretResolutionError(f"Endpoint URL is not allowed: {why}")
+    return url
+
+
 class SecretBackend:
     """Base class for an external secrets provider adapter.
 

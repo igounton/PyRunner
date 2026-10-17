@@ -2,6 +2,12 @@
 {% load workspace_tags %}
 {% block heading %}{{ heading }}{% endblock %}
 {% block brain_content %}
+{% if index_status %}
+<div class="max-w-4xl mb-4 space-y-1.5 text-sm">
+    <p id="brain-index-status" class="{% if index_status.state == 'error' %}text-fail{% elif index_status.state == 'pending' %}text-warn{% elif index_status.state == 'ok' %}text-ok{% else %}text-muted{% endif %} break-words">{{ index_status.text }}</p>
+    <p id="brain-spend" class="text-muted">AI spend today: <span class="font-mono text-text">${{ spent_today|floatformat:4 }}</span>{% if cap_display is not None %} of a <span class="font-mono text-text">${{ cap_display }}</span> daily cap{% else %} (no daily cap){% endif %}.</p>
+</div>
+{% endif %}
 <form method="post" enctype="multipart/form-data" class="rounded-2xl border border-line bg-panel p-5 space-y-5 max-w-4xl" data-brain-form>
     {% csrf_token %}
     {% include "cpanel/brains/fields.html" %}

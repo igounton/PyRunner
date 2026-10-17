@@ -1,6 +1,7 @@
 """Workspace Brain console: browsing for members, writes for owners/admins."""
 
 from collections import Counter
+from decimal import Decimal
 from urllib.parse import urlencode
 
 from django import forms
@@ -15,6 +16,7 @@ from django.views.decorators.http import require_POST
 
 from core.api.errors import ApiError
 from core.brain.contract import version_warning
+from core.brain.runtime import daily_spend
 from core.brain.imports import export_zip, import_github, import_zip
 from core.brain.paths import MAX_IMPORT_BYTES, MAX_NOTE_BYTES, MAX_RAW_BYTES, validate_path
 from core.brain.service import BrainService
@@ -84,6 +86,12 @@ class EditBrainForm(StyledForm, forms.Form):
     delete = forms.BooleanField(required=False, label="Delete this file")
 
 
+def _money(value: Decimal) -> Decimal:
+    """Money, not the column's 4 places: 0.5000 -> 0.50, 0.0125 stays (U64)."""
+    cents = value.quantize(Decimal("0.01"))
+    return cents if cents == value else value.normalize()
+
+
 class BrainSettingsForm(StyledForm, forms.ModelForm):
     class Meta:
         model = Brain
@@ -112,6 +120,9 @@ class BrainSettingsForm(StyledForm, forms.ModelForm):
         super().__init__(*args, **kwargs)
         from core.models import VectorCollection
 
+        cap = self.instance.daily_cost_cap_usd
+        if cap is not None and not self.is_bound:
+            self.initial["daily_cost_cap_usd"] = _money(cap)
         self.fields["vector_collection"].queryset = VectorCollection.objects.for_workspace(self.instance.workspace).filter(embedding_provider__isnull=False)
 
 
@@ -207,6 +218,20 @@ def _brain(request, brain_id):
 def _url(request, name, **kwargs):
     return ws_url({"request": request, "show_workspace_switcher": request.resolver_match.namespace == "cpanel_ws"},
                   f"cpanel:{name}", **kwargs)
+
+
+def _index_status(brain):
+    """One line about the brain's search index (U64): off / rebuilding / up to date / error."""
+    if not brain.vector_collection_id:
+        return {"state": "off", "text": "Search index: off — choose a vector collection to enable recall."}
+    name = brain.vector_collection.name
+    if brain.vector_error:
+        return {"state": "error", "text": f"Search index in {name}: last rebuild failed — {brain.vector_error}"}
+    head = brain.head_revision.number if brain.head_revision_id else None
+    done = brain.vector_revision.number if brain.vector_revision_id else None
+    if head is not None and done == head:
+        return {"state": "ok", "text": f"Search index in {name}: up to date (revision {head})."}
+    return {"state": "pending", "text": f"Search index in {name}: rebuilding for revision {head} — reload to check."}
 
 
 def _context(request, brain=None, **extra):
@@ -420,7 +445,16 @@ def brain_settings_view(request, brain_id):
             from core.brain.recall import enqueue
 
             enqueue(request.workspace.pk, brain.pk)
-        messages.success(request, "Brain settings saved.")
+        if "vector_collection" in form.changed_data and brain.vector_collection_id:
+            messages.success(
+                request,
+                "Brain settings saved — rebuilding the search index in "
+                f"{brain.vector_collection.name}. The status is shown below.",
+            )
+        elif "vector_collection" in form.changed_data:
+            messages.success(request, "Brain settings saved — the search index is switched off.")
+        else:
+            messages.success(request, "Brain settings saved.")
         return redirect(_url(request, "brain_settings", brain_id=brain.pk))
     is_owner = request.user.is_superuser or WorkspaceMembership.objects.filter(
         user=request.user, workspace=request.workspace, role=WorkspaceMembership.ROLE_OWNER
@@ -432,6 +466,9 @@ def brain_settings_view(request, brain_id):
             request, brain, form=form, heading="Brain settings", submit="Save settings",
             delete_zone=True, can_delete=is_owner and not brain.owner_plugin,
             bound_tokens=brain.api_tokens.count(),
+            spent_today=daily_spend(brain)[0],
+            cap_display=_money(brain.daily_cost_cap_usd) if brain.daily_cost_cap_usd is not None else None,
+            index_status=_index_status(brain),
         ),
     )
 
@@ -639,4 +676,6 @@ def brain_feed_view(request, brain_id, feed_id):
                   review=current, form=form, expected_digest=approval.digest(feed),
                   editable=feed.status in {"pending", "failed", "proposed"} and (feed.channel != "sync" or _context(request)["can_manage"]),
                   retryable=feed.channel != "sync" and feed.status in {"pending", "failed"},
-                  decidable=feed.status not in {"applied", "rejected", "approving"}))
+                  decidable=feed.status not in {"applied", "rejected", "approving"},
+                  # A refused edit re-opens the JSON panel so its error is visible (U66).
+                  edit_open=request.method == "POST" and request.POST.get("action") == "edit"))

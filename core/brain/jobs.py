@@ -23,6 +23,12 @@ def submit(workspace, brain, user, task, lens=""):
         raise ApiError("rate_limited", "Wait a minute before starting another reader query.", 429)
     ctx = principal_context(workspace, "user", user.pk)
     resolve(ctx, {"brain": brain.slug})
+    # Refuse a cap-blocked query now instead of queueing a job that fails (U64).
+    from core.brain.runtime import cap_refusal
+
+    refusal = cap_refusal(brain)
+    if refusal:
+        raise ApiError("daily_cap", refusal)
     job = BrainReaderJob.objects.create(brain=brain, user=user, task=task, lens=lens)
     try:
         async_task("core.brain.jobs.run", str(workspace.pk), str(job.pk))

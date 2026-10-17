@@ -87,6 +87,9 @@ class Review:
     files: dict
     changes: list
     digest: str
+    # True when ``changes`` previews a proposal that fails validation (U66): shown so
+    # the reviewer sees what it wants to write, never applied (approve re-validates).
+    blocked: bool = False
 
 
 def review(workspace, brain_id, feed_id):
@@ -94,7 +97,26 @@ def review(workspace, brain_id, feed_id):
     before = BrainService.files(workspace, brain_id, feed.base_revision_id)
     verdict, after = _evaluate(feed, before)
     changes = [item for item in diff_module_maps(before, after) if item["status"] != "unchanged"]
-    return Review(feed, verdict, after, changes, digest(feed))
+    blocked = False
+    if not verdict.valid and not changes:
+        preview = _preview_files(feed, before)
+        if preview is not None:
+            changes = [
+                item for item in diff_module_maps(before, preview) if item["status"] != "unchanged"
+            ]
+            blocked = bool(changes)
+    return Review(feed, verdict, after, changes, digest(feed), blocked)
+
+
+def _preview_files(feed, before):
+    """The files an invalid (non-sync) proposal would write, as proposed — display only."""
+    if feed.channel == "sync" or not isinstance(feed.proposal, dict):
+        return None
+    after = dict(before)
+    for row in feed.proposal.get("files") or []:
+        if isinstance(row, dict) and isinstance(row.get("path"), str) and isinstance(row.get("content"), str):
+            after[row["path"]] = row["content"]
+    return after
 
 
 def _evaluate(feed, before):

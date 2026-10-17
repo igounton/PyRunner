@@ -61,13 +61,17 @@ class HTMLText(HTMLParser):
 def safe_url(url):
     try:
         parsed = urllib.parse.urlsplit(url)
-        safe, _reason = is_safe_endpoint_url(url)
-        if not safe or parsed.scheme not in {"http", "https"} or parsed.username or parsed.password:
+        if parsed.scheme not in {"http", "https"} or parsed.username or parsed.password:
             raise ValueError
+        safe, reason = is_safe_endpoint_url(url)
     except (ValueError, TypeError):
         raise ApiError(
             "unsafe_url", "Enter an allowed HTTP or HTTPS URL without credentials."
         ) from None
+    if not safe:
+        # Name the guard's reason (cloud metadata, private network + the flag), like
+        # notification webhooks do since F47 (U66).
+        raise ApiError("unsafe_url", f"This URL is not allowed: {reason}")
 
 
 def fetch_text(url, *, deadline=None):

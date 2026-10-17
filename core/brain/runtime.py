@@ -68,6 +68,31 @@ class PartialUsage:
 
 
 @transaction.atomic
+def daily_spend(brain):
+    """``(spent today in USD, any call today with unknown cost)`` for the brain's AI runs."""
+    today = ClaudeUsage.objects.filter(
+        source="brain", brain_id=brain.pk, created_at__date=timezone.localdate()
+    )
+    unknown = today.filter(cost_usd__isnull=True).exists()
+    spent = Decimal(str(today.aggregate(total=Sum("cost_usd"))["total"] or 0))
+    return spent, unknown
+
+
+def cap_refusal(brain) -> str:
+    """Why the daily cap refuses an AI run right now, or ``""`` (U64: checked before queueing)."""
+    if brain.daily_cost_cap_usd is None:
+        return ""
+    spent, unknown = daily_spend(brain)
+    if unknown:
+        return (
+            "An AI call today is still running or has unknown cost. Retry tomorrow or remove "
+            "the cap explicitly."
+        )
+    if brain.daily_cost_cap_usd - spent <= 0:
+        return "The brain's daily AI cap is reached. Raise it or retry tomorrow."
+    return ""
+
+
 def prepare(workspace, brain_id, kind):
     brain = BrainService.get(workspace, brain_id, lock=True)
     settings = GlobalSettings.get_settings()
@@ -107,20 +132,11 @@ def prepare(workspace, brain_id, kind):
     model = getattr(brain, f"{kind}_model") or provider.default_model
     budget = None
     if brain.daily_cost_cap_usd is not None:
-        today = ClaudeUsage.objects.filter(
-            source="brain", brain_id=brain.pk, created_at__date=timezone.localdate()
-        )
-        if today.filter(cost_usd__isnull=True).exists():
-            raise ApiError(
-                "daily_cap",
-                "An AI call today is still running or has unknown cost. Retry tomorrow or remove the cap explicitly.",
-            )
-        spent = Decimal(str(today.aggregate(total=Sum("cost_usd"))["total"] or 0))
+        refusal = cap_refusal(brain)
+        if refusal:
+            raise ApiError("daily_cap", refusal)
+        spent, _ = daily_spend(brain)
         budget = float(brain.daily_cost_cap_usd - spent)
-        if budget <= 0:
-            raise ApiError(
-                "daily_cap", "The brain's daily AI cap is reached. Raise it or retry tomorrow."
-            )
     usage = ClaudeUsage.objects.create(
         source="brain", brain_id=brain.pk, provider=provider.provider_type, model=model
     )

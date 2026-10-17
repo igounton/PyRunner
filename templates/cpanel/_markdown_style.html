@@ -1,0 +1,34 @@
+{# Shared style for PyRunMarkdown output (static/js/markdown.js): Py AI, Ask brain, provider Test. #}
+<style>
+    .pyrun-md { line-height: 1.6; word-break: break-word; }
+    .pyrun-md > * + * { margin-top: .6em; }
+    .pyrun-md p { margin: 0; }
+    .pyrun-md h1, .pyrun-md h2, .pyrun-md h3 { font-weight: 600; font-size: 0.95em; margin-top: .9em; }
+    .pyrun-md ul, .pyrun-md ol { padding-left: 1.35em; margin: 0; }
+    .pyrun-md ul { list-style: disc; }
+    .pyrun-md ol { list-style: decimal; }
+    .pyrun-md li + li { margin-top: .25em; }
+    .pyrun-md a { color: rgb(var(--info)); text-decoration: underline; text-underline-offset: 2px; }
+    .pyrun-md code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: .86em;
+        background: rgb(var(--ink));
+        border: 1px solid rgb(var(--line-soft));
+        border-radius: 5px;
+        padding: .1em .4em;
+    }
+    .pyrun-md pre {
+        background: rgb(var(--ink));
+        border: 1px solid rgb(var(--line));
+        border-radius: 10px;
+        padding: .75rem .9rem;
+        overflow-x: auto;
+        font-size: .82rem;
+        line-height: 1.55;
+    }
+    .pyrun-md pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+    .pyrun-md table { border-collapse: collapse; font-size: .9em; display: block; overflow-x: auto; max-width: 100%; }
+    .pyrun-md th, .pyrun-md td { border: 1px solid rgb(var(--line)); padding: .3em .6em; text-align: left; }
+    .pyrun-md th { background: rgb(var(--panel-hi)); font-weight: 600; }
+    .pyrun-md hr { border: 0; border-top: 1px solid rgb(var(--line)); }
+</style>

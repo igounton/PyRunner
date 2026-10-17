@@ -1,5 +1,6 @@
 """Profile-backed smart reads over one caller-tier snapshot, with final checks."""
 
+import logging
 from pathlib import Path
 
 from core.api.exceptions import ApiError
@@ -9,6 +10,8 @@ from .paths import utf8_size
 from .reads import note_row, snapshot
 from .runtime import run_agent
 from .snapshots import materialize, reader_hooks
+
+log = logging.getLogger(__name__)
 
 READER_SCHEMA = {
     "type": "object",
@@ -49,7 +52,13 @@ def assemble(ctx, params):
             (e for e in view.entities if e.kind == "lens" and e.entity_id == f"lens-{lens}"), None
         )
         if entity is None:
-            raise unknown()
+            # Name the lenses this caller can see (visible at this tier) — U68.
+            names = sorted(e.entity_id.removeprefix("lens-") for e in view.entities if e.kind == "lens")
+            raise ApiError(
+                "invalid_input",
+                f"No lens named '{lens}'."
+                + (f" Lenses: {', '.join(names)}." if names else " This brain has no lenses."),
+            )
         lens_text = view.files[entity.path]
     candidates = []
     if view.brain.vector_collection_id:
@@ -92,22 +101,35 @@ def assemble(ctx, params):
     current = unchanged(ctx, params, view)
     visible = {e.entity_id: e for e in current.entities}
     ids = list(dict.fromkeys(result.output["entity_ids_used"]))
-    if any(
-        identifier not in visible or visible[identifier].path not in read_paths
-        for identifier in ids
-    ):
+    hidden = [identifier for identifier in ids if identifier not in visible]
+    if hidden:
         # Reject the whole pack: dropping a hidden id would leave its prose in
         # context_pack. Never echo a rejected id to a lower-tier caller.
+        log.warning("brain_reader_unverified_sources hidden=%d cited=%d", len(hidden), len(ids))
         raise ApiError(
             "unverified_sources",
             "The reader could not verify its sources. Run the query again.",
             502,
         )
+    # A note the caller may see but the reader never opened (it saw it only in
+    # INDEX.md or a semantic hint) is dropped from the sources and reported;
+    # the answer is kept (F58). Its id is visible at this tier, so echoing is safe.
+    unopened = [identifier for identifier in ids if visible[identifier].path not in read_paths]
+    if unopened:
+        log.info("brain_reader_dropped_unopened count=%d cited=%d", len(unopened), len(ids))
+        ids = [identifier for identifier in ids if identifier not in unopened]
+    note = (
+        f"{len(unopened)} cited note{'s were' if len(unopened) != 1 else ' was'} not opened "
+        "by the reader and left out of the sources: " + ", ".join(unopened) + "."
+        if unopened
+        else ""
+    )
     ctx.check_budget()
     return {
         **result.output,
         "entity_ids_used": ids,
-        "unverified_entity_ids": [],
+        "unverified_entity_ids": unopened,
+        "note": note,
         "sources": [note_row(visible[identifier], view.tier) for identifier in ids],
         "tokens": {
             "input": result.usage.get("input_tokens"),

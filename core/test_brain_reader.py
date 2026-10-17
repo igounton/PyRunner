@@ -169,8 +169,20 @@ class BrainReaderTests(ReaderFixture, TestCase):
         self.assertEqual(result["sources"][0]["entity_id"], "take-public")
         self.assertNotIn("PRIVATE CONTRACT", run.call_args.kwargs["system"])
 
-    def test_unverified_hidden_or_unread_sources_reject_entire_pack(self):
-        for identifier in ("missing", "take-private", "take-public"):
+    def test_visible_but_unopened_citation_is_dropped_and_the_answer_kept(self):
+        # F58: one visible note the reader never opened no longer discards the
+        # whole answer; it is left out of the sources and named in a note.
+        output = {"context_pack": "ANSWER", "entity_ids_used": ["take-public"], "gaps": []}
+        with patch.object(reader, "run_agent", return_value=AgentResult(output=output)):
+            result = reader.assemble(self.ctx, self.params)
+        self.assertEqual(result["context_pack"], "ANSWER")
+        self.assertEqual(result["entity_ids_used"], [])
+        self.assertEqual(result["sources"], [])
+        self.assertEqual(result["unverified_entity_ids"], ["take-public"])
+        self.assertIn("1 cited note was not opened", result["note"])
+
+    def test_unverified_hidden_sources_reject_entire_pack(self):
+        for identifier in ("missing", "take-private"):
             output = {"context_pack": "DO NOT RETURN", "entity_ids_used": [identifier], "gaps": []}
             with (
                 patch.object(reader, "run_agent", return_value=AgentResult(output=output)),
@@ -229,10 +241,15 @@ class BrainReaderTests(ReaderFixture, TestCase):
 
     def test_lens_hidden_and_missing_are_identical(self):
         with patch.object(reader, "run_agent") as run:
+            shapes = []
             for lens in ("default", "missing"):
                 with self.assertRaises(ApiError) as error:
                     reader.assemble(self.ctx, {**self.params, "lens": lens})
-                self.assertEqual(error.exception.code, "not_found")
+                self.assertEqual(error.exception.code, "invalid_input")
+                # U68: the message names only the lenses visible at this tier.
+                shapes.append(error.exception.message.replace(f"'{lens}'", "'x'"))
+            self.assertEqual(shapes[0], shapes[1])
+            self.assertNotIn("default", shapes[0])
             run.assert_not_called()
 
     def test_call_budget_bounds_sdk_and_prevents_expired_launch(self):

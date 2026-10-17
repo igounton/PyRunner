@@ -1,41 +1,14 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Py AI - {{ instance_name }}{% endblock %}
 
 {% block extra_head %}
+{% include "cpanel/_markdown_style.html" %}
 <style>
-    /* Assistant answers are rendered from a small, escaped markdown subset (see renderMarkdown). */
-    .pyai-md { line-height: 1.6; word-break: break-word; }
-    .pyai-md > * + * { margin-top: .6em; }
-    .pyai-md p { margin: 0; }
-    .pyai-md h1, .pyai-md h2, .pyai-md h3 { font-weight: 600; font-size: 0.95em; margin-top: .9em; }
-    .pyai-md ul, .pyai-md ol { padding-left: 1.35em; margin: 0; }
-    .pyai-md ul { list-style: disc; }
-    .pyai-md ol { list-style: decimal; }
-    .pyai-md li + li { margin-top: .25em; }
-    .pyai-md a { color: rgb(var(--info)); text-decoration: underline; text-underline-offset: 2px; }
-    .pyai-md code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: .86em;
-        background: rgb(var(--ink));
-        border: 1px solid rgb(var(--line-soft));
-        border-radius: 5px;
-        padding: .1em .4em;
-    }
-    .pyai-md pre {
-        background: rgb(var(--ink));
-        border: 1px solid rgb(var(--line));
-        border-radius: 10px;
-        padding: .75rem .9rem;
-        overflow-x: auto;
-        font-size: .82rem;
-        line-height: 1.55;
-    }
-    .pyai-md pre code { background: none; border: 0; padding: 0; font-size: inherit; }
-    .pyai-md table { border-collapse: collapse; font-size: .9em; display: block; overflow-x: auto; max-width: 100%; }
-    .pyai-md th, .pyai-md td { border: 1px solid rgb(var(--line)); padding: .3em .6em; text-align: left; }
-    .pyai-md th { background: rgb(var(--panel-hi)); font-weight: 600; }
-    .pyai-md hr { border: 0; border-top: 1px solid rgb(var(--line)); }
+    /* Error replies (provider errors, refused requests) */
+    .pyai-error { color: rgb(var(--fail)) !important; border-color: rgb(var(--fail) / .4) !important; background: rgb(var(--fail) / .06) !important; }
+    .pyai-error-label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: .25rem; }
 
     /* Typing indicator */
     .pyai-dots span {
@@ -190,6 +163,7 @@
 {% endif %}
 
 {{ history|json_script:"pyai-history" }}
+<script src="{% static 'js/markdown.js' %}"></script>
 <script>
 (function () {
     const csrf = "{{ csrf_token }}";
@@ -202,51 +176,9 @@
     const input = document.getElementById("pyai-input");
     const sendBtn = document.getElementById("pyai-send");
 
-    /* ---------- markdown (small, escaped subset) ---------- */
-    function escapeHtml(s) {
-        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
-    function inline(s) {
-        // s is already HTML-escaped.
-        s = s.replace(/`([^`\n]+)`/g, function (_, c) { return "<code>" + c + "</code>"; });
-        s = s.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
-        s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>");
-        s = s.replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-        return s;
-    }
-    function renderMarkdown(text) {
-        const out = [];
-        const parts = escapeHtml(text.replace(/\r\n/g, "\n")).split(/```/);
-        parts.forEach(function (part, i) {
-            if (i % 2 === 1) {
-                const body = part.replace(/^[a-zA-Z0-9_-]*\n/, "").replace(/\n$/, "");
-                out.push("<pre><code>" + body + "</code></pre>");
-                return;
-            }
-            part.split(/\n{2,}/).forEach(function (block) {
-                const lines = block.split("\n").filter(function (l) { return l.trim() !== ""; });
-                if (!lines.length) return;
-                if (lines.every(function (l) { return /^\s*[-*]\s+/.test(l); })) {
-                    out.push("<ul>" + lines.map(function (l) { return "<li>" + inline(l.replace(/^\s*[-*]\s+/, "")) + "</li>"; }).join("") + "</ul>");
-                } else if (lines.every(function (l) { return /^\s*\d+[.)]\s+/.test(l); })) {
-                    out.push("<ol>" + lines.map(function (l) { return "<li>" + inline(l.replace(/^\s*\d+[.)]\s+/, "")) + "</li>"; }).join("") + "</ol>");
-                } else if (lines.length >= 2 && /^\s*\|/.test(lines[0]) && /^\s*\|?\s*:?-{2,}/.test(lines[1])) {
-                    const cells = function (l) { return l.trim().replace(/^\||\|$/g, "").split("|").map(function (c) { return inline(c.trim()); }); };
-                    const head = cells(lines[0]);
-                    const rows = lines.slice(2).map(cells);
-                    out.push("<table><thead><tr>" + head.map(function (c) { return "<th>" + c + "</th>"; }).join("") + "</tr></thead><tbody>" +
-                        rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table>");
-                } else if (lines.length === 1 && /^#{1,3}\s+/.test(lines[0])) {
-                    out.push("<h3>" + inline(lines[0].replace(/^#{1,3}\s+/, "")) + "</h3>");
-                } else if (lines.length === 1 && /^(-{3,}|\*{3,})$/.test(lines[0].trim())) {
-                    out.push("<hr>");
-                } else {
-                    out.push("<p>" + lines.map(inline).join("<br>") + "</p>");
-                }
-            });
-        });
-        return out.join("");
-    }
+    /* ---------- markdown: shared escaped subset (static/js/markdown.js) ---------- */
+    const escapeHtml = window.PyRunMarkdown.escapeHtml;
+    const renderMarkdown = window.PyRunMarkdown.render;
 
     /* ---------- rendering ---------- */
     function scrollDown() { transcript.scrollTop = transcript.scrollHeight; }
@@ -282,12 +214,16 @@
     function setAssistant(node, text, opts) {
         opts = opts || {};
         const body = node.querySelector(".pyai-body");
-        body.classList.remove("text-fail", "border-fail/40", "bg-fail/[0.06]");
+        // Styled by .pyai-error in this page's <style> (the Tailwind classes used
+        // before weren't in the built CSS, so errors looked like answers — U54).
+        body.classList.toggle("pyai-error", !!opts.error);
         if (opts.error) {
-            body.classList.add("text-fail", "border-fail/40", "bg-fail/[0.06]");
-            body.textContent = text;
+            const label = document.createElement("span");
+            label.className = "pyai-error-label";
+            label.textContent = "Error";
+            body.replaceChildren(label, document.createTextNode(text));
         } else {
-            body.innerHTML = '<div class="pyai-md">' + renderMarkdown(text) + "</div>";
+            body.innerHTML = '<div class="pyrun-md">' + renderMarkdown(text) + "</div>";
         }
         const tools = node.querySelector(".pyai-tools");
         if (opts.tools && opts.tools.length) {

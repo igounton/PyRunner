@@ -1,7 +1,8 @@
 {% extends "cpanel/brains/base.html" %}
-{% load workspace_tags %}
+{% load workspace_tags static %}
 {% block heading %}Ask {{ brain.name }}{% endblock %}
 {% block brain_content %}
+{% include "cpanel/_markdown_style.html" %}
 <div class="rounded-xl border border-line bg-panel p-5 space-y-4">
     <p class="text-sm text-muted">Assemble context from your brain's current notes. Your query runs in the background. Results and verified sources appear here when ready.</p>
     <form method="post" class="space-y-4">{% csrf_token %}
@@ -11,11 +12,23 @@
 </div>
 {% if job %}
 <section id="reader-result" class="rounded-xl border border-line bg-panel p-5 space-y-4" data-poll="{% ws_url 'cpanel:brain_reader_status' brain.pk job.pk %}" data-note="{% ws_url 'cpanel:brain_detail' brain.pk %}">
-    <p id="reader-status" role="status">Queued. Waiting for the worker…</p>
-    <div id="reader-pack" class="whitespace-pre-wrap break-words text-sm"></div>
-    <ul id="reader-sources" class="space-y-2 text-sm"></ul>
-    <div id="reader-gaps" class="text-sm text-muted whitespace-pre-wrap break-words"></div>
+    <div class="text-sm">
+        <p class="text-xs font-medium uppercase tracking-wide text-faint">Task{% if job.lens %} · lens {{ job.lens }}{% endif %}</p>
+        <p class="text-text whitespace-pre-wrap break-words">{{ job.task }}</p>
+    </div>
+    <p id="reader-status" role="status" class="text-sm">Queued. Waiting for the worker…</p>
+    <div id="reader-pack" class="pyrun-md text-sm"></div>
+    <p id="reader-note" class="hidden text-sm rounded-lg border border-warn/30 bg-warn/10 text-warn px-3 py-2"></p>
+    <div id="reader-sources-box" class="hidden">
+        <h3 class="text-sm font-semibold text-text mb-2">Sources (opened by the reader)</h3>
+        <ul id="reader-sources" class="space-y-2 text-sm"></ul>
+    </div>
+    <div id="reader-gaps-box" class="hidden">
+        <h3 class="text-sm font-semibold text-text mb-2">Gaps</h3>
+        <ul id="reader-gaps" class="list-disc pl-5 space-y-1 text-sm text-muted break-words"></ul>
+    </div>
 </section>
+<script src="{% static 'js/markdown.js' %}"></script>
 <script>
 (() => {
     const panel = document.getElementById('reader-result');
@@ -26,11 +39,25 @@
             const response = await fetch(panel.dataset.poll, {headers: {'Accept': 'application/json'}, cache: 'no-store'});
             if (!response.ok) throw new Error('Query unavailable. Refresh the page and retry.');
             const data = await response.json();
-            if (data.status === 'failed') { status.textContent = data.error; return; }
+            if (data.status === 'failed') {
+                status.textContent = data.error;
+                status.className = 'text-sm rounded-lg border border-fail/30 bg-fail/10 text-fail px-3 py-2';
+                return;
+            }
             if (data.status === 'complete') {
-                status.textContent = 'Context ready. Sources below were opened by the reader.';
-                document.getElementById('reader-pack').textContent = data.result.context_pack;
-                document.getElementById('reader-gaps').textContent = data.result.gaps.join('\n');
+                status.textContent = 'Context ready.';
+                document.getElementById('reader-pack').innerHTML = window.PyRunMarkdown.render(data.result.context_pack);
+                if (data.result.note) {
+                    const note = document.getElementById('reader-note');
+                    note.textContent = data.result.note;
+                    note.classList.remove('hidden');
+                }
+                const gaps = document.getElementById('reader-gaps');
+                for (const gap of data.result.gaps) {
+                    const item = document.createElement('li'); item.textContent = gap; gaps.appendChild(item);
+                }
+                if (data.result.gaps.length) document.getElementById('reader-gaps-box').classList.remove('hidden');
+                if (data.result.sources.length) document.getElementById('reader-sources-box').classList.remove('hidden');
                 for (const source of data.result.sources) {
                     const item = document.createElement('li'), link = document.createElement('a');
                     link.textContent = source.title || source.entity_id;

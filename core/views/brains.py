@@ -537,6 +537,9 @@ def brain_reader_view(request, brain_id):
         except ValueError:
             raise Http404 from None
         job = get_object_or_404(brain.reader_jobs.filter(brain__workspace=request.workspace, user=request.user), pk=identifier)
+        if request.method != "POST":
+            # Keep the question in the box so it can be refined and re-asked (U67).
+            form = BrainReaderForm(initial={"task": job.task, "lens": job.lens})
     if request.method == "POST" and form.is_valid():
         try:
             job = submit(request.workspace, brain, request.user, **form.cleaned_data)

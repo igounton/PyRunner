@@ -270,4 +270,4 @@ class Command(BaseCommand):
         if not options["generate"]:
             return
         self.stdout.write(f"  Password: {password}")
-        self.stdout.write("  Sign in with it, then change it under Settings.")
+        self.stdout.write("  Sign in with it, then change it from the key icon in the header (Change password).")

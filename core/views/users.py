@@ -88,7 +88,7 @@ def invite_user_view(request: HttpRequest) -> HttpResponse:
         existing_invite = UserInvite.objects.filter(
             email=email, used_at__isnull=True
         ).first()
-        if existing_invite:
+        if existing_invite and existing_invite.is_valid():
             messages.warning(
                 request,
                 f"An invite for {email} already exists. Creating a new one will invalidate the old link."

@@ -59,6 +59,12 @@
 </div>
 
 {% if recaptcha_active %}
+<script>
+    {# Match the widget to the console theme (it renders light by default). #}
+    if (document.documentElement.classList.contains('dark')) {
+        document.querySelectorAll('.g-recaptcha').forEach(function (el) { el.setAttribute('data-theme', 'dark'); });
+    }
+</script>
 <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Form expired - {{ instance_name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-12rem)] flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md text-center">
+        <div class="w-20 h-20 bg-warn/10 rounded-2xl grid place-items-center mx-auto mb-8">
+            <svg class="w-10 h-10 text-warn" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+        </div>
+
+        <h1 class="text-2xl font-semibold text-text mb-4">This form expired</h1>
+        <p class="text-muted mb-8">
+            The page was open while your session changed, so it can't be submitted safely.
+            Reload the page and try again.
+        </p>
+
+        <button type="button" onclick="window.location.assign(window.location.href)" class="inline-block py-3 px-6 bg-ok text-ink font-semibold rounded-lg hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ok/40 focus:ring-offset-2 focus:ring-offset-ink">
+            Reload the page
+        </button>
+        <p class="mt-4"><a href="/" class="text-sm text-muted hover:text-text">Back to Home</a></p>
+    </div>
+</div>
+{% endblock %}

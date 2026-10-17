@@ -127,12 +127,14 @@ def accept_invite_view(request: HttpRequest, token: str) -> HttpResponse:
 
     if not invite.is_valid():
         if invite.used_at:
+            error_title = "Invite already used"
             error_message = "This invite has already been used."
         else:
+            error_title = "Invite expired"
             error_message = "This invite has expired. Please request a new one from an administrator."
 
         return render(request, "auth/invite_invalid.html", {
-            "error": "Invite expired",
+            "error": error_title,
             "message": error_message
         })
 
@@ -257,12 +259,14 @@ def reset_password_view(request: HttpRequest, token: str) -> HttpResponse:
 
     if not reset_token.is_valid():
         if reset_token.used_at:
+            error_title = "Link already used"
             error_message = "This password reset link has already been used."
         else:
+            error_title = "Link expired"
             error_message = "This password reset link has expired. Please request a new one."
 
         return render(request, "auth/reset_password.html", {
-            "error": "Link expired",
+            "error": error_title,
             "message": error_message
         })
 
@@ -283,3 +287,12 @@ def reset_password_view(request: HttpRequest, token: str) -> HttpResponse:
         "form": form,
         "token": token,
     })
+
+
+def csrf_failure(request: HttpRequest, reason: str = "") -> HttpResponse:
+    """Console-styled CSRF failure page (settings.CSRF_FAILURE_VIEW).
+
+    A stale form (left open while the session changed) otherwise shows
+    Django's plain debug-style 403 page.
+    """
+    return render(request, "403_csrf.html", status=403)

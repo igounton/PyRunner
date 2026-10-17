@@ -668,6 +668,9 @@ if not DEBUG:
 # Always-on security settings (regardless of DEBUG)
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+# A stale form gets a console-styled "This form expired" page instead of
+# Django's plain CSRF 403 (templates/403_csrf.html).
+CSRF_FAILURE_VIEW = "core.views.auth.csrf_failure"
 
 # Content-Security-Policy (defense-in-depth), applied to HTML responses by
 # pyrunner.middleware.ContentSecurityPolicyMiddleware. Deliberately SCOPED: it

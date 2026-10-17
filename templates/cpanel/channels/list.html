@@ -68,7 +68,7 @@
                             <td class="px-6 py-3.5">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{% url 'cpanel:channel_edit' pk=channel.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</a>
-                                    <form method="post" action="{% url 'cpanel:channel_delete' pk=channel.pk %}" onsubmit="return confirm('Delete channel {{ channel.name }}? Scripts notifying this channel will stop sending to it.');" class="inline">
+                                    <form method="post" action="{% url 'cpanel:channel_delete' pk=channel.pk %}" onsubmit="return confirm('Delete channel {{ channel.name|escapejs }}? Scripts notifying this channel will stop sending to it.');" class="inline">
                                         {% csrf_token %}
                                         <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
                                     </form>

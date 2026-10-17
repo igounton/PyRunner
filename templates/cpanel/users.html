@@ -64,7 +64,7 @@
                             {% endif %}
                             <form method="post" action="{% url 'cpanel:revoke_invite' pk=invite.pk %}" class="inline">
                                 {% csrf_token %}
-                                <button type="submit" onclick="return confirm('Revoke invite for {{ invite.email }}?')" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Revoke</button>
+                                <button type="submit" onclick="return confirm('Revoke invite for {{ invite.email|escapejs }}?')" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Revoke</button>
                             </form>
                         </div>
                     </div>

@@ -50,7 +50,7 @@
                                 Restore
                             </button>
                         </form>
-                        <form method="post" action="{% url 'cpanel:script_delete' pk=script.pk %}" onsubmit="return confirm('PERMANENTLY delete {{ script.name }}? This cannot be undone and will delete all run history.');">
+                        <form method="post" action="{% url 'cpanel:script_delete' pk=script.pk %}" onsubmit="return confirm('PERMANENTLY delete {{ script.name|escapejs }}? This cannot be undone and will delete all run history.');">
                             {% csrf_token %}
                             <button type="submit" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg border border-line text-muted hover:text-fail hover:border-fail/50 transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -79,7 +79,7 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V5a2 2 0 012-2h9a2 2 0 012 2v9a2 2 0 01-2 2h-2M5 9h9a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2z"/></svg>
                             </button>
                         </form>
-                        <form method="post" action="{% url 'cpanel:script_archive' pk=script.pk %}" onsubmit="return confirm('Archive {{ script.name }}? The script will be hidden and its schedule paused.');">
+                        <form method="post" action="{% url 'cpanel:script_archive' pk=script.pk %}" onsubmit="return confirm('Archive {{ script.name|escapejs }}? The script will be hidden and its schedule paused.');">
                             {% csrf_token %}
                             <button type="submit" class="inline-grid place-items-center w-9 h-9 rounded-lg border border-line text-muted hover:text-fail hover:border-fail/50 transition-colors" title="Archive">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>

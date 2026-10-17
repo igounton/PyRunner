@@ -107,7 +107,7 @@
                                         {% if package.name|lower == "pip" or package.name|lower == "setuptools" %}
                                         <span class="text-xs text-faint" title="Needed to install packages in this environment">required</span>
                                         {% elif user.is_superuser %}
-                                        <form method="post" action="{% url 'cpanel:package_uninstall' pk=environment.pk %}" onsubmit="return confirm('Uninstall {{ package.name }}?');" class="inline" data-loading-form>
+                                        <form method="post" action="{% url 'cpanel:package_uninstall' pk=environment.pk %}" onsubmit="return confirm('Uninstall {{ package.name|escapejs }}?');" class="inline" data-loading-form>
                                             {% csrf_token %}
                                             <input type="hidden" name="package_name" value="{{ package.name }}">
                                             <button type="submit" class="text-xs font-medium text-fail hover:underline">Uninstall</button>

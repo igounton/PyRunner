@@ -48,7 +48,7 @@
                             <td class="px-6 py-3.5">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{% url 'cpanel:tag_edit' pk=tag.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</a>
-                                    <form method="post" action="{% url 'cpanel:tag_delete' pk=tag.pk %}" onsubmit="return confirm('Are you sure you want to delete the tag &quot;{{ tag.name }}&quot;? It will be removed from all scripts.');" class="inline">
+                                    <form method="post" action="{% url 'cpanel:tag_delete' pk=tag.pk %}" onsubmit="return confirm('Are you sure you want to delete the tag &quot;{{ tag.name|escapejs }}&quot;? It will be removed from all scripts.');" class="inline">
                                         {% csrf_token %}
                                         <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
                                     </form>

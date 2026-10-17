@@ -516,9 +516,11 @@ class ProviderCrudViewTests(TestCase):
         self.assertIsNotNone(match)
         data = json.loads(unescape(match.group(1)))
         self.assertIsInstance(data, dict)
-        self.assertEqual(data["input"], [10])
-        self.assertEqual(data["output"], [5])
-        self.assertEqual(len(data["labels"]), 1)
+        # Every day of the window is present (U49); today's bar holds the call.
+        self.assertEqual(len(data["input"]), 7)
+        self.assertEqual(data["input"][-1], 10)
+        self.assertEqual(data["output"][-1], 5)
+        self.assertEqual(len(data["labels"]), 7)
 
 
 @override_settings(ENCRYPTION_KEY=_TEST_KEY)

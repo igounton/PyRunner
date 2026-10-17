@@ -9,6 +9,8 @@ secrets service, a wrapper in front of another store, …).
 
 import requests
 
+from core.net_errors import describe_request_error
+
 from .base import SecretBackend, SecretResolutionError, register
 
 CUSTOM_TIMEOUT = 10  # seconds
@@ -67,7 +69,7 @@ class CustomHTTPBackend(SecretBackend):
         try:
             resp = self._get(profile)
         except requests.RequestException as e:
-            return False, f"Could not reach the endpoint: {e}"
+            return False, describe_request_error(e, "the endpoint", CUSTOM_TIMEOUT)
         if resp.status_code != 200:
             return False, f"Endpoint returned HTTP {resp.status_code}."
         try:
@@ -82,7 +84,9 @@ class CustomHTTPBackend(SecretBackend):
         try:
             resp = self._get(profile)
         except requests.RequestException as e:
-            raise SecretResolutionError(f"Custom endpoint request failed: {e}") from e
+            raise SecretResolutionError(
+                describe_request_error(e, "the custom endpoint", CUSTOM_TIMEOUT)
+            ) from e
 
         if resp.status_code in (401, 403):
             raise SecretResolutionError("Custom endpoint denied access (401/403)")

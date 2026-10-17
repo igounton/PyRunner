@@ -2278,7 +2278,7 @@ class StorageConnectionForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "class": INPUT_CLASS,
-                "placeholder": "Leave blank to keep current",
+                "placeholder": "Paste the access key ID",
                 "autocomplete": "new-password",
             }
         ),
@@ -2290,7 +2290,7 @@ class StorageConnectionForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "class": INPUT_CLASS,
-                "placeholder": "Leave blank to keep current",
+                "placeholder": "Paste the secret access key",
                 "autocomplete": "new-password",
             }
         ),
@@ -2586,7 +2586,7 @@ class AIProviderForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "class": INPUT_CLASS,
-                "placeholder": "Leave blank to keep current",
+                "placeholder": "Paste the API key or token",
                 "autocomplete": "new-password",
             }
         ),
@@ -3405,7 +3405,7 @@ class EmbeddingProviderForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "class": INPUT_CLASS,
-                "placeholder": "Leave blank to keep current",
+                "placeholder": "Paste the API key",
                 "autocomplete": "new-password",
             }
         ),
@@ -3559,7 +3559,7 @@ class VectorConnectionForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "class": INPUT_CLASS,
-                "placeholder": "Leave blank to keep current",
+                "placeholder": "Paste the API key, if the server needs one",
                 "autocomplete": "new-password",
             }
         ),
@@ -3743,7 +3743,17 @@ class VectorCollectionForm(forms.Form):
         default = VectorService.default_connection()
         if default is not None:
             self.fields["connection"].initial = default.pk
-        self.fields["embedding_provider"].queryset = EmbeddingProvider.objects.filter(enabled=True)
+        providers = EmbeddingProvider.objects.filter(enabled=True)
+        self.fields["embedding_provider"].queryset = providers
+        # Preselect the most recently tested provider (U45): "None" as the default
+        # made hurried users create vectors-only collections the console can't search.
+        tested = (
+            providers.filter(dimension__isnull=False, last_tested_at__isnull=False)
+            .order_by("-last_tested_at")
+            .first()
+        )
+        if tested is not None:
+            self.fields["embedding_provider"].initial = tested.pk
         self.fields["metric"].choices = VectorCollection.Metric.choices
         self.fields["metric"].initial = VectorCollection.Metric.COSINE
 

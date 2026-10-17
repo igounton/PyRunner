@@ -89,7 +89,7 @@
                             <tr class="text-left">
                                 <th class="eyebrow text-faint font-normal px-6 py-2">Model</th>
                                 <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Reqs</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Total tokens</th>
+                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right" title="Input + output tokens (cache tokens are not counted here)">Input + output</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -117,13 +117,13 @@
                             <tr class="text-left">
                                 <th class="eyebrow text-faint font-normal px-6 py-2">Script</th>
                                 <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Reqs</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Total tokens</th>
+                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right" title="Input + output tokens (cache tokens are not counted here)">Input + output</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for s in by_script %}
                             <tr class="border-t border-line-soft">
-                                <td class="px-6 py-2.5"><a href="{% url 'cpanel:script_detail' pk=s.script_id %}" class="text-info hover:underline transition">{{ s.script_name }}</a></td>
+                                <td class="px-6 py-2.5">{% if s.exists %}<a href="{% url 'cpanel:script_detail' pk=s.script_id %}" class="text-info hover:underline transition">{{ s.script_name }}</a>{% else %}<span class="text-muted">{{ s.script_name }}</span> <span class="text-xs text-faint">(deleted)</span>{% endif %}</td>
                                 <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ s.requests|intcomma }}</td>
                                 <td class="px-6 py-2.5 text-right font-mono tnum text-text">{{ s.total|intcomma }}</td>
                             </tr>
@@ -154,7 +154,7 @@
                                 <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Output</th>
                                 <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Cache</th>
                                 <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Turns</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Total</th>
+                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right" title="Input + output + cache tokens">Total incl. cache</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -166,8 +166,10 @@
                                     <span class="px-2 py-0.5 rounded-md text-xs bg-warn/10 text-warn">test</span>
                                     {% elif row.source == 'brain' %}
                                     <span class="text-muted" title="{{ row.brain_id }}">Brain</span>
-                                    {% elif row.script_name %}
+                                    {% elif row.script_name and row.script_exists %}
                                     <a href="{% url 'cpanel:script_detail' pk=row.script_id %}" class="text-info hover:underline transition">{{ row.script_name }}</a>
+                                    {% elif row.script_name %}
+                                    <span class="text-muted">{{ row.script_name }}</span> <span class="text-xs text-faint">(deleted)</span>
                                     {% else %}
                                     <span class="text-muted">script</span>
                                     {% endif %}

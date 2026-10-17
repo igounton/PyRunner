@@ -19,7 +19,9 @@
                     </nav>
                     <div class="flex items-center gap-3 flex-wrap">
                         <h1 class="text-[22px] font-semibold tracking-tight font-mono">{{ collection.name }}</h1>
-                        {% if collection.status == "ready" %}
+                        {% if collection.status == "ready" and sample_error %}
+                        <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-warn/10 text-warn" title="The collection is set up, but its store did not answer just now"><span class="w-1.5 h-1.5 rounded-full bg-warn"></span>Store unreachable</span>
+                        {% elif collection.status == "ready" %}
                         <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Ready</span>
                         {% else %}
                         <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-fail/10 text-fail"><span class="w-1.5 h-1.5 rounded-full bg-fail"></span>Error</span>
@@ -59,7 +61,7 @@
                 <dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3 text-sm">
                     <div>
                         <dt class="eyebrow text-faint">Points</dt>
-                        <dd class="font-mono tnum text-text mt-0.5">{{ collection.points_count }}</dd>
+                        <dd class="font-mono tnum text-text mt-0.5">{{ collection.points_count }}{% if sample_error %} <span class="font-sans text-xs text-faint">(last known)</span>{% endif %}</dd>
                     </div>
                     <div>
                         <dt class="eyebrow text-faint">Dimension · metric</dt>
@@ -155,7 +157,7 @@
             <section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
                 <div>
                     <h2 class="text-sm font-medium text-text">Points</h2>
-                    <p class="text-xs text-muted mt-1">The first {{ sample|length }} point(s) by id.</p>
+                    {% if sample %}<p class="text-xs text-muted mt-1">{% if collection.is_local %}The first {{ sample|length }} point{{ sample|length|pluralize }} by id.{% else %}{{ sample|length }} point{{ sample|length|pluralize }} from the server, sorted by id.{% endif %}</p>{% endif %}
                 </div>
                 {% if sample_error %}
                 <div class="rounded-lg border border-warn/30 bg-warn/5 p-3 text-sm text-muted">Could not read points: {{ sample_error }}</div>

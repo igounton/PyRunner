@@ -38,6 +38,7 @@ cases against both:
 
 import hashlib
 import logging
+import math
 import time
 import uuid
 from urllib.parse import quote
@@ -366,9 +367,15 @@ class QdrantStore:
         return self._request("POST", f"{self._base}/{op}", params=params, json=body)
 
     def _check_outage(self):
-        if cache.get(self._outage_key):
+        until = cache.get(self._outage_key)
+        if until:
+            # The window stores its end time; an older entry stored just True.
+            if isinstance(until, (int, float)) and not isinstance(until, bool):
+                left = max(1, math.ceil(until - time.time()))
+            else:
+                left = FAIL_FAST_SECONDS
             raise BackendUnavailable(
-                "Qdrant is temporarily unavailable; retry in 30 seconds "
+                f"Qdrant is temporarily unavailable; retry in {left} s "
                 "or use Services Test to check recovery"
             )
 
@@ -378,7 +385,9 @@ class QdrantStore:
             return self._send(method, path, params=params, json=json, allow_404=allow_404)
         except BackendUnavailable:
             # add() keeps the original expiry even if an in-flight peer fails too.
-            cache.add(self._outage_key, True, timeout=FAIL_FAST_SECONDS)
+            cache.add(
+                self._outage_key, time.time() + FAIL_FAST_SECONDS, timeout=FAIL_FAST_SECONDS
+            )
             raise
 
     def _send(self, method, path, *, params=None, json=None, allow_404=False):

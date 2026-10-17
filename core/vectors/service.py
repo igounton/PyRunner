@@ -432,7 +432,10 @@ class VectorService:
             cache.delete(outage_cache_key(url, api_key, connection.pk))
             return True, f"Qdrant reachable — {count} collection(s) on the server."
         except requests.RequestException as e:
-            return False, f"Could not reach the server: {e}"
+            from core.net_errors import describe_request_error
+
+            # TIMEOUT_SECONDS was imported in the try block, before the request.
+            return False, describe_request_error(e, "the Qdrant server", TIMEOUT_SECONDS)
         except Exception as e:
             logger.exception("Vector connection test failed")
             return False, str(e)

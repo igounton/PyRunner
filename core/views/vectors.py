@@ -148,6 +148,8 @@ def _detail_context(request, collection, **extra) -> dict:
             sample, _ = handle.scroll(limit=BROWSE_PAGE)
         except VectorError as e:
             sample_error = str(e)
+    # Qdrant pages in its internal (UUID) order; show the page sorted by the user's id.
+    sample = sorted(sample, key=lambda item: str(item.get("id", "")))
     for item in sample:
         item["payload_json"] = json.dumps(item["payload"], ensure_ascii=False)
     context = {

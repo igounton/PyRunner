@@ -9,6 +9,8 @@ later, additive extension (another credential field + a login step).
 
 import requests
 
+from core.net_errors import describe_request_error
+
 from .base import SecretBackend, SecretResolutionError, register
 
 # Vault reads are fast; keep the run-start latency bound tight.
@@ -92,7 +94,7 @@ class VaultBackend(SecretBackend):
                 timeout=VAULT_TIMEOUT,
             )
         except requests.RequestException as e:
-            return False, f"Could not reach Vault: {e}"
+            return False, describe_request_error(e, "Vault", VAULT_TIMEOUT)
         if resp.status_code == 200:
             return True, "Token is valid."
         if resp.status_code in (401, 403):
@@ -108,7 +110,7 @@ class VaultBackend(SecretBackend):
         try:
             resp = requests.get(url, headers=headers, timeout=VAULT_TIMEOUT)
         except requests.RequestException as e:
-            raise SecretResolutionError(f"Vault request failed: {e}") from e
+            raise SecretResolutionError(describe_request_error(e, "Vault", VAULT_TIMEOUT)) from e
 
         if resp.status_code == 404:
             raise SecretResolutionError(

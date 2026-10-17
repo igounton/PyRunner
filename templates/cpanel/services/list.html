@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Services - {{ instance_name }}{% endblock %}
 
@@ -18,9 +19,9 @@
             <!-- Object Storage Service Card -->
             <div class="rounded-2xl border border-line bg-panel overflow-hidden">
                 <div class="p-6 border-b border-line-soft">
-                    <div class="flex items-center justify-between gap-4">
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
                         <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-12 h-12 rounded-lg bg-info/10 grid place-items-center flex-shrink-0">
+                            <div class="w-12 h-12 rounded-lg bg-info/10 hidden sm:grid place-items-center flex-shrink-0">
                                 <svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
                             </div>
                             <div class="min-w-0">
@@ -29,7 +30,7 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-3 flex-shrink-0">
+                        <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
                             {% if s3_status.enabled and s3_status.configured %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Active</span>
                             {% elif s3_status.configured %}
@@ -110,7 +111,7 @@
                                                 {% endif %}
                                             </td>
                                             <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ c.get_provider_type_display }}</td>
-                                            <td class="px-4 py-2.5 font-mono text-xs text-muted">{{ c.bucket|default:"—" }}</td>
+                                            <td class="px-4 py-2.5 font-mono text-xs text-muted whitespace-nowrap"><span class="block max-w-[14rem] truncate" title="{{ c.bucket }}">{{ c.bucket|default:"—" }}</span></td>
                                             <td class="px-4 py-2.5 text-muted whitespace-nowrap">
                                                 {% if c.public_base_url %}
                                                 <span class="text-ok">Public</span>
@@ -118,7 +119,7 @@
                                                 <span class="text-faint">Presigned</span>
                                                 {% endif %}
                                             </td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{% if c.last_tested_at %}{{ c.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
+                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if c.last_tested_at %}{{ c.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
                                             <td class="px-4 py-2.5">
                                                 <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
                                                     {% if not c.is_default %}
@@ -149,11 +150,20 @@
                         </div>
 
                         <!-- Add / edit connection form -->
-                        <div id="storage-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
-                            <p id="storage-form-title" class="text-[13px] font-medium text-text mb-4">Add connection</p>
+                        <div id="storage-form-wrap" class="{% if not storage_form_open %}hidden {% endif %}border border-line-soft rounded-lg p-5 bg-panel-hi/30">
+                            <p id="storage-form-title" class="text-[13px] font-medium text-text mb-4">{% if storage_form_open and storage_form.instance %}Edit connection{% else %}Add connection{% endif %}</p>
+                            {% if storage_form.errors %}
+                            <div id="storage-form-errors" class="mb-4 p-3 rounded-lg bg-fail/10 border border-fail/30 text-fail text-sm" role="alert">
+                                <p class="font-medium">Not saved &mdash; fix the following and save again:</p>
+                                <ul class="mt-1 list-disc pl-5">
+                                    {% for error in storage_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                                    {% for field in storage_form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
                             <form method="post" action="{% url 'cpanel:storage_connection_save' %}" id="storage-form">
                                 {% csrf_token %}
-                                <input type="hidden" name="connection_id" id="storage-connection-id" value="">
+                                <input type="hidden" name="connection_id" id="storage-connection-id" value="{% if storage_form_open and storage_form.instance %}{{ storage_form.instance.pk }}{% endif %}">
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                                     <div>
@@ -252,9 +262,9 @@ url = storage.url("avatars/abc.jpg")</code></pre>
             <!-- AI Provider Service Card -->
             <div class="rounded-2xl border border-line bg-panel overflow-hidden">
                 <div class="p-6 border-b border-line-soft">
-                    <div class="flex items-center justify-between gap-4">
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
                         <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-12 h-12 rounded-lg bg-accent/10 grid place-items-center flex-shrink-0">
+                            <div class="w-12 h-12 rounded-lg bg-accent/10 hidden sm:grid place-items-center flex-shrink-0">
                                 <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
                             </div>
                             <div class="min-w-0">
@@ -263,7 +273,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-3 flex-shrink-0">
+                        <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
                             {% if claude_status.enabled and claude_status.configured %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Active</span>
                             {% elif claude_status.configured %}
@@ -342,7 +352,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
                                             </td>
                                             <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.get_provider_type_display }}</td>
                                             <td class="px-4 py-2.5 font-mono text-xs text-muted">{{ p.default_model|default:"—" }}</td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
+                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
                                             <td class="px-4 py-2.5">
                                                 <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
                                                     {% if settings.active_ai_provider_id != p.id %}
@@ -462,9 +472,9 @@ print(answer)</code></pre>
             <!-- Secret Providers Service Card -->
             <div class="rounded-2xl border border-line bg-panel overflow-hidden">
                 <div class="p-6 border-b border-line-soft">
-                    <div class="flex items-center justify-between gap-4">
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
                         <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-12 h-12 rounded-lg bg-info/10 grid place-items-center flex-shrink-0">
+                            <div class="w-12 h-12 rounded-lg bg-info/10 hidden sm:grid place-items-center flex-shrink-0">
                                 <svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                             </div>
                             <div class="min-w-0">
@@ -476,7 +486,7 @@ print(answer)</code></pre>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-3 flex-shrink-0">
+                        <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
                             {% if secret_providers %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>{{ secret_providers|length }} configured</span>
                             {% else %}
@@ -519,7 +529,7 @@ print(answer)</code></pre>
                                             <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">{{ p.name }}</td>
                                             <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.type_label }}</td>
                                             <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.secret_count }} secret{{ p.secret_count|pluralize }}</td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
+                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
                                             <td class="px-4 py-2.5">
                                                 <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
                                                     <button type="button" onclick="spTestRow('{{ p.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
@@ -604,9 +614,9 @@ print(answer)</code></pre>
             <!-- Embedding Providers Service Card -->
             <div class="rounded-2xl border border-line bg-panel overflow-hidden">
                 <div class="p-6 border-b border-line-soft">
-                    <div class="flex items-center justify-between gap-4">
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
                         <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-12 h-12 rounded-lg bg-accent/10 grid place-items-center flex-shrink-0">
+                            <div class="w-12 h-12 rounded-lg bg-accent/10 hidden sm:grid place-items-center flex-shrink-0">
                                 <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20l5-5m0 0l4 4 7-7m-11 3V9a2 2 0 012-2h3m6 0h.01M6 4h.01M18 4h.01M12 12h.01"/></svg>
                             </div>
                             <div class="min-w-0">
@@ -614,7 +624,7 @@ print(answer)</code></pre>
                                 <p class="text-sm text-muted">Turn text into vectors for semantic search &mdash; OpenAI, Voyage, Jina, Z.AI, a local Ollama, or any OpenAI-compatible endpoint</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3 flex-shrink-0">
+                        <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
                             {% if embedding_providers %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>{{ embedding_providers|length }} configured</span>
                             {% else %}
@@ -661,7 +671,7 @@ print(answer)</code></pre>
                                             <td class="px-4 py-2.5 font-mono text-xs text-muted">{{ p.model }}</td>
                                             <td class="px-4 py-2.5 text-right font-mono tnum text-muted">{% if p.dimension %}{{ p.dimension }}{% else %}<span class="text-warn" title="Run Test to record the dimension">untested</span>{% endif %}</td>
                                             <td class="px-4 py-2.5 text-right font-mono tnum text-muted">{{ p.collection_count }}</td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
+                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
                                             <td class="px-4 py-2.5">
                                                 <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
                                                     <button type="button" onclick="embTestRow('{{ p.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
@@ -749,9 +759,9 @@ print(answer)</code></pre>
             <!-- Vector Stores Service Card -->
             <div class="rounded-2xl border border-line bg-panel overflow-hidden">
                 <div class="p-6 border-b border-line-soft">
-                    <div class="flex items-center justify-between gap-4">
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
                         <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-12 h-12 rounded-lg bg-info/10 grid place-items-center flex-shrink-0">
+                            <div class="w-12 h-12 rounded-lg bg-info/10 hidden sm:grid place-items-center flex-shrink-0">
                                 <svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
                             </div>
                             <div class="min-w-0">
@@ -759,7 +769,7 @@ print(answer)</code></pre>
                                 <p class="text-sm text-muted">Where vector collections live &mdash; the built-in Local store (SQLite + numpy on the data volume) or a Qdrant server</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3 flex-shrink-0">
+                        <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
                             {% if vector_connections %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>{{ vector_connections|length }} connection{{ vector_connections|length|pluralize }}</span>
                             {% else %}
@@ -806,7 +816,7 @@ print(answer)</code></pre>
                                             <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ c.get_provider_type_display }}</td>
                                             <td class="px-4 py-2.5 font-mono text-xs text-muted">{% if c.is_local %}{{ vectors_dir }}{% else %}{{ c.url|default:"—" }}{% endif %}</td>
                                             <td class="px-4 py-2.5 text-right font-mono tnum text-muted">{{ c.collection_count }}</td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{% if c.last_tested_at %}{{ c.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
+                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if c.last_tested_at %}{{ c.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
                                             <td class="px-4 py-2.5">
                                                 <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
                                                     {% if not c.is_default %}
@@ -904,11 +914,67 @@ print(answer)</code></pre>
     </div>
 </div>
 
+{% include "cpanel/_markdown_style.html" %}
+<script src="{% static 'js/markdown.js' %}"></script>
 <script>
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Test results (U37, U46, U47, U60). The server may add a second line starting
+// with "Details: " (the raw network error); it folds under a toggle. The box is
+// moved right under what was clicked — the form's button row, or the table of
+// saved rows — instead of the bottom of the card, far from the button.
+function testResultBody(text) {
+    text = text || 'No further details were returned.';
+    const cut = text.indexOf('\nDetails: ');
+    if (cut < 0) return '<span class="min-w-0 break-words">' + escapeHtml(text) + '</span>';
+    return '<div class="min-w-0"><p class="break-words">' + escapeHtml(text.slice(0, cut)) + '</p>' +
+        '<details class="mt-1.5 text-xs opacity-80"><summary class="cursor-pointer select-none">Details</summary>' +
+        '<pre class="mt-1 whitespace-pre-wrap break-all font-mono">' + escapeHtml(text.slice(cut + 10)) + '</pre></details></div>';
+}
+
+function placeTestResult(div, btn) {
+    if (!btn) return;
+    let anchor = null;
+    if (btn.closest('tr')) {
+        const table = btn.closest('table');
+        anchor = (table.parentElement && table.parentElement.closest('.rounded-lg')) || table;
+    } else if (btn.closest('form')) {
+        anchor = btn.parentElement;
+    }
+    if (anchor) anchor.after(div);
+}
+
+// New rows ask for the key; only an edited row with a stored key may leave it
+// blank (U48): the forms render the "Paste the …" text, editing swaps it.
+function setKeyPlaceholder(input, keepSaved) {
+    if (!input) return;
+    if (!input.dataset.addPlaceholder) input.dataset.addPlaceholder = input.placeholder;
+    input.placeholder = keepSaved ? 'Leave blank to keep current' : input.dataset.addPlaceholder;
+}
+
+// A passing Test on a saved row stamps last_tested_at server-side: show it now.
+function markRowTested(btn) {
+    const row = btn && btn.closest('tr');
+    const cell = row && row.querySelector('[data-last-tested]');
+    if (cell) cell.textContent = 'just now';
+}
+
+function showTestResult(resultId, data, btn) {
+    const div = document.getElementById(resultId);
+    const ok = data.success === true;
+    placeTestResult(div, btn);
+    div.className = 'mt-4 p-4 rounded-lg border text-sm ' + (ok
+        ? 'bg-ok/10 border-ok/30 text-ok' : 'bg-fail/10 border-fail/30 text-fail');
+    div.setAttribute('role', 'status');
+    const icon = ok ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12';
+    div.innerHTML = '<div class="flex items-start"><svg class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="' + icon + '"/></svg>' +
+        testResultBody(ok ? data.message : data.error) + '</div>';
+    if (ok) markRowTested(btn);
+    if (div.scrollIntoView) div.scrollIntoView({block: 'nearest', behavior: 'smooth'});
 }
 
 function toggleS3Config() {
@@ -927,16 +993,8 @@ function storageFormField(name) {
     return document.querySelector('#storage-form [name="' + name + '"]');
 }
 
-function storageShowResult(data) {
-    const resultDiv = document.getElementById('s3-test-result');
-    resultDiv.classList.remove('hidden');
-    if (data.success) {
-        resultDiv.className = 'mx-6 mb-6 p-4 rounded-lg bg-ok/10 border border-ok/30 text-ok';
-        resultDiv.innerHTML = '<div class="flex items-center"><svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>' + escapeHtml(data.message) + '</span></div>';
-    } else {
-        resultDiv.className = 'mx-6 mb-6 p-4 rounded-lg bg-fail/10 border border-fail/30 text-fail';
-        resultDiv.innerHTML = '<div class="flex items-center"><svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg><span>' + escapeHtml(data.error) + '</span></div>';
-    }
+function storageShowResult(data, btn) {
+    showTestResult('s3-test-result', data, btn);
 }
 
 function storagePostTest(payload, btn, busyLabel) {
@@ -954,9 +1012,9 @@ function storagePostTest(payload, btn, busyLabel) {
         body: JSON.stringify(payload),
     })
     .then(response => response.json())
-    .then(storageShowResult)
+    .then(data => storageShowResult(data, btn))
     .catch(error => {
-        storageShowResult({success: false, error: error.message});
+        storageShowResult({success: false, error: error.message}, btn);
     })
     .finally(() => {
         btn.disabled = false;
@@ -1021,6 +1079,10 @@ function storageNewConnection() {
     document.getElementById('storage-connection-id').value = '';
     document.getElementById('storage-form').reset();
     document.getElementById('storage-credentials-saved').classList.add('hidden');
+    setKeyPlaceholder(storageFormField('access_key'), false);
+    setKeyPlaceholder(storageFormField('secret_key'), false);
+    const staleErrors = document.getElementById('storage-form-errors');
+    if (staleErrors) staleErrors.remove();
     document.getElementById('storage-form-wrap').classList.remove('hidden');
     storageApplyPreset(storageFormField('provider_type').value, {prefillEndpoint: true});
 }
@@ -1045,6 +1107,11 @@ function storageEditConnection(id) {
     storageFormField('access_key').value = '';
     storageFormField('secret_key').value = '';
     document.getElementById('storage-credentials-saved').classList.toggle('hidden', !c.has_credentials);
+    setKeyPlaceholder(storageFormField('access_key'), c.has_credentials);
+    setKeyPlaceholder(storageFormField('secret_key'), c.has_credentials);
+    // A refused save left its own errors in the form; they don't belong to this row.
+    const staleErrors = document.getElementById('storage-form-errors');
+    if (staleErrors) staleErrors.remove();
 
     // Don't clobber the row's own endpoint/region with preset defaults.
     storageApplyPreset(c.provider_type, {prefillEndpoint: false});
@@ -1110,6 +1177,7 @@ function aiNewProvider() {
     aiFormField('credential').value = '';
     aiFormField('default_model').value = '';
     document.getElementById('ai-credential-saved').classList.add('hidden');
+    setKeyPlaceholder(aiFormField('credential'), false);
     aiApplyTypeHints(true);
     aiShowProviderForm();
     aiFormField('name').focus();
@@ -1128,6 +1196,7 @@ function aiEditProvider(id) {
     aiApplyTypeHints(false);
     aiFormField('base_url').value = p.base_url;
     document.getElementById('ai-credential-saved').classList.toggle('hidden', !p.has_credential);
+    setKeyPlaceholder(aiFormField('credential'), p.has_credential);
     aiShowProviderForm();
 }
 
@@ -1154,7 +1223,12 @@ function aiRenderTestResult(data, btn) {
         ? 'bg-ok/10 border-ok/30 text-ok' : 'bg-fail/10 border-fail/30 text-fail');
     const heading = passed ? 'Connection successful' : 'Connection failed';
     const detail = (passed ? data.message : data.error) || 'No further details were returned.';
-    resultDiv.innerHTML = '<p class="font-medium">' + heading + '</p><p class="mt-1">' + escapeHtml(detail) + '</p>';
+    // The model answers in Markdown (U59): render the shared escaped subset.
+    const body = passed && window.PyRunMarkdown
+        ? '<div class="mt-1 pyrun-md text-text">' + window.PyRunMarkdown.render(detail) + '</div>'
+        : '<div class="mt-1">' + testResultBody(detail) + '</div>';
+    resultDiv.innerHTML = '<p class="font-medium">' + heading + '</p>' + body;
+    if (passed) markRowTested(btn);
     aiResetTestButton(btn);
     btn.classList.remove('border-line', 'text-muted', 'hover:text-text', 'hover:border-faint');
     btn.classList.add(...(passed ? ['border-ok/30', 'bg-ok/10', 'text-ok'] : ['border-fail/30', 'bg-fail/10', 'text-fail']));
@@ -1308,16 +1382,8 @@ function spEditProvider(id) {
     spShowProviderForm();
 }
 
-function spRenderTestResult(data) {
-    const resultDiv = document.getElementById('sp-test-result');
-    resultDiv.classList.remove('hidden');
-    if (data.success) {
-        resultDiv.className = 'mx-6 mb-6 p-4 rounded-lg bg-ok/10 border border-ok/30 text-ok';
-        resultDiv.innerHTML = '<div class="flex items-start"><svg class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>' + escapeHtml(data.message) + '</span></div>';
-    } else {
-        resultDiv.className = 'mx-6 mb-6 p-4 rounded-lg bg-fail/10 border border-fail/30 text-fail';
-        resultDiv.innerHTML = '<div class="flex items-start"><svg class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg><span>' + escapeHtml(data.error) + '</span></div>';
-    }
+function spRenderTestResult(data, btn) {
+    showTestResult('sp-test-result', data, btn);
 }
 
 function spPostTest(payload, btn) {
@@ -1331,8 +1397,8 @@ function spPostTest(payload, btn) {
         body: JSON.stringify(payload),
     })
     .then(function (r) { return r.json(); })
-    .then(spRenderTestResult)
-    .catch(function (e) { spRenderTestResult({success: false, error: e.message}); })
+    .then(function (data) { spRenderTestResult(data, btn); })
+    .catch(function (e) { spRenderTestResult({success: false, error: e.message}, btn); })
     .finally(function () { btn.disabled = false; btn.textContent = original; });
 }
 
@@ -1373,16 +1439,8 @@ function embFormField(name) {
     return document.querySelector('#emb-form [name="' + name + '"]');
 }
 
-function embShowResult(data) {
-    const div = document.getElementById('emb-test-result');
-    div.classList.remove('hidden');
-    if (data.success) {
-        div.className = 'mx-6 mb-6 p-4 rounded-lg bg-ok/10 border border-ok/30 text-ok';
-        div.innerHTML = '<div class="flex items-center"><svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>' + escapeHtml(data.message) + '</span></div>';
-    } else {
-        div.className = 'mx-6 mb-6 p-4 rounded-lg bg-fail/10 border border-fail/30 text-fail';
-        div.innerHTML = '<div class="flex items-center"><svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg><span>' + escapeHtml(data.error) + '</span></div>';
-    }
+function embShowResult(data, btn) {
+    showTestResult('emb-test-result', data, btn);
 }
 
 function embPostTest(payload, btn) {
@@ -1396,8 +1454,8 @@ function embPostTest(payload, btn) {
         body: JSON.stringify(payload),
     })
     .then(r => r.json())
-    .then(embShowResult)
-    .catch(err => embShowResult({success: false, error: err.message}))
+    .then(data => embShowResult(data, btn))
+    .catch(err => embShowResult({success: false, error: err.message}, btn))
     .finally(() => { btn.disabled = false; btn.textContent = original; });
 }
 
@@ -1454,6 +1512,7 @@ function embNewProvider() {
     document.getElementById('emb-provider-id').value = '';
     document.getElementById('emb-form').reset();
     document.getElementById('emb-credential-saved').classList.add('hidden');
+    setKeyPlaceholder(embFormField('credential'), false);
     document.getElementById('emb-form-wrap').classList.remove('hidden');
     embApplyTypeHints(true);
 }
@@ -1471,6 +1530,7 @@ function embEditProvider(id) {
     embFormField('enabled').checked = p.enabled;
     embFormField('credential').value = '';  // blank keeps the stored key
     document.getElementById('emb-credential-saved').classList.toggle('hidden', !p.has_credential);
+    setKeyPlaceholder(embFormField('credential'), p.has_credential);
     embApplyTypeHints(false);
     document.getElementById('emb-form-wrap').classList.remove('hidden');
 }
@@ -1487,16 +1547,8 @@ function vecFormField(name) {
     return document.querySelector('#vec-form [name="' + name + '"]');
 }
 
-function vecShowResult(data) {
-    const div = document.getElementById('vec-test-result');
-    div.classList.remove('hidden');
-    if (data.success) {
-        div.className = 'mx-6 mb-6 p-4 rounded-lg bg-ok/10 border border-ok/30 text-ok';
-        div.innerHTML = '<div class="flex items-center"><svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>' + escapeHtml(data.message) + '</span></div>';
-    } else {
-        div.className = 'mx-6 mb-6 p-4 rounded-lg bg-fail/10 border border-fail/30 text-fail';
-        div.innerHTML = '<div class="flex items-center"><svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg><span>' + escapeHtml(data.error) + '</span></div>';
-    }
+function vecShowResult(data, btn) {
+    showTestResult('vec-test-result', data, btn);
 }
 
 function vecPostTest(payload, btn) {
@@ -1510,8 +1562,8 @@ function vecPostTest(payload, btn) {
         body: JSON.stringify(payload),
     })
     .then(r => r.json())
-    .then(vecShowResult)
-    .catch(err => vecShowResult({success: false, error: err.message}))
+    .then(data => vecShowResult(data, btn))
+    .catch(err => vecShowResult({success: false, error: err.message}, btn))
     .finally(() => { btn.disabled = false; btn.textContent = original; });
 }
 
@@ -1540,6 +1592,7 @@ function vecNewConnection() {
     document.getElementById('vec-connection-id').value = '';
     document.getElementById('vec-form').reset();
     document.getElementById('vec-credentials-saved').classList.add('hidden');
+    setKeyPlaceholder(vecFormField('api_key'), false);
     document.getElementById('vec-form-wrap').classList.remove('hidden');
     vecApplyType();
 }
@@ -1558,12 +1611,13 @@ function vecEditConnection(id) {
     vecFormField('expose_credentials').checked = c.expose_credentials;
     vecFormField('api_key').value = '';  // blank keeps the stored key
     document.getElementById('vec-credentials-saved').classList.toggle('hidden', !c.has_credentials);
+    setKeyPlaceholder(vecFormField('api_key'), c.has_credentials);
     vecApplyType();
     document.getElementById('vec-form-wrap').classList.remove('hidden');
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    {% if not s3_status.configured %}
+    {% if not s3_status.configured or storage_form_open %}
     toggleS3Config();
     {% endif %}
 
@@ -1573,7 +1627,19 @@ document.addEventListener('DOMContentLoaded', function() {
             storageApplyPreset(this.value, {prefillEndpoint: true});
         });
     }
-    {% if not storage_connections %}
+    {% if storage_form_open %}
+    // A refused save (U47): the form comes back open with what was typed.
+    storageApplyPreset(storageFormField('provider_type').value, {prefillEndpoint: false});
+    {% if storage_form.instance %}
+    const refused = STORAGE_CONNECTIONS.find(x => x.id === '{{ storage_form.instance.pk }}');
+    if (refused) {
+        document.getElementById('storage-credentials-saved').classList.toggle('hidden', !refused.has_credentials);
+        setKeyPlaceholder(storageFormField('access_key'), refused.has_credentials);
+        setKeyPlaceholder(storageFormField('secret_key'), refused.has_credentials);
+    }
+    {% endif %}
+    document.getElementById('storage-form-wrap').scrollIntoView({block: 'start'});
+    {% elif not storage_connections %}
     // First run: open the add-connection form (the card is already open above).
     storageNewConnection();
     {% endif %}

@@ -185,7 +185,7 @@ class VaultFetchTests(_Base):
     def test_network_error_wrapped(self):
         p = self._provider()
         with mock.patch(_VAULT_GET, side_effect=requests.ConnectionError("boom")):
-            with self.assertRaisesRegex(SecretResolutionError, "request failed"):
+            with self.assertRaisesRegex(SecretResolutionError, "Could not reach Vault"):
                 get_backend("vault").fetch(p, "kv/app")
 
     def test_missing_base_url_raises(self):

@@ -8,6 +8,8 @@ one call (cached per profile), and the reference is simply the secret name.
 
 import requests
 
+from core.net_errors import describe_request_error
+
 from .base import SecretBackend, SecretResolutionError, register
 
 DOPPLER_TIMEOUT = 10  # seconds
@@ -59,7 +61,7 @@ class DopplerBackend(SecretBackend):
         try:
             resp = self._download(token)
         except requests.RequestException as e:
-            return False, f"Could not reach Doppler: {e}"
+            return False, describe_request_error(e, "Doppler", DOPPLER_TIMEOUT)
         if resp.status_code == 200:
             return True, "Doppler service token is valid."
         if resp.status_code in (401, 403):
@@ -71,7 +73,7 @@ class DopplerBackend(SecretBackend):
         try:
             resp = self._download(token)
         except requests.RequestException as e:
-            raise SecretResolutionError(f"Doppler request failed: {e}") from e
+            raise SecretResolutionError(describe_request_error(e, "Doppler", DOPPLER_TIMEOUT)) from e
 
         if resp.status_code in (401, 403):
             raise SecretResolutionError("Doppler denied access (401/403) — check the token")

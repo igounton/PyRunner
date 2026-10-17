@@ -136,6 +136,9 @@ class S3Service:
         """
         if "NoSuchBucket" in error_msg:
             return f"Bucket '{bucket_name}' does not exist"
+        if "HeadBucket" in error_msg and ("(404)" in error_msg or "Not Found" in error_msg):
+            # HeadBucket has no body, so a missing bucket is a bare 404 (U47).
+            return f"Bucket '{bucket_name}' not found at this endpoint"
         if "AccessDenied" in error_msg or "403" in error_msg:
             return "Access denied. Check your credentials and bucket permissions"
         if "InvalidAccessKeyId" in error_msg:

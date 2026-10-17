@@ -27,6 +27,7 @@ from core.models import (
     ClaudeUsage,
     PROVIDER_PRESETS,
     STORAGE_PRESETS,
+    Script,
     SecretProvider,
     StorageConnection,
     VectorCollection,
@@ -61,6 +62,11 @@ logger = logging.getLogger(__name__)
 @superuser_required
 def services_view(request: HttpRequest) -> HttpResponse:
     """Display services configuration page."""
+    return _render_services(request)
+
+
+def _render_services(request, storage_form=None, status=200) -> HttpResponse:
+    """The Services page; a refused storage save passes its bound form (U47)."""
     settings = GlobalSettings.get_settings()
     claude_form = AISettingsForm(instance=settings)
     claude_status = ClaudeService.get_status()
@@ -68,7 +74,9 @@ def services_view(request: HttpRequest) -> HttpResponse:
     # Object storage — many connections; backups use `is_default`, plugins use the
     # `assets_storage` FK. `s3_status` describes the BACKUP connection, keeping the
     # existing backup card and its template contract unchanged.
-    storage_form = StorageConnectionForm()
+    storage_form_open = storage_form is not None
+    if storage_form is None:
+        storage_form = StorageConnectionForm()
     assets_form = AssetsStorageForm(instance=settings)
     s3_status = S3Service.get_status()
     storage_connections = list(StorageConnection.objects.all())
@@ -150,10 +158,12 @@ def services_view(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         "cpanel/services/list.html",
-        {
+        status=status,
+        context={
             "settings": settings,
             "s3_status": s3_status,
             "storage_form": storage_form,
+            "storage_form_open": storage_form_open,
             "storage_connections": storage_connections,
             "storage_connections_json": storage_connections_data,
             "storage_presets_json": storage_presets_data,
@@ -223,13 +233,13 @@ def storage_connection_save_view(request: HttpRequest) -> HttpResponse:
             connection.is_default = True
             connection.save(update_fields=["is_default"])
         messages.success(request, f"Storage connection '{connection.name}' saved.")
-    else:
-        for field, errors in form.errors.items():
-            label = "" if field == "__all__" else f"{field}: "
-            for error in errors:
-                messages.error(request, f"{label}{error}")
+        return redirect("cpanel:services")
 
-    return redirect("cpanel:services")
+    # Refused (U47): re-open the form with what was typed — keys included, so the
+    # user doesn't paste them again — and the reasons inside the form.
+    for name in ("access_key", "secret_key"):
+        form.fields[name].widget.render_value = True
+    return _render_services(request, storage_form=form)
 
 
 @login_required
@@ -744,12 +754,7 @@ def claude_usage_view(request: HttpRequest) -> HttpResponse:
         )
         .order_by("day")
     )
-    chart = {
-        "labels": [d["day"].strftime("%b %d") if d["day"] else "" for d in daily],
-        "input": [d["input"] or 0 for d in daily],
-        "output": [d["output"] or 0 for d in daily],
-        "requests": [d["requests"] or 0 for d in daily],
-    }
+    chart = _daily_chart(daily, day_map.get(period))
 
     # Per-model breakdown (split by serving provider)
     by_model = []
@@ -790,6 +795,17 @@ def claude_usage_view(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(base.order_by("-created_at"), 25)
     page_obj = paginator.get_page(request.GET.get("page"))
 
+    # Link a script name only while the script exists (U49): usage rows outlive
+    # deleted scripts, and their old link was a 404.
+    wanted = {s["script_id"] for s in by_script} | {
+        row.script_id for row in page_obj if row.script_id
+    }
+    existing = set(Script.objects.filter(pk__in=wanted).values_list("pk", flat=True))
+    for s in by_script:
+        s["exists"] = s["script_id"] in existing
+    for row in page_obj:
+        row.script_exists = row.script_id in existing
+
     return render(
         request,
         "cpanel/services/usage.html",
@@ -806,6 +822,37 @@ def claude_usage_view(request: HttpRequest) -> HttpResponse:
             "claude_status": ClaudeService.get_status(),
         },
     )
+
+
+def _daily_chart(daily: list, days: int | None) -> dict:
+    """Tokens-per-day series with every calendar day present (U49).
+
+    The aggregate only returns days that had usage, so a categorical chart put
+    "Jun 17" next to "Aug 16". Fill the gaps with zeros: the whole window for
+    7/30/90 days, first-to-last day (up to a year) for "All".
+    """
+    by_day = {d["day"]: d for d in daily if d["day"]}
+    today = timezone.localdate()
+    if days:
+        start = today - timedelta(days=days - 1)
+        end = today
+    elif by_day and (max(by_day) - min(by_day)).days <= 366:
+        start, end = min(by_day), max(max(by_day), today)
+    else:
+        start = end = None
+    if start is None:
+        span = sorted(by_day)
+    else:
+        start = min([start, *by_day]) if by_day else start
+        span = [start + timedelta(days=i) for i in range((end - start).days + 1)]
+    empty = {"input": 0, "output": 0, "requests": 0}
+    rows = [by_day.get(day, empty) for day in span]
+    return {
+        "labels": [day.strftime("%b %d") for day in span],
+        "input": [r["input"] or 0 for r in rows],
+        "output": [r["output"] or 0 for r in rows],
+        "requests": [r["requests"] or 0 for r in rows],
+    }
 
 
 # =============================================================================

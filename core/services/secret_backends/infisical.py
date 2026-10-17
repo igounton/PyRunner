@@ -12,6 +12,8 @@ bare ``SECRET_KEY`` or ``#SECRET_KEY`` reads from the root folder.
 
 import requests
 
+from core.net_errors import describe_request_error
+
 from .base import SecretBackend, SecretResolutionError, register
 
 INFISICAL_TIMEOUT = 10  # seconds
@@ -96,7 +98,9 @@ class InfisicalBackend(SecretBackend):
                 timeout=INFISICAL_TIMEOUT,
             )
         except requests.RequestException as e:
-            raise SecretResolutionError(f"Infisical login request failed: {e}") from e
+            raise SecretResolutionError(
+                describe_request_error(e, "Infisical", INFISICAL_TIMEOUT)
+            ) from e
         if resp.status_code in (401, 403):
             raise SecretResolutionError("Infisical rejected the client credentials (401/403)")
         if resp.status_code != 200:
@@ -141,7 +145,9 @@ class InfisicalBackend(SecretBackend):
                 timeout=INFISICAL_TIMEOUT,
             )
         except requests.RequestException as e:
-            raise SecretResolutionError(f"Infisical request failed: {e}") from e
+            raise SecretResolutionError(
+                describe_request_error(e, "Infisical", INFISICAL_TIMEOUT)
+            ) from e
 
         if resp.status_code == 404:
             raise SecretResolutionError(f"folder {path!r} not found in Infisical")

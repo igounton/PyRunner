@@ -159,6 +159,19 @@ class Run(models.Model):
     def __str__(self):
         return f"Run {self.id} - {self.script.name} ({self.status})"
 
+    def save(self, *args, **kwargs):
+        # A run always belongs to its script's workspace. Code that creates a
+        # Run without one (a plugin using the models directly) would otherwise
+        # execute the script unscoped: the default workspace's data stores and
+        # every workspace's secrets (F82).
+        if self.workspace_id is None and self.script_id is not None:
+            self.workspace_id = (
+                Script.objects.filter(pk=self.script_id)
+                .values_list("workspace_id", flat=True)
+                .first()
+            )
+        super().save(*args, **kwargs)
+
     # Grace beyond a run's own timeout before a still-'running' row is declared
     # dead. A live worker HARD-kills the subprocess at timeout_seconds and
     # finalizes within seconds (the per-task cushion is +60s), so five minutes

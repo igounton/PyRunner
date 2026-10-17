@@ -180,11 +180,13 @@ def internal_datastore_token_required(view_func):
         try:
             from core.models import Run
 
-            ws_id = (
+            row = (
                 Run.objects.filter(id=payload.get("run_id"))
-                .values_list("workspace_id", flat=True)
+                .values_list("workspace_id", "script__workspace_id")
                 .first()
             )
+            # A run saved without a workspace is scoped to its script's (F82).
+            ws_id = (row[0] or row[1]) if row else None
         except Exception:
             ws_id = None
         request.datastore_workspace = ws_id

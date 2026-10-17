@@ -47,6 +47,22 @@ _TRUNCATION_MARKER_RESERVE = 256
 _TRUNCATION_LINE_SLACK = 4096
 
 
+def run_workspace_id(run):
+    """The workspace a run executes in: its own, else its script's.
+
+    ``Run.save()`` stamps the script's workspace on new runs; this also covers a
+    row saved without one before that (F82), so such a run is never treated as
+    un-scoped while its script belongs to a workspace. None only when neither
+    the run nor its script has a workspace (pre-tenancy data).
+    """
+    if run is None:
+        return None
+    ws_id = getattr(run, "workspace_id", None)
+    if ws_id is None and getattr(run, "script_id", None):
+        ws_id = getattr(run.script, "workspace_id", None)
+    return ws_id
+
+
 def resolve_secrets_for_run(run) -> dict:
     """Resolve the secrets to inject into (and mask in) a run, scoped to its workspace.
 
@@ -55,8 +71,9 @@ def resolve_secrets_for_run(run) -> dict:
 
     Workspace scoping (back-compat rule, chosen to keep a single-workspace /
     pre-tenancy instance byte-for-byte):
-    - ``run`` is None or ``run.workspace_id`` is None ⇒ no workspace narrowing
-      (an un-scoped run cannot narrow).
+    - ``run`` is None, or neither the run nor its script has a workspace ⇒ no
+      workspace narrowing (an un-scoped run cannot narrow). A run saved without
+      a workspace whose script has one is scoped to the script's (F82).
     - otherwise ⇒ the run's-workspace secrets PLUS still-unassigned
       (``workspace IS NULL``) secrets — legacy secrets created before scoping
       keep injecting on a single-workspace instance.
@@ -89,7 +106,7 @@ def resolve_secrets_for_run(run) -> dict:
         return secrets_env
 
     try:
-        ws_id = getattr(run, "workspace_id", None) if run is not None else None
+        ws_id = run_workspace_id(run)
 
         def _ws_scope(qs):
             if ws_id is not None:
@@ -273,9 +290,10 @@ def _build_script_environment(
 
         # Trusted workspace id for datastore-by-name scoping (tenancy Stage 2).
         # The SQLite helper scopes lookups to this workspace; it is derived from
-        # the run (never script-supplied), defaulting to the default workspace
-        # for an un-scoped run so single-workspace resolution is unchanged.
-        ws_id = run.workspace_id
+        # the run (never script-supplied) or else its script (F82), defaulting to
+        # the default workspace for an un-scoped run so single-workspace
+        # resolution is unchanged.
+        ws_id = run_workspace_id(run)
         if ws_id is None:
             default_ws = Workspace.get_default()
             ws_id = default_ws.id if default_ws else None

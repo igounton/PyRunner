@@ -54,7 +54,11 @@ class ResolveSecretsForRunTests(TestCase):
         self.assertNotIn("B_KEY", out)  # WS-B secret never reaches a WS-A run
 
     def test_null_workspace_run_gets_all(self):
-        run_null = Run.objects.create(script=self.script_a, workspace=None)
+        # Un-scoped = a pre-tenancy script with no workspace. A run of a scoped
+        # script always takes the script's workspace (F82).
+        legacy = Script.objects.create(name="legacy", code="x", environment=self.env, workspace=None)
+        run_null = Run.objects.create(script=legacy, workspace=None)
+        self.assertIsNone(run_null.workspace_id)
         out = resolve_secrets_for_run(run_null)
         self.assertEqual(set(out), {"A_KEY", "B_KEY", "NULL_KEY"})
 

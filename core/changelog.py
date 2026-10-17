@@ -197,7 +197,8 @@ CHANGELOG = [
                     "account for everyone. Changing a password asks for the current "
                     "one. Only an Owner can grant or change the Owner role, only "
                     "superusers rename or delete shared tags, and members no longer "
-                    "see other workspaces' script names or host details."
+                    "see other workspaces' script names or host details. A run "
+                    "started by a plugin always uses its script's workspace."
                 ),
             },
             {

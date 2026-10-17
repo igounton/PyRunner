@@ -286,6 +286,10 @@ begins tracking at the current release; earlier history is in the git log.
   GitHub README.
 
 ### Security
+- **A run always uses its script's workspace.** A run started by plugin code
+  that set no workspace (the bundled Sales Dashboard's *Run collector now*)
+  ran its script with the default workspace's data stores and every
+  workspace's secrets. Such runs now take their script's workspace.
 - Docker builds exclude every root `.env.*` variant, including local test
   credentials, in addition to `.env` and the existing private artifact rules.
 - **The login lockout now actually locks** — the limit of 5 failed sign-ins

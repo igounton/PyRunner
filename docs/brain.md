@@ -30,6 +30,12 @@ its slug): its notes, revisions, grants, feeds, GitHub sync settings, search
 chunks and the API tokens bound to it go with it. Plugin-owned brains are
 removed by their plugin.
 
+Ask brain (the reader) works on the notes your tier can see. A lens may set
+`visibility-ceiling` in its frontmatter: with that lens the reader sees only
+notes at or below the ceiling (an audience-facing lens with `public` never draws
+on agents-only or private notes), and the result reports the tier used. A cited
+note the reader never opened is left out of the sources and named in a note.
+
 ## Access and visibility
 
 The tiers are `public`, `agents-only`, then `private`. Explicit frontmatter wins

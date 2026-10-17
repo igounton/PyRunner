@@ -239,6 +239,39 @@ class BrainReaderTests(ReaderFixture, TestCase):
             reader.assemble(self.ctx, self.params)
         self.assertEqual(error.exception.code, "brain_changed")
 
+    def test_lens_visibility_ceiling_caps_the_snapshot(self):
+        # F59: a lens with `visibility-ceiling: public` must not let the reader
+        # draw on private notes, even for a caller who may read them.
+        files = BrainService.files(self.ws, self.brain.pk)
+        files["lenses/pub.md"] = (
+            "---\nlens: pub\nvisibility: public\nvisibility-ceiling: public\n---\n# Lens: pub"
+        )
+        BrainService.commit(
+            self.ws, self.brain.pk, files, expected_head=self.brain.head_revision_id,
+            message="add lens", author=None, source="edit",
+        )
+        self.token.brain_tier = "private"
+        self.token.save(update_fields=["brain_tier"])
+        self.grant.max_tier = "private"
+        self.grant.save(update_fields=["max_tier"])
+        seen = {}
+
+        def run(*args, **kwargs):
+            root = Path(kwargs["cwd"])
+            seen[kwargs["prompt"].count("<lens>")] = (root / "knowledge/takes/private.md").exists()
+            return AgentResult(
+                output={"context_pack": "ok", "entity_ids_used": [], "gaps": []}, model="stub"
+            )
+
+        ctx = token_context(self.token)
+        with patch.object(reader, "run_agent", side_effect=run):
+            plain = reader.assemble(ctx, self.params)
+            capped = reader.assemble(ctx, {**self.params, "lens": "pub"})
+        self.assertEqual(plain["tier"], "private")
+        self.assertTrue(seen[0])  # without the lens the private note is in the snapshot
+        self.assertEqual(capped["tier"], "public")
+        self.assertFalse(seen[1])  # the public ceiling removed it
+
     def test_lens_hidden_and_missing_are_identical(self):
         with patch.object(reader, "run_agent") as run:
             shapes = []

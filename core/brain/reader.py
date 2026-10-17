@@ -1,13 +1,16 @@
 """Profile-backed smart reads over one caller-tier snapshot, with final checks."""
 
 import logging
+from dataclasses import replace
 from pathlib import Path
 
 from core.api.exceptions import ApiError
 from core.api.schema import validate
 from .access import unknown
+from .indexer import parse_frontmatter
+from .visibility import TIER_ORDER
 from .paths import utf8_size
-from .reads import note_row, snapshot
+from .reads import at_tier, note_row, snapshot
 from .runtime import run_agent
 from .snapshots import materialize, reader_hooks
 
@@ -60,6 +63,16 @@ def assemble(ctx, params):
                 + (f" Lenses: {', '.join(names)}." if names else " This brain has no lenses."),
             )
         lens_text = view.files[entity.path]
+        # F59: a lens's `visibility-ceiling` caps what the reader may draw on —
+        # an audience-facing lens (ceiling public) never sees agents-only or
+        # private notes, whatever the caller could read. Re-take the snapshot
+        # at the lower tier; the rest of the call runs at that tier.
+        meta, _, _ = parse_frontmatter(lens_text)
+        ceiling = str(meta.get("visibility-ceiling") or "").strip()
+        if ceiling in TIER_ORDER and TIER_ORDER[ceiling] < TIER_ORDER[view.tier]:
+            ctx = replace(ctx, tier=ceiling)
+            view = snapshot(ctx, params)
+            lens_text = at_tier(lens_text, ceiling)
     candidates = []
     if view.brain.vector_collection_id:
         from .recall import search
@@ -138,5 +151,6 @@ def assemble(ctx, params):
         "model": result.model,
         "duration_ms": result.duration_ms,
         "revision": str(view.brain.head_revision_id),
+        "tier": view.tier,
         "semantic_candidates": len(candidates),
     }

@@ -184,6 +184,7 @@ class BackupScheduleService:
             "s3_configured": S3Service.is_configured(connection),
             "s3_enabled": bool(connection and connection.enabled),
             "connection_name": connection.name if connection else None,
+            "bucket": getattr(connection, "bucket", None) if connection else None,
         }
 
     @classmethod

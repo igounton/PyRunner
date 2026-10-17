@@ -683,7 +683,7 @@
                     <div class="mt-6 pt-4 border-t border-line-soft">
                         <h4 class="text-sm font-medium text-text mb-3">Last backup status</h4>
                         <div class="grid grid-cols-2 gap-4 text-sm">
-                            <div><span class="text-muted">Last run:</span><span class="text-text ml-2">{{ backup_schedule_status.last_run|date:"Y-m-d H:i" }}</span></div>
+                            <div><span class="text-muted">Last run:</span><span class="text-text ml-2">{{ backup_schedule_status.last_run|date:"Y-m-d H:i T" }}</span></div>
                             <div>
                                 <span class="text-muted">Status:</span>
                                 {% if backup_schedule_status.last_status == "success" %}
@@ -693,7 +693,8 @@
                                 {% else %}<span class="ml-2 text-muted">-</span>{% endif %}
                             </div>
                             {% if backup_schedule_status.last_size %}<div><span class="text-muted">Size:</span><span class="text-text ml-2">{{ backup_schedule_status.last_size|filesizeformat }}</span></div>{% endif %}
-                            {% if backup_schedule_status.next_run %}<div><span class="text-muted">Next run:</span><span class="text-text ml-2">{{ backup_schedule_status.next_run|date:"Y-m-d H:i" }}</span></div>{% endif %}
+                            {% if backup_schedule_status.next_run %}<div><span class="text-muted">Next run:</span><span class="text-text ml-2">{{ backup_schedule_status.next_run|date:"Y-m-d H:i T" }}</span></div>{% endif %}
+                            {% if backup_schedule_status.bucket %}<div class="col-span-2"><span class="text-muted">Stored in:</span><span class="text-text ml-2 font-mono text-xs break-all">{{ backup_schedule_status.bucket }}/{{ backup_schedule_status.prefix|default:"" }}</span> <span class="text-faint text-xs">({{ backup_schedule_status.connection_name }}, newest {{ backup_schedule_status.retention_count }} kept)</span></div>{% endif %}
                         </div>
                         {% if backup_schedule_status.last_status == "failed" and backup_schedule_status.last_error %}
                         <div class="mt-3 p-3 bg-fail/10 border border-fail/30 rounded-lg"><p class="text-sm text-fail">{{ backup_schedule_status.last_error }}</p></div>

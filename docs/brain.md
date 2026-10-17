@@ -23,6 +23,13 @@ directly, change settings and manage grants. Workspace members can browse all
 tiers and submit ordinary source proposals. Export ZIP downloads the complete
 private tree; keep exported archives appropriately restricted.
 
+Brain slugs are lowercase and unique in a workspace regardless of case; a
+mixed-case slug from before 2.0 still answers when typed in another case. Only a
+workspace owner can delete a brain (Brain settings → Delete this brain, typing
+its slug): its notes, revisions, grants, feeds, GitHub sync settings, search
+chunks and the API tokens bound to it go with it. Plugin-owned brains are
+removed by their plugin.
+
 ## Access and visibility
 
 The tiers are `public`, `agents-only`, then `private`. Explicit frontmatter wins

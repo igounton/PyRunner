@@ -30,10 +30,10 @@
                     <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0L3.16 16.25A2 2 0 005 19z"/></svg>
                     <div class="text-sm">
                         <p class="font-medium text-text">Restart required</p>
-                        <p class="text-muted mt-0.5">Plugin changes won't take effect until PyRun restarts (a few seconds of downtime).</p>
+                        <p class="text-muted mt-0.5">Plugin changes won't take effect until PyRun restarts (PyRun is unavailable for up to a minute).</p>
                     </div>
                 </div>
-                <form method="post" action="{% url 'cpanel:plugin_restart' %}" onsubmit="return confirm('Restart PyRun now? It will be briefly unavailable.');">
+                <form method="post" action="{% url 'cpanel:plugin_restart' %}" onsubmit="return confirm('Restart PyRun now? It will be unavailable for up to a minute.');">
                     {% csrf_token %}
                     <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-warn text-ink hover:opacity-90 transition whitespace-nowrap">Restart now</button>
                 </form>

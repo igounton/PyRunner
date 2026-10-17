@@ -26,7 +26,7 @@
                         <p class="text-muted mt-0.5">Plugin changes won't take effect until PyRun restarts.</p>
                     </div>
                 </div>
-                <form method="post" action="{% url 'cpanel:plugin_restart' %}" onsubmit="return confirm('Restart PyRun now? It will be briefly unavailable.');">
+                <form method="post" action="{% url 'cpanel:plugin_restart' %}" onsubmit="return confirm('Restart PyRun now? It will be unavailable for up to a minute.');">
                     {% csrf_token %}
                     <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-warn text-ink hover:opacity-90 transition whitespace-nowrap">Restart now</button>
                 </form>

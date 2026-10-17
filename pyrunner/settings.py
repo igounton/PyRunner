@@ -219,10 +219,16 @@ else:
 import importlib as _importlib
 import re as _re
 import sqlite3 as _sqlite3
+import time as _time
 
 PLUGINS_DIR = BASE_DIR / "plugins"
 INSTALLED_PLUGINS = []  # ["plugins.<slug>", ...] actually loaded this boot
 PLUGIN_LOAD_ERRORS = {}  # {slug: repr(exception)} for plugins skipped at boot
+# When this process read its plugin set. Settings load once per process at boot
+# (each gunicorn worker imports the app as it starts), so the plugin
+# "Restarting…" page can tell an answer from the restarted process from one the
+# old process still sends in the seconds before it shuts down.
+PLUGINS_LOADED_AT = _time.time()
 
 _PLUGIN_SLUG_RE = _re.compile(r"^[a-z][a-z0-9_]*$")
 

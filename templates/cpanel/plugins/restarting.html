@@ -11,7 +11,7 @@
             <svg class="pr-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         </div>
         <h1 class="pr-title">Restarting PyRun&hellip;</h1>
-        <p class="pr-sub">Applying plugin changes. This page reloads automatically once PyRun is back &mdash; usually a few seconds.</p>
+        <p class="pr-sub">Applying plugin changes. This page reloads automatically once PyRun is back &mdash; usually within a minute.</p>
         <div class="pr-bar" aria-hidden="true"><span></span></div>
         <p id="pr-slow" class="pr-slow">Taking longer than usual. <a href="{% url 'cpanel:plugin_list' %}">Reload now</a>.</p>
     </div>
@@ -48,25 +48,24 @@
 <script>
 (function () {
     var target = "{% url 'cpanel:plugin_list' %}";
+    var statusUrl = "{% url 'cpanel:plugin_restart_status' %}?since={{ since }}";
     var attempts = 0;
-    var slowAfter = 40;  // ~60s -> reveal manual link, but keep polling
+    var slowAfter = 60;  // ~90s -> reveal manual link, but keep polling
 
-    // Only navigate once a COMPLETE page is served. During boot a worker can
-    // briefly answer with an empty/partial body; requiring </html> avoids
-    // landing on a blank/broken page.
-    function isComplete(html) {
-        return html && html.indexOf("</html>") !== -1;
-    }
-
+    // Go back only when the RESTARTED process answers. The old one keeps
+    // serving for a few seconds after the click (the restart is a SIGTERM sent
+    // after a short delay), and returning then shows the stale "Restart
+    // required" page. A partial body while a worker boots fails to parse and
+    // is simply retried.
     function poll() {
         attempts++;
         if (attempts === slowAfter) {
             document.getElementById("pr-slow").style.display = "block";
         }
-        fetch(target, { cache: "no-store", credentials: "same-origin" })
-            .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
-            .then(function (html) {
-                if (isComplete(html)) {
+        fetch(statusUrl, { cache: "no-store", credentials: "same-origin" })
+            .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+            .then(function (data) {
+                if (data && data.restarted) {
                     window.location.href = target;
                 } else {
                     setTimeout(poll, 1500);

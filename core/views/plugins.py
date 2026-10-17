@@ -7,13 +7,16 @@ gate on superuser, call the service, set messages, and redirect.
 """
 
 import logging
+import math
+import time
 from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import FileResponse, Http404, HttpRequest, HttpResponse
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from core.forms import PluginUploadForm
@@ -189,13 +192,45 @@ def plugin_restart_view(request: HttpRequest) -> HttpResponse:
 
     Post/Redirect/Get: the 'restarting…' page lives at a GET URL, so a manual
     refresh during the wait can never re-POST and re-trigger another restart.
+    ``since`` (the request time) travels in the URL so the page — and a refresh
+    of it — waits for a process that started after this restart was asked for.
     """
+    requested_at = time.time()
     PluginService.trigger_restart()
-    return redirect("cpanel:plugin_restarting")
+    return redirect(f"{reverse('cpanel:plugin_restarting')}?since={requested_at:.3f}")
+
+
+def _since(request: HttpRequest) -> float:
+    """The ``since`` query value as a finite float; 0.0 when absent or bad."""
+    try:
+        value = float(request.GET.get("since", ""))
+    except ValueError:
+        return 0.0
+    return value if math.isfinite(value) else 0.0
 
 
 @login_required
 @superuser_required
 def plugin_restarting_view(request: HttpRequest) -> HttpResponse:
     """The 'restarting…' interstitial (GET → safe to refresh)."""
-    return render(request, "cpanel/plugins/restarting.html")
+    return render(request, "cpanel/plugins/restarting.html", {"since": f"{_since(request):.3f}"})
+
+
+@login_required
+def plugin_restart_status_view(request: HttpRequest) -> JsonResponse:
+    """JSON for the 'restarting…' page: has the restarted process answered?
+
+    The restart is a SIGTERM sent a few seconds after the request, and the old
+    process keeps serving until then, so "the server answered" is not enough:
+    ``restarted`` is true only when the answering process loaded its plugins
+    after ``since``.
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Superuser access required."}, status=403)
+    loaded_at = float(getattr(settings, "PLUGINS_LOADED_AT", 0.0))
+    response = JsonResponse({
+        "restarted": loaded_at > _since(request),
+        "pending_restart": PluginService.pending_restart(),
+    })
+    response["Cache-Control"] = "no-store"
+    return response

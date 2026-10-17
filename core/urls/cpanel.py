@@ -201,6 +201,7 @@ from core.views.plugins import (
     plugin_deactivate_view,
     plugin_delete_view,
     plugin_restart_view,
+    plugin_restart_status_view,
     plugin_restarting_view,
 )
 from core.views.workspaces import (
@@ -451,6 +452,7 @@ urlpatterns = [
     path("plugins/upload/", plugin_upload_view, name="plugin_upload"),
     path("plugins/restart/", plugin_restart_view, name="plugin_restart"),
     path("plugins/restarting/", plugin_restarting_view, name="plugin_restarting"),
+    path("plugins/restart/status/", plugin_restart_status_view, name="plugin_restart_status"),
     path("plugins/<uuid:pk>/activate/", plugin_activate_view, name="plugin_activate"),
     path("plugins/<uuid:pk>/deactivate/", plugin_deactivate_view, name="plugin_deactivate"),
     path("plugins/<uuid:pk>/delete/", plugin_delete_view, name="plugin_delete"),

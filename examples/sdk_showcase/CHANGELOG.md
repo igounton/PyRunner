@@ -3,7 +3,7 @@
 All notable changes to the SDK Showcase plugin are documented here. This
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [1.1.0] - Unreleased
+## [1.1.0] - 2026-10-17
 
 ### Added
 - A **Vectors** card: setup provisions a vectors-only collection

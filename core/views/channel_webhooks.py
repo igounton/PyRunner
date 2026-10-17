@@ -72,7 +72,13 @@ def channel_webhook_view(request: HttpRequest, token: str) -> JsonResponse:
             return JsonResponse({"status": "duplicate"})
         cache.set(dkey, 1, _DEDUP_TTL)
 
-    msg = provider.parse_inbound(channel, payload)
+    try:
+        msg = provider.parse_inbound(channel, payload)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        # A payload with the right secret but an unexpected shape is the
+        # caller's error, not ours: answer 400 instead of a 500.
+        logger.warning("Unparseable inbound payload for channel %s", channel.id, exc_info=True)
+        return JsonResponse({"error": "bad request"}, status=400)
     if msg is None:
         return JsonResponse({"status": "ignored"})
     sender_id = msg.sender.get("id")

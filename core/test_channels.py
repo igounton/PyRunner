@@ -642,6 +642,36 @@ class ChannelWebhookTests(_EncBase):
         self.assertEqual(resp.json()["status"], "queued")
         at.assert_called_once()
 
+    def test_malformed_payloads_with_valid_secret_are_ignored_not_500(self):
+        # 2.0 release test 24.01 (F88): these crashed parse_inbound → HTTP 500.
+        payloads = [
+            {"message": "x"},
+            {"message": {"chat": "x"}},
+            {"message": {"chat": {"id": {"a": 1}}}},
+            {"message": {"chat": {"id": True}}},
+            {"edited_message": ["x"]},
+        ]
+        with mock.patch("core.views.channel_webhooks.async_task") as at:
+            for i, payload in enumerate(payloads):
+                resp = self._hook(payload, remote=f"1.2.3.{i + 10}")
+                self.assertEqual(resp.status_code, 200, payload)
+                self.assertEqual(resp.json()["status"], "ignored", payload)
+        at.assert_not_called()
+        self.assertFalse(ChannelMember.objects.filter(channel=self.ch).exists())
+        self.send.assert_not_called()
+
+    def test_odd_field_types_are_coerced(self):
+        payload = {"message": {"chat": {"id": 7, "title": 5}, "from": {"id": [1], "username": 3}, "text": 9}}
+        msg = TelegramProvider().parse_inbound(self.ch, payload)
+        self.assertEqual(msg.text, "")
+        self.assertEqual(msg.sender, {"id": "7", "username": "", "display_name": "7"})
+        self.assertEqual(msg.reply_ref, {"chat_id": 7})
+
+    def test_provider_crash_on_payload_is_400(self):
+        with mock.patch.object(TelegramProvider, "parse_inbound", side_effect=AttributeError("x")):
+            resp = self._hook({"message": {}})
+        self.assertEqual(resp.status_code, 400)
+
 
 class InboundConfigViewTests(TestCase):
     def setUp(self):

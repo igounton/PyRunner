@@ -25,6 +25,17 @@ BAD_TOKEN_MESSAGE = (
 )
 
 
+def _is_id(value) -> bool:
+    """A Telegram chat/user id: an int (not a bool) or a non-empty string."""
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, int) or (isinstance(value, str) and value != "")
+
+
+def _text(value) -> str:
+    return value if isinstance(value, str) else ""
+
+
 class TelegramProvider(ChannelProvider):
     provider_key = "telegram"
     supports_inbound = True
@@ -137,27 +148,36 @@ class TelegramProvider(ChannelProvider):
         return str(update_id) if update_id is not None else None
 
     def parse_inbound(self, channel, payload: dict):
-        message = payload.get("message") or payload.get("edited_message") or {}
-        chat = message.get("chat") or {}
-        if chat.get("id") is None:
+        # Accept only the shape Telegram documents. Anything else (an update type
+        # we don't handle, or a caller who knows the secret sending junk) is
+        # ignored instead of crashing the public webhook with a 500.
+        message = payload.get("message") or payload.get("edited_message")
+        if not isinstance(message, dict):
             return None
-        frm = message.get("from") or {}
+        chat = message.get("chat")
+        chat_id = chat.get("id") if isinstance(chat, dict) else None
+        if not _is_id(chat_id):
+            return None
+        frm = message.get("from")
+        if not isinstance(frm, dict):
+            frm = {}
         display = (
-            " ".join(p for p in (frm.get("first_name"), frm.get("last_name")) if p)
-            or chat.get("title")
-            or frm.get("username")
-            or str(chat.get("id"))
+            " ".join(p for p in (_text(frm.get("first_name")), _text(frm.get("last_name"))) if p)
+            or _text(chat.get("title"))
+            or _text(frm.get("username"))
+            or str(chat_id)
         )
+        sender_id = frm.get("id") if _is_id(frm.get("id")) else chat_id
         return InboundMessage(
             channel_id=str(channel.id),
             provider=self.provider_key,
-            text=message.get("text", "") or "",
+            text=_text(message.get("text")),
             sender={
-                "id": str(frm.get("id") or chat.get("id")),
-                "username": frm.get("username", "") or "",
+                "id": str(sender_id),
+                "username": _text(frm.get("username")),
                 "display_name": display,
             },
-            reply_ref={"chat_id": chat.get("id")},
+            reply_ref={"chat_id": chat_id},
             raw=payload,
         )
 

@@ -532,14 +532,16 @@ class ApiDispatchTests(TestCase):
 
         self.ws = Workspace.get_default()
         _seed_state(self.ws)
+        # Tokens are stored hashed (2.0, F53): keep the raw value to send.
+        self.raw = APIToken.generate_token()
         self.token = APIToken.objects.create(
-            name="bt", token=APIToken.generate_token(), scope="plugin",
+            name="bt", token=self.raw, scope="plugin",
             plugin_slug="brand_tracker", workspace=self.ws,
         )
 
     def _get(self, url, token=None):
         return self.client.get(
-            url, HTTP_AUTHORIZATION=f"Bearer {token or self.token.token}"
+            url, HTTP_AUTHORIZATION=f"Bearer {token or self.raw}"
         )
 
     def test_mentions_feed_over_http(self):
@@ -560,12 +562,13 @@ class ApiDispatchTests(TestCase):
         from core.models import APIToken, Workspace
 
         other_ws = Workspace.objects.create(name="tenant-b")
-        other_token = APIToken.objects.create(
-            name="bt-b", token=APIToken.generate_token(), scope="plugin",
+        other_raw = APIToken.generate_token()
+        APIToken.objects.create(
+            name="bt-b", token=other_raw, scope="plugin",
             plugin_slug="brand_tracker", workspace=other_ws,
         )
         resp = self._get(
-            "/api/v1/plugins/brand_tracker/mentions/", token=other_token.token
+            "/api/v1/plugins/brand_tracker/mentions/", token=other_raw
         )
         # tenant-b has no brand_tracker store: 409, never the default
         # workspace's feed.
@@ -575,10 +578,9 @@ class ApiDispatchTests(TestCase):
     def test_wrong_scope_token_rejected(self):
         from core.models import APIToken
 
-        legacy = APIToken.objects.create(
-            name="legacy", token=APIToken.generate_token(), workspace=self.ws
-        )
-        resp = self._get("/api/v1/plugins/brand_tracker/mentions/", token=legacy.token)
+        legacy_raw = APIToken.generate_token()
+        APIToken.objects.create(name="legacy", token=legacy_raw, workspace=self.ws)
+        resp = self._get("/api/v1/plugins/brand_tracker/mentions/", token=legacy_raw)
         self.assertEqual(resp.status_code, 403)
 
     def test_discovery_shows_brand_tracker(self):

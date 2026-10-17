@@ -253,6 +253,38 @@ begins tracking at the current release; earlier history is in the git log.
   data and the "fresh" boot silently reused it. The launcher now removes the
   three named volumes explicitly and refuses to continue if any survive.
 
+### Improved (2.0 release-test polish)
+- **Readable failures.** Secret-provider, vector-store and Telegram network
+  errors are one line naming the host, port and cause ("doesn't resolve",
+  "connection refused", "timed out after 10 s"); the raw text is under
+  *Details*. Telegram's bare "Unauthorized" says the bot token was rejected, and
+  a network error never echoes the bot token from the request URL. A missing
+  bucket is named instead of boto's "HeadBucket … 404".
+- **Forms and results.** Services Test results render under the clicked button;
+  a refused storage save re-opens the form with its values; settings saves stay
+  on their tab and name the field in errors; add forms ask for the key instead of
+  "Leave blank to keep current".
+- **Runs, scripts and schedules.** A truncation badge, a hint when a configured
+  memory/CPU/file-size limit stopped a run, numbered forks, the next run in the
+  schedule's own timezone, and an error banner when a script save fails.
+- **Data pages.** pip/setuptools can't be uninstalled from an environment, the
+  Python picker lists each interpreter once, plugin-owned stores say so, the
+  database explorer counts small never-analysed tables exactly, the vector page
+  shows "Store unreachable" during an outage, and new collections preselect the
+  last tested embedding provider.
+- **Tokens, Connect, Brains.** The tokens list shows bound brains, expired
+  tokens and inactive plugins (cards on phones); Connect has Copy buttons;
+  deleting a token deletes its brain grants; brain settings show the search
+  index state and today's spend; Ask brain refuses a cap-blocked query at once;
+  an invalid proposal still shows what it would write.
+- **Py AI and channels.** Py AI talks about the current workspace, its model hint
+  follows the active provider, and answers sent to Telegram are plain text.
+- **Admin pages.** Logs open a message in full, keep filters in pager links and
+  refresh only the table; Members lists the Owner first and marks "(you)";
+  `manage.py recaptcha status|off` switches reCAPTCHA off from the shell; the
+  header resource meters are superuser-only; the header Docs link opens the
+  GitHub README.
+
 ### Security
 - Docker builds exclude every root `.env.*` variant, including local test
   credentials, in addition to `.env` and the existing private artifact rules.

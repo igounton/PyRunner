@@ -162,6 +162,22 @@ CHANGELOG = [
                 ),
             },
             {
+                "tag": "Improved",
+                "title": "Polish from the 2.0 release test",
+                "body": (
+                    "Network failures read as one line (host, port and cause) with the "
+                    "raw error under Details, and Test results appear next to the "
+                    "button. Forms keep what you typed after a refused save, settings "
+                    "tabs stay open after saving, and errors name the field. Runs say "
+                    "when output was cut or a resource limit stopped them, schedules "
+                    "show the next run in their own timezone, and forks are numbered. "
+                    "The API tokens list shows bound brains and expired tokens, Connect "
+                    "has Copy buttons, brain settings show the search index and "
+                    "today's spend, and Logs open a message in full. Phones get "
+                    "stacked headers and card lists where tables scrolled sideways."
+                ),
+            },
+            {
                 "tag": "Security",
                 "title": "Explicit network access and credential boundaries",
                 "body": (

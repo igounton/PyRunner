@@ -116,7 +116,7 @@
             <!-- Selected mode: per-script attach -->
             <div id="injection-selected-panel" class="space-y-3 hidden">
                 {% if form.instance.owner_plugin %}
-                <p class="text-xs text-faint">Only the secrets attached here are injected, plus the secrets owned by this script's plugin and unowned workspace secrets.</p>
+                <p class="text-xs text-faint">Only the secrets attached here are injected, plus the secrets owned by this script's plugin. Other workspace secrets are not.</p>
                 {% else %}
                 <p class="text-xs text-faint">Only the secrets attached here are injected. Other workspace secrets are not.</p>
                 {% endif %}

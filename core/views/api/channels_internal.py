@@ -50,10 +50,11 @@ def _log_outbound_message(channel, text, reply_ref, *, status="ok", error=""):
     appears in the channel's conversation history AND never counts toward its
     ``daily_reply_cap`` (the cost fuse that ``dispatch_inbound`` checks) — so the
     cap stays stuck at 0 for script channels. Mirrors the synchronous
-    ``channels.inbound._reply`` row. (Run *notifications* go through
-    ``NotificationService`` in-process, not this endpoint, so they are correctly
-    excluded from the cap.) Best-effort: the message is already delivered, so a
-    logging failure must never fail the request.
+    ``channels.inbound._reply`` row. Only rows that carry a ``reply_ref`` and
+    were delivered count toward the cap (``Channel.replies_today``): a plain
+    ``pyrunner_notify.send()`` or a failed send is history, not a reply (F50).
+    Best-effort: the message is already delivered, so a logging failure must
+    never fail the request.
     """
     from core.models import ChannelMessage
 

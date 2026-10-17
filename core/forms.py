@@ -3217,7 +3217,7 @@ class ChannelInboundForm(forms.Form):
         min_value=0,
         widget=forms.NumberInput(attrs={"class": INPUT_CLASS, "min": 0}),
         label="Daily reply cap",
-        help_text="Max handler replies per day (0 = unlimited).",
+        help_text="Max replies to incoming messages per day (0 = unlimited). Plain notifications sent by scripts don't count.",
     )
 
     def __init__(self, *args, channel=None, workspace=None, **kwargs):

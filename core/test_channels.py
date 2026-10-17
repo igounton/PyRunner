@@ -300,15 +300,32 @@ class InternalSendEndpointTests(_EncBase):
         self.assertEqual(row.status, "ok")
         self.assertEqual(row.reply_ref_json, {"chat_id": "5"})
 
-    def test_outbound_send_counts_toward_daily_cap(self):
+    def test_script_reply_counts_toward_daily_cap(self):
         ch = self._channel(name="Ops", token="a:1")
         ch.daily_reply_cap = 1
         ch.save()
         self.assertFalse(ch.daily_cap_reached())
         with mock.patch.object(ChannelService, "send", return_value={"ok": True}):
-            self._post({"target": "Ops", "text": "one"})
+            self._post({"target": "Ops", "text": "one", "reply_ref": {"chat_id": "5"}})
         self.assertEqual(ch.replies_today(), 1)
         self.assertTrue(ch.daily_cap_reached())
+
+    def test_plain_notification_and_failed_send_do_not_count_toward_cap(self):
+        # F50: the cap is "Max handler replies per day" — a script's plain
+        # pyrunner_notify.send() and a failed reply are logged but not counted.
+        ch = self._channel(name="Ops", token="a:1")
+        ch.daily_reply_cap = 1
+        ch.save()
+        with mock.patch.object(ChannelService, "send", return_value={"ok": True}):
+            self._post({"target": "Ops", "text": "scheduled report"})
+        with mock.patch.object(ChannelService, "send", side_effect=ChannelError("boom")):
+            self._post({"target": "Ops", "text": "reply", "reply_ref": {"chat_id": "5"}})
+        self.assertEqual(
+            ChannelMessage.objects.filter(channel=ch, direction=ChannelMessage.Direction.OUT).count(),
+            2,
+        )
+        self.assertEqual(ch.replies_today(), 0)
+        self.assertFalse(ch.daily_cap_reached())
 
     def test_failed_send_logs_error_row(self):
         ch = self._channel(name="Ops", token="a:1")
@@ -487,7 +504,9 @@ class InboundDispatchTests(_EncBase):
     def test_daily_cap_blocks_and_replies(self):
         self.ch.daily_reply_cap = 1
         self.ch.save()
-        ChannelMessage.objects.create(channel=self.ch, direction="out", text="prev")
+        ChannelMessage.objects.create(
+            channel=self.ch, direction="out", text="prev", reply_ref_json={"chat_id": "1"}
+        )
         with mock.patch.object(TelegramProvider, "send", return_value={}) as send, \
                 mock.patch("core.tasks.queue_script_run") as q:
             dispatch_inbound(str(self.ch.id), _TG_UPDATE)

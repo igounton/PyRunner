@@ -201,13 +201,25 @@ class Channel(models.Model):
         return current
 
     def replies_today(self) -> int:
-        """Outbound handler replies sent today (for the per-channel daily cap)."""
+        """Replies to inbound messages delivered today (for the per-channel daily cap).
+
+        Only delivered (``status="ok"``) OUT rows that answer an inbound message
+        (they carry its ``reply_ref``) count: a script's plain notification, a
+        failed send and the cap's own "limit reached" notice do not (F50), so a
+        channel used for scheduled notifications can't hit its reply cap.
+        """
         from django.utils import timezone
 
         start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        return self.messages.filter(
-            direction=ChannelMessage.Direction.OUT, created_at__gte=start
-        ).count()
+        return (
+            self.messages.filter(
+                direction=ChannelMessage.Direction.OUT,
+                status="ok",
+                created_at__gte=start,
+            )
+            .exclude(reply_ref_json={})
+            .count()
+        )
 
     def daily_cap_reached(self) -> bool:
         return bool(self.daily_reply_cap) and self.replies_today() >= self.daily_reply_cap

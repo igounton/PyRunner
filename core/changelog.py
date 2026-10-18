@@ -148,7 +148,9 @@ CHANGELOG = [
                     "SQLite takes write locks before reads; Qdrant outages share a "
                     "short fail-fast window across workers. Reconciled failed runs "
                     "notify you, package installs terminate cleanly, and partial "
-                    "environment creation no longer reserves a broken name."
+                    "environment creation no longer reserves a broken name. "
+                    "manage.py migrate_db copies every table to PostgreSQL, so users, "
+                    "API tokens, AI providers and channels come along."
                 ),
             },
             {

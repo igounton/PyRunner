@@ -182,6 +182,15 @@ begins tracking at the current release; earlier history is in the git log.
   Settings → General instead of a hardcoded brand.
 
 ### Fixed
+- **`manage.py migrate_db` copies the whole instance.** Moving from SQLite to
+  PostgreSQL went through backup and restore, which is portable by design and so
+  left out users, workspace members, API tokens, AI providers, channels, plugin
+  records and library history: the migrated instance came up with no admin
+  account and an open `/setup/admin/` page. It now copies every table row for row
+  with its original keys and exact timestamps, replaces whatever the target
+  database held, and checks every table's row count. Data-server databases,
+  vector stores and environments are left as they are. Sessions are not copied,
+  so everyone signs in again.
 - A run that was executing when the container or its worker restarted is now
   marked failed as soon as the worker starts again, if its process is gone. It
   used to show "running" until its timeout plus five minutes had passed (65

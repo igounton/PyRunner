@@ -103,7 +103,8 @@ class CoreConfig(AppConfig):
         from django.db.models.signals import post_save
 
         def ensure_membership(sender, instance, created, **kwargs):
-            if not created:
+            # A fixture load (``raw``, e.g. migrate_db) brings its own membership rows.
+            if not created or kwargs.get("raw"):
                 return
             try:
                 from core.models import Workspace, WorkspaceMembership

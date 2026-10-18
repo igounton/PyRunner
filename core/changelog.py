@@ -143,7 +143,8 @@ CHANGELOG = [
                 "tag": "Fixed",
                 "title": "Safer restores and more resilient workers",
                 "body": (
-                    "Failed database restores roll back, Brain history and attribution "
+                    "Failed database restores roll back (and one unusable database no "
+                    "longer fails the whole restore), Brain history and attribution "
                     "survive backups, and weekly/monthly schedules restore correctly. "
                     "SQLite takes write locks before reads; Qdrant outages share a "
                     "short fail-fast window across workers. Reconciled failed runs "

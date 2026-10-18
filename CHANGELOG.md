@@ -191,6 +191,11 @@ begins tracking at the current release; earlier history is in the git log.
   database held, and checks every table's row count. Data-server databases,
   vector stores and environments are left as they are. Sessions are not copied,
   so everyone signs in again.
+- **One unusable database no longer fails a whole restore.** A database row
+  that was never provisioned (no schema, role or password in the backup) made
+  the restore stop with "Cannot decrypt empty value", so no backup of that
+  instance could be restored. It is now restored in error status with a warning,
+  like any other database that can't be provisioned.
 - **Brain AI works on PostgreSQL.** Every brain feeder extraction and reader
   run failed on a PostgreSQL core database ("Extraction failed. Check the worker
   and retry."): the daily-cap check locked the brain row outside a transaction,

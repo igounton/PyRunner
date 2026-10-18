@@ -1375,6 +1375,29 @@ class BackupDatabasesTests(TestCase):
         restored = Database.objects.get(name="restored")
         self.assertTrue(DatabaseGrant.objects.filter(database=restored).exists())
 
+    def test_import_never_provisioned_row_does_not_fail_the_restore(self):
+        """F102: a source row with no schema, role or password used to abort the
+        whole restore ("Cannot decrypt empty value"); now it warns and moves on."""
+        bad = self._entry(name="never", schema_name="", role_name="", encrypted_password="",
+                          dump_sql=None, grants=[])
+        good = self._entry()
+
+        def provision(db):
+            db.get_password()  # what the real provision reads first
+
+        with (
+            mock.patch.object(DatabaseService, "provision", side_effect=provision),
+            mock.patch.object(DatabaseService, "restore_schema_dump"),
+        ):
+            count, warnings = self._restore([bad, good])
+        self.assertEqual(count, 2)
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("no usable credentials", warnings[0])
+        never = Database.objects.get(name="never")
+        self.assertEqual(never.status, Database.STATUS_ERROR)
+        self.assertTrue(never.last_error)
+        self.assertTrue(Database.objects.filter(name="restored").exists())
+
     def test_import_replay_failure_warns_but_keeps_database(self):
         with (
             mock.patch.object(DatabaseService, "provision"),

@@ -39,7 +39,7 @@ from core.models import (
     WorkspaceMembership,
 )
 from core.models.library import hash_modules
-from core.services.encryption_service import EncryptionService
+from core.services.encryption_service import EncryptionError, EncryptionService
 from core.services.schedule_service import ScheduleService
 from pyrunner.version import __version__ as PYRUNNER_VERSION
 
@@ -2031,6 +2031,19 @@ class BackupService:
                 warnings.append(
                     f"Database '{name}': provisioning failed ({e}) — left in "
                     "error status; fix the data server and use Retry on its page."
+                )
+                continue
+            except EncryptionError:
+                # A row the source never provisioned (no schema, role or
+                # password) or whose password doesn't decrypt: keep the row and
+                # restore everything else instead of failing the whole restore.
+                db.status = Database.STATUS_ERROR
+                db.last_error = "The backup holds no usable credentials for this database."
+                db.save(update_fields=["status", "last_error"])
+                warnings.append(
+                    f"Database '{name}': the backup holds no usable credentials (it was "
+                    "never provisioned on the source) — restored in error status with no "
+                    "data; delete it and create it again."
                 )
                 continue
 

@@ -150,7 +150,8 @@ CHANGELOG = [
                     "notify you, package installs terminate cleanly, and partial "
                     "environment creation no longer reserves a broken name. "
                     "manage.py migrate_db copies every table to PostgreSQL, so users, "
-                    "API tokens, AI providers and channels come along."
+                    "API tokens, AI providers and channels come along, and brain AI "
+                    "calls work on a PostgreSQL core database."
                 ),
             },
             {

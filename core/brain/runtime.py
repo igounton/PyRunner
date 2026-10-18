@@ -93,7 +93,11 @@ def cap_refusal(brain) -> str:
     return ""
 
 
+@transaction.atomic
 def prepare(workspace, brain_id, kind):
+    # The brain row lock serializes the daily-cap check and the usage reservation;
+    # it needs a transaction (PostgreSQL refuses SELECT ... FOR UPDATE without one).
+    # The AI call itself runs after this commits.
     brain = BrainService.get(workspace, brain_id, lock=True)
     settings = GlobalSettings.get_settings()
     provider = brain.ai_provider or settings.active_ai_provider

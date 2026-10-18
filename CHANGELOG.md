@@ -191,6 +191,10 @@ begins tracking at the current release; earlier history is in the git log.
   database held, and checks every table's row count. Data-server databases,
   vector stores and environments are left as they are. Sessions are not copied,
   so everyone signs in again.
+- **Brain AI works on PostgreSQL.** Every brain feeder extraction and reader
+  run failed on a PostgreSQL core database ("Extraction failed. Check the worker
+  and retry."): the daily-cap check locked the brain row outside a transaction,
+  which PostgreSQL refuses and SQLite ignores. It now runs in one.
 - A run that was executing when the container or its worker restarted is now
   marked failed as soon as the worker starts again, if its process is gone. It
   used to show "running" until its timeout plus five minutes had passed (65

@@ -25,12 +25,26 @@ from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
+from core.forms import NotificationSettingsForm, WorkerSettingsForm
 from core.models import Environment, GlobalSettings, User
 from core.services.backup_service import BackupService
 from core.services.worker_config import EFFECTIVE_RETRY_CACHE_KEY
 
 PW = "correct-horse-battery-staple-91"
 SETTINGS = "/cpanel/settings/"
+
+
+def current_values(form_class):
+    """POST data that re-saves the settings as they are (a valid submission)."""
+    form = form_class(instance=GlobalSettings.get_settings())
+    data = {}
+    for name in form.fields:
+        value = form[name].value()
+        if value is True:
+            data[name] = "on"
+        elif value not in (None, False):
+            data[name] = value
+    return data
 
 
 class SettingsBase(TestCase):
@@ -54,12 +68,11 @@ class SettingsBase(TestCase):
 class TabRedirectTests(SettingsBase):
     def test_each_tab_returns_to_itself(self):
         cases = [
-            ("cpanel:notification_settings", {}, "#notifications"),
+            ("cpanel:notification_settings", current_values(NotificationSettingsForm), "#notifications"),
             ("cpanel:retention_settings", {"retention_days": "5", "retention_count": "3"}, "#retention"),
-            ("cpanel:worker_settings", {}, "#workers"),
+            ("cpanel:worker_settings", current_values(WorkerSettingsForm), "#workers"),
             ("cpanel:recaptcha_settings", {}, "#security"),
             ("cpanel:toggle_global_pause", {}, "#schedules"),
-            ("cpanel:backup_create", {"max_runs": "-1"}, "#backup"),
         ]
         for name, data, tab in cases:
             with self.subTest(name=name):
@@ -67,16 +80,54 @@ class TabRedirectTests(SettingsBase):
                 self.assertEqual(resp.status_code, 302)
                 self.assertEqual(resp["Location"], SETTINGS + tab)
 
-    def test_refused_save_names_the_field_label(self):
-        resp = self.client.post(reverse("cpanel:retention_settings"), {"retention_days": "-1", "retention_count": "0"})
-        texts = self.messages_of(resp)
-        self.assertTrue(any(t.startswith("Retention Days:") for t in texts), texts)
-        self.assertFalse(any("retention_days" in t for t in texts), texts)
+    def test_refused_save_shows_the_error_under_the_field(self):
+        """U69: the tab re-renders with the typed value and the error inline."""
+        resp = self.client.post(reverse("cpanel:retention_settings"), {"retention_days": "-1", "retention_count": "7"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["active_tab"], "retention")
+        html = resp.content.decode()
+        # the field is marked and its error sits under it
+        self.assertRegex(html, r'name="retention_days" value="-1"[^>]*aria-invalid="true"')
+        self.assertIn('<div id="id_retention_days_error" class="mt-1.5 space-y-0.5"><p class="text-xs text-fail break-words">'
+                      "Ensure this value is greater than or equal to 0.</p></div>", html)
+        # the other typed value is kept, and the summary links the field by its label
+        self.assertIn('name="retention_count" value="7"', html)
+        self.assertIn('data-form-errors', html)
+        self.assertIn('href="#id_retention_days"', html)
+        self.assertIn(">Retention Days</a>", html)
+        self.assertNotIn("retention_days:", html)
+        self.assertIn("|| '#retention'", html)  # that tab opens
+        self.assertEqual(self.messages_of(resp), [])
+        gs = GlobalSettings.get_settings()
+        self.assertNotEqual(gs.retention_count, 7)  # nothing saved
+
+    def test_reserved_admin_slug_is_refused_inline(self):
+        resp = self.client.post(reverse("cpanel:general_settings"), {
+            "instance_name": "PyRun", "timezone": "UTC", "admin_url_slug": "api"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["active_tab"], "general")
+        html = resp.content.decode()
+        self.assertIn('id="id_admin_url_slug_error"', html)
+        self.assertIn("reserved URL path", html)
+        self.assertRegex(html, r'name="admin_url_slug" value="api"')
 
     def test_invalid_backup_form_says_why(self):
         resp = self.client.post(reverse("cpanel:backup_create"), {"max_runs": "10001"})
-        texts = self.messages_of(resp)
-        self.assertTrue(any("10000" in t for t in texts), texts)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["active_tab"], "backup")
+        html = resp.content.decode()
+        self.assertIn('id="id_max_runs_error"', html)
+        self.assertIn("10000", html)
+
+    def test_unknown_bound_form_is_a_programming_error(self):
+        from django.test import RequestFactory
+
+        from core.views.settings import render_settings
+
+        request = RequestFactory().get(SETTINGS)
+        request.user = self.admin
+        with self.assertRaises(TypeError):
+            render_settings(request, "general", nope_form=object())
 
 
 class TestEmailTests(SettingsBase):

@@ -347,3 +347,78 @@ class PhoneCardRowsTests(ShellBase):
         html = self.client.get(reverse("cpanel:workspace_members", kwargs={"pk": self.ws.pk})).content.decode()
         self.assertIn("flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4", html)
         self.assertIn("break-all sm:truncate", html)
+
+
+class InlineFormErrorTests(ShellBase):
+    """U69 / UX14: refused console forms show each error under its field (the
+    widget marked aria-invalid) and a summary above the form."""
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.admin)
+
+    def test_partials_are_used_by_every_console_form(self):
+        from pathlib import Path
+
+        from django.conf import settings
+
+        root = Path(settings.BASE_DIR) / "templates" / "cpanel"
+        for name in ("secrets/create.html", "tags/create.html", "datastores/entry_create.html",
+                     "environments/create.html", "libraries/create.html", "channels/create.html",
+                     "vectors/create.html", "api_tokens/create.html", "plugins/upload.html", "brains/fields.html"):
+            with self.subTest(template=name):
+                text = (root / name).read_text(encoding="utf-8")
+                self.assertIn('{% include "cpanel/_form_errors.html"', text)
+                self.assertNotIn(".errors.0 }}", text)
+
+    def test_bad_json_entry_shows_field_error_and_summary(self):
+        from core.models import DataStore
+
+        store = DataStore.objects.create(name="orders", workspace=self.ws, created_by=self.admin)
+        resp = self.client.post(reverse("cpanel:datastore_entry_create", kwargs={"pk": store.pk}),
+                                {"key": "order_1", "value": "{not json"})
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('id="id_value_error"', html)
+        self.assertRegex(html, r'<textarea[^>]*name="value"[^>]*aria-invalid="true"|<textarea[^>]*aria-invalid="true"[^>]*name="value"')
+        self.assertIn("data-form-errors", html)
+        self.assertIn('href="#id_value"', html)
+        self.assertIn('value="order_1"', html)
+
+    def test_non_field_error_is_in_the_summary(self):
+        from django import forms as djforms
+        from django.template.loader import render_to_string
+
+        class F(djforms.Form):
+            name = djforms.CharField()
+
+            def clean(self):
+                raise djforms.ValidationError("These two fields clash.")
+
+        form = F({"name": ""})
+        form.is_valid()
+        html = render_to_string("cpanel/_form_errors.html", {"form": form})
+        self.assertIn("These two fields clash.", html)
+        self.assertIn('href="#id_name"', html)
+        self.assertEqual(render_to_string("cpanel/_form_errors.html", {"form": F()}).strip(), "")
+
+    def test_refused_ai_provider_save_reopens_the_form(self):
+        resp = self.client.post(reverse("cpanel:ai_provider_save"),
+                                {"provider_type": "custom", "name": "", "base_url": "", "default_model": "typed-model"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.context["ai_form_open"])
+        html = resp.content.decode()
+        self.assertIn('<div id="ai-provider-form-wrap" class="border', html)
+        self.assertIn('id="id_name_error"', html)
+        self.assertIn('value="typed-model"', html)
+        self.assertNotIn("name: ", "".join(str(m) for m in resp.wsgi_request._messages))
+
+    def test_refused_ai_settings_shows_the_error_under_active_provider(self):
+        import uuid
+
+        resp = self.client.post(reverse("cpanel:claude_settings"),
+                                {"claude_enabled": "on", "active_provider": str(uuid.uuid4())})
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('id="id_active_provider_error"', html)
+        self.assertIn("That provider no longer exists", html)

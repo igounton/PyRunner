@@ -1,17 +1,17 @@
-{% for error in form.non_field_errors %}<p class="text-sm text-fail break-words" role="alert">{{ error }}</p>{% endfor %}
+{% include "cpanel/_form_errors.html" %}
 {% for field in form %}
     {% if field.is_hidden %}{{ field }}{% elif field.widget_type == 'checkbox' %}
     <div class="min-w-0" data-field="{{ field.name }}">
         <label class="flex items-start gap-2.5 text-sm text-text cursor-pointer" for="{{ field.id_for_label }}">{{ field }}<span>{{ field.label }}</span></label>
         {% if field.help_text %}<p class="mt-1.5 ml-[26px] text-xs text-faint">{{ field.help_text }}</p>{% endif %}
-        {% for error in field.errors %}<p class="mt-1.5 text-xs text-fail" role="alert">{{ error }}</p>{% endfor %}
+        {% include "cpanel/_field_errors.html" with field=field %}
     </div>
     {% else %}
     <div class="min-w-0" data-field="{{ field.name }}">
         <label class="block text-[13px] font-medium text-text mb-1.5" for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
         {% if field.help_text %}<p class="mt-1.5 text-xs text-faint">{{ field.help_text }}</p>{% endif %}
-        {% for error in field.errors %}<p class="mt-1.5 text-xs text-fail" role="alert">{{ error }}</p>{% endfor %}
+        {% include "cpanel/_field_errors.html" with field=field %}
     </div>
     {% endif %}
 {% endfor %}

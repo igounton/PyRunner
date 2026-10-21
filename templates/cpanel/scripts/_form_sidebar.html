@@ -11,19 +11,19 @@
             <div>
                 <label for="id_environment" class="block text-[13px] font-medium text-text mb-1.5">{{ form.environment.label }}</label>
                 {{ form.environment }}
-                {% if form.environment.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.environment.errors.0 }}</p>{% endif %}
+                {% include "cpanel/_field_errors.html" with field=form.environment %}
             </div>
             <div>
                 <label for="id_timeout_seconds" class="block text-[13px] font-medium text-text mb-1.5">{{ form.timeout_seconds.label }}</label>
                 {{ form.timeout_seconds }}
                 {% if form.timeout_seconds.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.timeout_seconds.help_text }}</p>{% endif %}
-                {% if form.timeout_seconds.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.timeout_seconds.errors.0 }}</p>{% endif %}
+                {% include "cpanel/_field_errors.html" with field=form.timeout_seconds %}
             </div>
             <div>
                 <label for="id_isolation_mode" class="block text-[13px] font-medium text-text mb-1.5">{{ form.isolation_mode.label }}</label>
                 {{ form.isolation_mode }}
                 {% if form.isolation_mode.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.isolation_mode.help_text }}</p>{% endif %}
-                {% if form.isolation_mode.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.isolation_mode.errors.0 }}</p>{% endif %}
+                {% include "cpanel/_field_errors.html" with field=form.isolation_mode %}
             </div>
             <label class="flex items-center gap-3 pt-3 border-t border-line-soft cursor-pointer">
                 {{ form.is_enabled }}
@@ -32,7 +32,7 @@
                     <span class="block text-xs text-faint">Allow this script to run, manually and on schedule.</span>
                 </span>
             </label>
-            {% if form.is_enabled.errors %}<p class="text-xs text-fail">{{ form.is_enabled.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.is_enabled %}
         </div>
     </section>
 
@@ -54,7 +54,7 @@
                 <p class="text-sm text-muted">No tags yet. <a href="{% url 'cpanel:tag_list' %}" class="text-info hover:underline">Create tags</a></p>
                 {% endfor %}
             </div>
-            {% if form.tags.errors %}<p class="mt-2 text-xs text-fail">{{ form.tags.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.tags %}
         </div>
     </section>
 
@@ -176,7 +176,7 @@
                     </label>
                     {% endfor %}
                 </div>
-                {% if schedule_form.run_mode.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.run_mode.errors.0 }}</p>{% endif %}
+                {% include "cpanel/_field_errors.html" with field=schedule_form.run_mode %}
             </div>
 
             <!-- Interval -->
@@ -191,7 +191,7 @@
                     {% endfor %}
                 </div>
                 <p class="mt-1.5 text-xs text-faint">{{ schedule_form.interval_minutes.help_text }}</p>
-                {% if schedule_form.interval_minutes.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.interval_minutes.errors.0 }}</p>{% endif %}
+                {% include "cpanel/_field_errors.html" with field=schedule_form.interval_minutes %}
             </div>
 
             <!-- Daily -->
@@ -200,7 +200,7 @@
                     <label for="id_daily_times_input" class="block text-[13px] font-medium text-text mb-1.5">{{ schedule_form.daily_times_input.label }}</label>
                     {{ schedule_form.daily_times_input }}
                     <p class="mt-1.5 text-xs text-faint">{{ schedule_form.daily_times_input.help_text }}</p>
-                    {% if schedule_form.daily_times_input.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.daily_times_input.errors.0 }}</p>{% endif %}
+                    {% include "cpanel/_field_errors.html" with field=schedule_form.daily_times_input %}
                 </div>
             </div>
 
@@ -216,13 +216,13 @@
                         </label>
                         {% endfor %}
                     </div>
-                    {% if schedule_form.weekly_days_input.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.weekly_days_input.errors.0 }}</p>{% endif %}
+                    {% include "cpanel/_field_errors.html" with field=schedule_form.weekly_days_input %}
                 </div>
                 <div>
                     <label for="id_weekly_times_input" class="block text-[13px] font-medium text-text mb-1.5">{{ schedule_form.weekly_times_input.label }}</label>
                     {{ schedule_form.weekly_times_input }}
                     <p class="mt-1.5 text-xs text-faint">{{ schedule_form.weekly_times_input.help_text }}</p>
-                    {% if schedule_form.weekly_times_input.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.weekly_times_input.errors.0 }}</p>{% endif %}
+                    {% include "cpanel/_field_errors.html" with field=schedule_form.weekly_times_input %}
                 </div>
             </div>
 
@@ -238,13 +238,13 @@
                         </label>
                         {% endfor %}
                     </div>
-                    {% if schedule_form.monthly_days_input.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.monthly_days_input.errors.0 }}</p>{% endif %}
+                    {% include "cpanel/_field_errors.html" with field=schedule_form.monthly_days_input %}
                 </div>
                 <div>
                     <label for="id_monthly_times_input" class="block text-[13px] font-medium text-text mb-1.5">{{ schedule_form.monthly_times_input.label }}</label>
                     {{ schedule_form.monthly_times_input }}
                     <p class="mt-1.5 text-xs text-faint">{{ schedule_form.monthly_times_input.help_text }}</p>
-                    {% if schedule_form.monthly_times_input.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.monthly_times_input.errors.0 }}</p>{% endif %}
+                    {% include "cpanel/_field_errors.html" with field=schedule_form.monthly_times_input %}
                 </div>
             </div>
 
@@ -254,19 +254,19 @@
                     <div>
                         <label for="id_yearly_month" class="block text-[13px] font-medium text-text mb-1.5">{{ schedule_form.yearly_month.label }}</label>
                         {{ schedule_form.yearly_month }}
-                        {% if schedule_form.yearly_month.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.yearly_month.errors.0 }}</p>{% endif %}
+                        {% include "cpanel/_field_errors.html" with field=schedule_form.yearly_month %}
                     </div>
                     <div>
                         <label for="id_yearly_day" class="block text-[13px] font-medium text-text mb-1.5">{{ schedule_form.yearly_day.label }}</label>
                         {{ schedule_form.yearly_day }}
-                        {% if schedule_form.yearly_day.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.yearly_day.errors.0 }}</p>{% endif %}
+                        {% include "cpanel/_field_errors.html" with field=schedule_form.yearly_day %}
                     </div>
                 </div>
                 <div>
                     <label for="id_yearly_time" class="block text-[13px] font-medium text-text mb-1.5">{{ schedule_form.yearly_time.label }}</label>
                     {{ schedule_form.yearly_time }}
                     <p class="mt-1.5 text-xs text-faint">{{ schedule_form.yearly_time.help_text }} 29 February runs only in leap years.</p>
-                    {% if schedule_form.yearly_time.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.yearly_time.errors.0 }}</p>{% endif %}
+                    {% include "cpanel/_field_errors.html" with field=schedule_form.yearly_time %}
                 </div>
             </div>
 
@@ -279,7 +279,7 @@
             <div id="timezone-option" class="{% if schedule_form.instance.run_mode != 'daily' and schedule_form.instance.run_mode != 'weekly' and schedule_form.instance.run_mode != 'monthly' and schedule_form.instance.run_mode != 'yearly' and schedule_form.instance.run_mode != 'cron' %}hidden{% endif %}">
                 <label for="id_timezone" class="block text-[13px] font-medium text-text mb-1.5">Timezone</label>
                 {{ schedule_form.timezone }}
-                {% if schedule_form.timezone.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.timezone.errors.0 }}</p>{% endif %}
+                {% include "cpanel/_field_errors.html" with field=schedule_form.timezone %}
             </div>
 
             <!-- Cron -->
@@ -292,7 +292,7 @@
                         Need help? Build one at
                         <a href="https://crontab.guru" target="_blank" rel="noopener" class="text-info hover:underline">crontab.guru</a>.
                     </p>
-                    {% if schedule_form.cron_expression.errors %}<p class="mt-1.5 text-xs text-fail">{{ schedule_form.cron_expression.errors.0 }}</p>{% endif %}
+                    {% include "cpanel/_field_errors.html" with field=schedule_form.cron_expression %}
                     <!-- Live preview populated by script_form.js -->
                     <div id="cron-preview" class="mt-2 text-xs hidden">
                         <span id="cron-preview-status" class="font-medium"></span>
@@ -308,7 +308,7 @@
                     <span class="block text-xs text-faint">Run automatically on the schedule above.</span>
                 </span>
             </label>
-            {% if schedule_form.is_active.errors %}<p class="text-xs text-fail">{{ schedule_form.is_active.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=schedule_form.is_active %}
         </div>
     </section>
     {% endif %}
@@ -326,13 +326,13 @@
             <div>
                 <label for="id_notify_on" class="block text-[13px] font-medium text-text mb-1.5">{{ form.notify_on.label }}</label>
                 {{ form.notify_on }}
-                {% if form.notify_on.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.notify_on.errors.0 }}</p>{% endif %}
+                {% include "cpanel/_field_errors.html" with field=form.notify_on %}
             </div>
             <div>
                 <label for="id_notify_email" class="block text-[13px] font-medium text-text mb-1.5">{{ form.notify_email.label }}</label>
                 {{ form.notify_email }}
                 {% if form.notify_email.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.notify_email.help_text }}</p>{% endif %}
-                {% if form.notify_email.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.notify_email.errors.0 }}</p>{% endif %}
+                {% include "cpanel/_field_errors.html" with field=form.notify_email %}
             </div>
             <div class="rounded-lg border border-line-soft bg-panel-hi/40 p-4 space-y-3">
                 <label class="flex items-center gap-3 cursor-pointer">
@@ -343,7 +343,7 @@
                     <label for="id_notify_webhook_url" class="block text-[13px] font-medium text-text mb-1.5">{{ form.notify_webhook_url.label }}</label>
                     {{ form.notify_webhook_url }}
                     {% if form.notify_webhook_url.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.notify_webhook_url.help_text }}</p>{% endif %}
-                    {% if form.notify_webhook_url.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.notify_webhook_url.errors.0 }}</p>{% endif %}
+                    {% include "cpanel/_field_errors.html" with field=form.notify_webhook_url %}
                 </div>
             </div>
             <div>
@@ -361,7 +361,7 @@
                 {% else %}
                 <p class="text-xs text-faint">No chat channels yet. <a href="{% url 'cpanel:channel_list' %}" class="text-info hover:underline">Add one</a> to send run notifications to Telegram.</p>
                 {% endif %}
-                {% if form.notify_channels.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.notify_channels.errors.0 }}</p>{% endif %}
+                {% include "cpanel/_field_errors.html" with field=form.notify_channels %}
             </div>
         </div>
     </section>

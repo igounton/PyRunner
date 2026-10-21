@@ -14,28 +14,26 @@
     <form method="post" class="lg:col-span-2 max-w-3xl w-full rounded-2xl border border-line bg-panel p-6 space-y-5">
         {% csrf_token %}
 
-        {% if form.non_field_errors %}
-        <div class="rounded-lg border border-fail/30 bg-fail/5 p-3 text-sm text-fail">{{ form.non_field_errors.0 }}</div>
-        {% endif %}
+        {% include "cpanel/_form_errors.html" %}
 
         <div>
             <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
             {{ form.name }}
             {% if form.name.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.name.help_text }}</p>{% endif %}
-            {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.name %}
         </div>
 
         <div>
             <label for="id_description" class="block text-[13px] font-medium text-text mb-1.5">{{ form.description.label }}</label>
             {{ form.description }}
-            {% if form.description.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.description.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.description %}
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
                 <label for="id_connection" class="block text-[13px] font-medium text-text mb-1.5">{{ form.connection.label }}</label>
                 {{ form.connection }}
-                {% if form.connection.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.connection.errors.0 }}</p>{% endif %}
+                {% include "cpanel/_field_errors.html" with field=form.connection %}
             </div>
             <div>
                 <label for="id_metric" class="block text-[13px] font-medium text-text mb-1.5">{{ form.metric.label }}</label>
@@ -48,14 +46,14 @@
             <label for="id_embedding_provider" class="block text-[13px] font-medium text-text mb-1.5">{{ form.embedding_provider.label }}</label>
             {{ form.embedding_provider }}
             <p class="mt-1.5 text-xs text-faint">{{ form.embedding_provider.help_text }}{% if providers_count == 0 %} No provider is configured yet — add one under Services → Embedding providers, or create a vectors-only collection.{% endif %}</p>
-            {% if form.embedding_provider.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.embedding_provider.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.embedding_provider %}
         </div>
 
         <div id="dimension-wrap">
             <label for="id_dimension" class="block text-[13px] font-medium text-text mb-1.5">{{ form.dimension.label }}</label>
             {{ form.dimension }}
             <p class="mt-1.5 text-xs text-faint">{{ form.dimension.help_text }}</p>
-            {% if form.dimension.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.dimension.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.dimension %}
         </div>
 
         <label class="flex items-center gap-2 cursor-pointer">{{ form.include_in_backup }}<span class="text-sm text-muted">{{ form.include_in_backup.label }}</span></label>

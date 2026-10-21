@@ -1,0 +1,10 @@
+{% load form_tags %}{% comment %}
+Form-level error summary (U69), shown above the fields of a refused form: errors
+that belong to no field (or to a hidden field) in full, then links to the fields
+whose own errors are shown under them. Usage: {% include "cpanel/_form_errors.html" %}
+(uses `form`) or {% include "cpanel/_form_errors.html" with form=other_form %}.
+{% endcomment %}{% if form.errors %}<div class="rounded-lg border border-fail/30 bg-fail/10 p-3 text-sm text-fail space-y-1" role="alert" data-form-errors>
+    {% for error in form.non_field_errors %}<p class="break-words">{{ error }}</p>{% endfor %}
+    {% for field in form.hidden_fields %}{% for error in field.errors %}<p class="break-words">{{ error }}</p>{% endfor %}{% endfor %}
+    {% with bad=form|error_fields %}{% if bad %}<p>Not saved &mdash; check {% for field in bad %}<a href="#{{ field.id_for_label }}" class="underline underline-offset-2 hover:opacity-80">{{ field.label }}</a>{% if not forloop.last %}, {% endif %}{% endfor %} below.</p>{% endif %}{% endwith %}
+</div>{% endif %}

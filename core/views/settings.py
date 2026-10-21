@@ -37,39 +37,45 @@ logger = logging.getLogger(__name__)
 @superuser_required
 def settings_view(request: HttpRequest) -> HttpResponse:
     """Display global settings."""
+    return render_settings(request)
+
+
+def render_settings(request: HttpRequest, tab: str = "", **bound) -> HttpResponse:
+    """The Settings page; a refused save passes its bound form (U69).
+
+    ``tab`` opens that tab and ``bound`` replaces one form (e.g.
+    ``retention_form=form``), so the errors show under their fields and the
+    typed values stay. The page then renders at the POST URL, like any refused
+    Django form.
+    """
     from core.services.backup_schedule_service import BackupScheduleService
 
     settings = GlobalSettings.get_settings()
-    notification_form = NotificationSettingsForm(instance=settings)
-    general_form = GeneralSettingsForm(instance=settings)
-    retention_form = LogRetentionForm(instance=settings)
-    worker_form = WorkerSettingsForm(instance=settings)
-    isolation_form = ExecutionIsolationForm(instance=settings)
-    backup_create_form = BackupCreateForm()
-    backup_restore_form = BackupRestoreForm()
-    backup_schedule_form = S3BackupScheduleForm(instance=settings)
-    backup_schedule_status = BackupScheduleService.get_schedule_status()
-    recaptcha_form = RecaptchaSettingsForm(instance=settings)
-
-    return render(
-        request,
-        "cpanel/settings.html",
+    forms = {
+        "notification_form": lambda: NotificationSettingsForm(instance=settings),
+        "general_form": lambda: GeneralSettingsForm(instance=settings),
+        "retention_form": lambda: LogRetentionForm(instance=settings),
+        "worker_form": lambda: WorkerSettingsForm(instance=settings),
+        "isolation_form": lambda: ExecutionIsolationForm(instance=settings),
+        "backup_create_form": BackupCreateForm,
+        "backup_restore_form": BackupRestoreForm,
+        "backup_schedule_form": lambda: S3BackupScheduleForm(instance=settings),
+        "recaptcha_form": lambda: RecaptchaSettingsForm(instance=settings),
+    }
+    unknown = set(bound) - set(forms)
+    if unknown:
+        raise TypeError(f"Unknown settings form(s): {', '.join(sorted(unknown))}")
+    context = {name: bound[name] if name in bound else make() for name, make in forms.items()}
+    context.update(
         {
             "settings": settings,
-            "notification_form": notification_form,
-            "general_form": general_form,
-            "retention_form": retention_form,
-            "worker_form": worker_form,
-            "isolation_form": isolation_form,
-            "backup_create_form": backup_create_form,
-            "backup_restore_form": backup_restore_form,
-            "backup_schedule_form": backup_schedule_form,
-            "backup_schedule_status": backup_schedule_status,
-            "recaptcha_form": recaptcha_form,
+            "active_tab": tab or "general",
+            "backup_schedule_status": BackupScheduleService.get_schedule_status(),
             "nproc_not_enforced": _scripts_run_as_root(),
             "effective_retry": _effective_retry(settings),
-        },
+        }
     )
+    return render(request, "cpanel/settings.html", context)
 
 
 def _effective_retry(settings):
@@ -88,9 +94,10 @@ def _effective_retry(settings):
 
 
 def flash_form_errors(request: HttpRequest, form) -> None:
-    """Flash a refused settings form's errors with each field's label (U69).
+    """Flash a refused form's errors as toasts, each with its field's label.
 
-    Was the raw field name ("retention_days: Ensure this value…").
+    For forms that can't be re-rendered in place (Services cards that are
+    filled by JS). Settings tabs re-render with the bound form instead (U69).
     """
     for field, errors in form.errors.items():
         label = ""
@@ -145,7 +152,7 @@ def notification_settings_view(request: HttpRequest) -> HttpResponse:
         form.save(settings)
         messages.success(request, "Notification settings saved successfully.")
     else:
-        flash_form_errors(request, form)
+        return render_settings(request, "notifications", notification_form=form)
 
     return settings_tab("notifications")
 
@@ -237,7 +244,7 @@ def general_settings_view(request: HttpRequest) -> HttpResponse:
                 "only works once PyRun has been restarted.",
             )
     else:
-        flash_form_errors(request, form)
+        return render_settings(request, "", general_form=form)
 
     return settings_tab("")
 
@@ -254,7 +261,7 @@ def recaptcha_settings_view(request: HttpRequest) -> HttpResponse:
         form.save(settings)
         messages.success(request, "reCAPTCHA settings saved successfully.")
     else:
-        flash_form_errors(request, form)
+        return render_settings(request, "security", recaptcha_form=form)
 
     return settings_tab("security")
 
@@ -271,7 +278,7 @@ def retention_settings_view(request: HttpRequest) -> HttpResponse:
         form.save(settings)
         messages.success(request, "Log retention settings saved successfully.")
     else:
-        flash_form_errors(request, form)
+        return render_settings(request, "retention", retention_form=form)
 
     return settings_tab("retention")
 
@@ -290,7 +297,7 @@ def worker_settings_view(request: HttpRequest) -> HttpResponse:
             request, "Worker settings saved. Restart workers for changes to take effect."
         )
     else:
-        flash_form_errors(request, form)
+        return render_settings(request, "workers", worker_form=form)
 
     return settings_tab("workers")
 
@@ -311,7 +318,7 @@ def execution_isolation_settings_view(request: HttpRequest) -> HttpResponse:
         form.save(settings)
         messages.success(request, "Execution & isolation settings saved successfully.")
     else:
-        flash_form_errors(request, form)
+        return render_settings(request, "isolation", isolation_form=form)
 
     return settings_tab("isolation")
 

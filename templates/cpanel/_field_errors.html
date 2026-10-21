@@ -1,0 +1,5 @@
+{% comment %}
+Errors under one form field (U69). Usage: {% include "cpanel/_field_errors.html" with field=form.name %}
+The id matches the aria-describedby Django puts on a refused widget (which also
+gets aria-invalid="true" and a red border from styles.css).
+{% endcomment %}{% if field.errors %}<div id="{{ field.auto_id }}_error" class="mt-1.5 space-y-0.5">{% for error in field.errors %}<p class="text-xs text-fail break-words">{{ error }}</p>{% endfor %}</div>{% endif %}

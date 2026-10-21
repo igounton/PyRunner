@@ -14,18 +14,20 @@
     <form method="post" class="lg:col-span-2 max-w-3xl w-full rounded-2xl border border-line bg-panel p-6 space-y-5">
         {% csrf_token %}
 
+        {% include "cpanel/_form_errors.html" %}
+
         <div>
             <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
             {{ form.name }}
             {% if form.name.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.name.help_text }}</p>{% endif %}
-            {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.name %}
         </div>
 
         <div>
             <label for="id_description" class="block text-[13px] font-medium text-text mb-1.5">{{ form.description.label }}</label>
             {{ form.description }}
             {% if form.description.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.description.help_text }}</p>{% endif %}
-            {% if form.description.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.description.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.description %}
         </div>
 
         <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">

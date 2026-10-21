@@ -401,38 +401,44 @@ url = storage.url("avatars/abc.jpg")</code></pre>
             </div>
 
             <!-- Add / edit provider form -->
-            <div id="ai-provider-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
-                <p id="ai-provider-form-title" class="text-[13px] font-medium text-text mb-4">Add provider</p>
+            <div id="ai-provider-form-wrap" class="{% if not ai_form_open %}hidden {% endif %}border border-line-soft rounded-lg p-5 bg-panel-hi/30">
+                <p id="ai-provider-form-title" class="text-[13px] font-medium text-text mb-4">{% if ai_provider_editing %}Edit provider &mdash; {{ ai_provider_form.instance.name }}{% else %}Add provider{% endif %}</p>
                 <form method="post" action="{% url 'cpanel:ai_provider_save' %}" id="ai-provider-form">
                     {% csrf_token %}
-                    <input type="hidden" name="provider_id" id="ai-provider-id" value="">
+                    <input type="hidden" name="provider_id" id="ai-provider-id" value="{% if ai_provider_editing %}{{ ai_provider_form.instance.pk }}{% endif %}">
+                    {% if ai_provider_form.errors %}<div class="mb-5">{% include "cpanel/_form_errors.html" with form=ai_provider_form %}</div>{% endif %}
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                         <div>
                             <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.provider_type.label }}</label>
                             {{ ai_provider_form.provider_type }}
+                            {% include "cpanel/_field_errors.html" with field=ai_provider_form.provider_type %}
                         </div>
                         <div>
                             <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.name.label }}</label>
                             {{ ai_provider_form.name }}
+                            {% include "cpanel/_field_errors.html" with field=ai_provider_form.name %}
                         </div>
 
                         <div id="ai-field-base-url" class="md:col-span-2">
                             <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.base_url.label }}</label>
                             {{ ai_provider_form.base_url }}
                             <p class="mt-1.5 text-xs text-faint">{{ ai_provider_form.base_url.help_text }}</p>
+                            {% include "cpanel/_field_errors.html" with field=ai_provider_form.base_url %}
                         </div>
 
                         <div id="ai-field-auth-method">
                             <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.auth_method.label }}</label>
                             {{ ai_provider_form.auth_method }}
                             <p class="mt-1.5 text-xs text-faint">{{ ai_provider_form.auth_method.help_text }}</p>
+                            {% include "cpanel/_field_errors.html" with field=ai_provider_form.auth_method %}
                         </div>
 
                         <div>
                             <label class="block text-[13px] font-medium text-text mb-1.5" id="ai-credential-label">{{ ai_provider_form.credential.label }}</label>
                             {{ ai_provider_form.credential }}
                             <p class="mt-1.5 text-xs text-faint" id="ai-credential-help"></p>
+                            {% include "cpanel/_field_errors.html" with field=ai_provider_form.credential %}
                             <p class="mt-1.5 text-xs text-ok hidden" id="ai-credential-saved">A credential is saved &mdash; leave blank to keep it.</p>
                         </div>
 
@@ -440,6 +446,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
                             <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.default_model.label }}</label>
                             {{ ai_provider_form.default_model }}
                             <p class="mt-1.5 text-xs text-faint">{{ ai_provider_form.default_model.help_text }}</p>
+                            {% include "cpanel/_field_errors.html" with field=ai_provider_form.default_model %}
                         </div>
                     </div>
 
@@ -460,6 +467,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
                     <label class="block text-[13px] font-medium text-text mb-1.5">{{ claude_form.active_provider.label }}</label>
                     {{ claude_form.active_provider }}
                     <p class="mt-1.5 text-xs text-faint">{{ claude_form.active_provider.help_text }}</p>
+                    {% include "cpanel/_field_errors.html" with field=claude_form.active_provider %}
                 </div>
                 <label class="flex items-center gap-2 cursor-pointer pb-2.5">{{ claude_form.claude_enabled }}<span class="text-sm text-muted">{{ claude_form.claude_enabled.label }}</span></label>
                 <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition mb-1">Save settings</button>
@@ -1174,8 +1182,13 @@ function aiApplyTypeHints(prefillBaseUrl) {
     }
 }
 
-function aiShowProviderForm() {
+function aiShowProviderForm(keepErrors) {
     aiResetFormTestFeedback();
+    if (!keepErrors) {
+        // A refused save's errors belong to what was typed, not to the next provider (U69).
+        document.querySelectorAll('#ai-provider-form [data-form-errors], #ai-provider-form [id$="_error"]').forEach(el => el.remove());
+        document.querySelectorAll('#ai-provider-form [aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
+    }
     document.getElementById('ai-provider-form-wrap').classList.remove('hidden');
 }
 
@@ -1675,7 +1688,24 @@ document.addEventListener('DOMContentLoaded', function() {
         spRenderFields(null, false);  // initial render for the default type
     }
 
-    {% if not storage_form_open %}
+    {% if ai_form_open or claude_form_refused %}
+    // A refused AI provider / AI settings save (U69): open the card on it.
+    toggleClaudeConfig();
+    {% if ai_form_open %}
+    aiApplyTypeHints(false);
+    {% if ai_provider_editing %}
+    const refusedAi = AI_PROVIDERS.find(x => x.id === '{{ ai_provider_form.instance.pk }}');
+    if (refusedAi) {
+        document.getElementById('ai-credential-saved').classList.toggle('hidden', !refusedAi.has_credential);
+        setKeyPlaceholder(aiFormField('credential'), refusedAi.has_credential);
+    }
+    {% endif %}
+    aiShowProviderForm(true);
+    document.getElementById('ai-provider-form-wrap').scrollIntoView({block: 'start'});
+    {% else %}
+    document.getElementById('ai').scrollIntoView({block: 'start'});
+    {% endif %}
+    {% elif not storage_form_open %}
     // First run: open only the first service that isn't set up (UX5) — the
     // others stay collapsed behind their "Not configured" pill, and nothing
     // takes focus, so the page opens at the top.

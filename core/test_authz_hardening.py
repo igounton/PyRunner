@@ -99,7 +99,10 @@ class SettingsAuthzTests(TestCase):
         """The gate must not break admins: a superuser reaches the view and is
         redirected back to the settings page, not to login."""
         self.client.force_login(self.superuser)
-        resp = self.client.post(reverse("cpanel:notification_settings"), {})
+        from core.forms import NotificationSettingsForm
+        from core.test_polish_settings import current_values
+
+        resp = self.client.post(reverse("cpanel:notification_settings"), current_values(NotificationSettingsForm))
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(resp["Location"], reverse("cpanel:settings") + "#notifications")
 

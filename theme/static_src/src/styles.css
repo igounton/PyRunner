@@ -167,6 +167,13 @@ select:not([multiple]):not([size]) {
 details.log-entry[open] .log-preview { display: none; }
 details.log-entry:not([open]) .log-hide { display: none; }
 
+/* A field the server refused: Django marks the widget aria-invalid="true" (U69). */
+input[aria-invalid="true"]:not([type="checkbox"]):not([type="radio"]),
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+    border-color: rgb(var(--fail) / 0.7);
+}
+
 @layer components {
     /* Monospace caps label used for eyebrows / section headers */
     .eyebrow {

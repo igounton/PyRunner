@@ -54,6 +54,7 @@ from core.services.secret_backends import (
     list_backends,
 )
 from core.views.decorators import superuser_required
+from core.views.settings import flash_form_errors
 
 logger = logging.getLogger(__name__)
 
@@ -65,10 +66,20 @@ def services_view(request: HttpRequest) -> HttpResponse:
     return _render_services(request)
 
 
-def _render_services(request, storage_form=None, status=200) -> HttpResponse:
-    """The Services page; a refused storage save passes its bound form (U47)."""
+def _render_services(
+    request, storage_form=None, status=200, ai_provider_form=None, ai_provider_editing=False,
+    claude_form=None,
+) -> HttpResponse:
+    """The Services page; a refused save passes its bound form.
+
+    Storage (U47), the AI provider form and the AI settings form (U69) come back
+    open with what was typed and the errors under their fields.
+    """
     settings = GlobalSettings.get_settings()
-    claude_form = AISettingsForm(instance=settings)
+    ai_form_open = ai_provider_form is not None
+    claude_form_refused = claude_form is not None
+    if claude_form is None:
+        claude_form = AISettingsForm(instance=settings)
     claude_status = ClaudeService.get_status()
 
     # Object storage — many connections; backups use `is_default`, plugins use the
@@ -172,7 +183,10 @@ def _render_services(request, storage_form=None, status=200) -> HttpResponse:
             "claude_form": claude_form,
             "claude_status": claude_status,
             "ai_providers": providers,
-            "ai_provider_form": AIProviderForm(),
+            "ai_provider_form": ai_provider_form if ai_form_open else AIProviderForm(),
+            "ai_form_open": ai_form_open,
+            "ai_provider_editing": ai_provider_editing,
+            "claude_form_refused": claude_form_refused,
             "ai_providers_json": providers_data,
             "ai_presets_json": presets_data,
             "secret_providers": secret_providers,
@@ -314,9 +328,7 @@ def assets_storage_view(request: HttpRequest) -> HttpResponse:
                 request, "Plugin storage is now unavailable (no connection selected)."
             )
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field}: {error}")
+        flash_form_errors(request, form)
 
     return redirect("cpanel:services")
 
@@ -413,9 +425,7 @@ def claude_settings_view(request: HttpRequest) -> HttpResponse:
         form.save(settings)
         messages.success(request, "AI settings saved successfully.")
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field}: {error}")
+        return _render_services(request, claude_form=form)
 
     return redirect("cpanel:services")
 
@@ -449,9 +459,7 @@ def ai_provider_save_view(request: HttpRequest) -> HttpResponse:
             settings.save(update_fields=["active_ai_provider"])
         messages.success(request, f"Provider '{provider.name}' saved.")
     else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field}: {error}")
+        return _render_services(request, ai_provider_form=form, ai_provider_editing=instance is not None)
 
     return redirect("cpanel:services")
 

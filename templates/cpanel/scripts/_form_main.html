@@ -4,14 +4,14 @@
     <div>
         <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
         {{ form.name }}
-        {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
+        {% include "cpanel/_field_errors.html" with field=form.name %}
     </div>
 
     <!-- Description -->
     <div>
         <label for="id_description" class="block text-[13px] font-medium text-text mb-1.5">{{ form.description.label }}</label>
         {{ form.description }}
-        {% if form.description.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.description.errors.0 }}</p>{% endif %}
+        {% include "cpanel/_field_errors.html" with field=form.description %}
     </div>
 
     <!-- Code editor -->
@@ -31,6 +31,6 @@
             </div>
             <div id="code-editor-container" class="h-[55vh] min-h-[320px] lg:h-[calc(100vh-28rem)] lg:max-h-[680px]"></div>
         </div>
-        {% if form.code.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.code.errors.0 }}</p>{% endif %}
+        {% include "cpanel/_field_errors.html" with field=form.code %}
     </div>
 </div>

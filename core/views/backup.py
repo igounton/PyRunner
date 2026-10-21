@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 from core.forms import BackupCreateForm, BackupRestoreForm
 from core.services.backup_service import BackupService
 from core.views.decorators import superuser_required
-from core.views.settings import flash_form_errors, settings_tab
+from core.views.settings import render_settings, settings_tab
 
 
 @login_required
@@ -59,8 +59,8 @@ def backup_create_view(request):
                 messages.error(request, f"Failed to create backup: {str(e)}")
                 return settings_tab("backup")
         else:
-            # U72: say why nothing downloaded (was a silent reload).
-            flash_form_errors(request, form)
+            # U72/U69: say why nothing downloaded, under the refused field.
+            return render_settings(request, "backup", backup_create_form=form)
 
     return settings_tab("backup")
 
@@ -289,7 +289,7 @@ def backup_schedule_settings_view(request):
         form.save(settings)
         messages.success(request, "Backup schedule settings saved successfully.")
     else:
-        flash_form_errors(request, form)
+        return render_settings(request, "backup", backup_schedule_form=form)
 
     return settings_tab("backup")
 

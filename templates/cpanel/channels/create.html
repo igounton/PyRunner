@@ -14,35 +14,33 @@
     <form method="post" autocomplete="off" class="lg:col-span-2 max-w-3xl w-full rounded-2xl border border-line bg-panel p-6 space-y-5">
         {% csrf_token %}
 
-        {% if form.non_field_errors %}
-        <div class="rounded-lg border border-fail/30 bg-fail/10 p-3 text-sm text-fail">{{ form.non_field_errors }}</div>
-        {% endif %}
+        {% include "cpanel/_form_errors.html" %}
 
         <div>
             <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
             {{ form.name }}
             {% if form.name.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.name.help_text }}</p>{% endif %}
-            {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.name %}
         </div>
 
         <div>
             <label for="id_provider" class="block text-[13px] font-medium text-text mb-1.5">Provider</label>
             {{ form.provider }}
-            {% if form.provider.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.provider.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.provider %}
         </div>
 
         <div>
             <label for="id_bot_token" class="block text-[13px] font-medium text-text mb-1.5">{{ form.bot_token.label }}</label>
             {{ form.bot_token }}
             {% if form.bot_token.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.bot_token.help_text }}</p>{% endif %}
-            {% if form.bot_token.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.bot_token.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.bot_token %}
         </div>
 
         <div>
             <label for="id_default_target" class="block text-[13px] font-medium text-text mb-1.5">{{ form.default_target.label }}</label>
             {{ form.default_target }}
             {% if form.default_target.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.default_target.help_text }}</p>{% endif %}
-            {% if form.default_target.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.default_target.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.default_target %}
         </div>
 
         <label class="flex items-center gap-2.5 cursor-pointer">

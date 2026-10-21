@@ -30,6 +30,7 @@
 
     <!-- Body -->
     <div class="px-5 lg:px-8 py-6 max-w-[1440px] mx-auto">
+        {% if form.errors %}<div class="mb-5">{% include "cpanel/_form_errors.html" %}</div>{% endif %}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div class="lg:col-span-2">
                 {% include "cpanel/scripts/_form_main.html" %}

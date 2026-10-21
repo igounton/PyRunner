@@ -14,34 +14,34 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
     <form method="post" autocomplete="off" class="lg:col-span-2 max-w-3xl w-full rounded-2xl border border-line bg-panel p-6 space-y-5">
         {% csrf_token %}
-        {{ form.non_field_errors }}
+        {% include "cpanel/_form_errors.html" %}
 
         <div>
             <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
             {{ form.name }}
             {% if form.name.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.name.help_text }}</p>{% endif %}
-            {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.name %}
         </div>
 
         <div>
             <label for="id_scope" class="block text-[13px] font-medium text-text mb-1.5">{{ form.scope.label }}</label>
             {{ form.scope }}
             {% if form.scope.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.scope.help_text }}</p>{% endif %}
-            {% if form.scope.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.scope.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.scope %}
         </div>
 
         <div id="datastore-field">
             <label for="id_datastore" class="block text-[13px] font-medium text-text mb-1.5">{{ form.datastore.label }}</label>
             {{ form.datastore }}
             {% if form.datastore.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.datastore.help_text }}</p>{% endif %}
-            {% if form.datastore.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.datastore.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.datastore %}
         </div>
 
         <div id="plugin-field">
             <label for="id_plugin_slug" class="block text-[13px] font-medium text-text mb-1.5">{{ form.plugin_slug.label }}</label>
             {{ form.plugin_slug }}
             {% if form.plugin_slug.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.plugin_slug.help_text }}</p>{% endif %}
-            {% if form.plugin_slug.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.plugin_slug.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.plugin_slug %}
         </div>
 
         <div id="api-fields" class="space-y-5">
@@ -50,19 +50,19 @@
                 {% for checkbox in form.permissions %}
                 <label class="flex items-center gap-2 text-sm text-text">{{ checkbox.tag }}<span>{{ checkbox.choice_label }}</span></label>
                 {% endfor %}
-                {{ form.permissions.errors }}
+                {% include "cpanel/_field_errors.html" with field=form.permissions %}
             </div>
             <div>
                 <label for="id_kind" class="block text-[13px] font-medium text-text mb-1.5">Token kind</label>
-                {{ form.kind }}{{ form.kind.errors }}
+                {{ form.kind }}{% include "cpanel/_field_errors.html" with field=form.kind %}
             </div>
             <div>
                 <label for="id_brain" class="block text-[13px] font-medium text-text mb-1.5">Bind to one brain (optional)</label>
-                {{ form.brain }}{{ form.brain.errors }}
+                {{ form.brain }}{% include "cpanel/_field_errors.html" with field=form.brain %}
             </div>
             <div>
                 <label for="id_brain_tier" class="block text-[13px] font-medium text-text mb-1.5">Maximum brain tier</label>
-                {{ form.brain_tier }}{{ form.brain_tier.errors }}
+                {{ form.brain_tier }}{% include "cpanel/_field_errors.html" with field=form.brain_tier %}
                 <p class="mt-1.5 text-xs text-faint">A brain grant is also required. The token never grants access by itself.</p>
             </div>
         </div>
@@ -86,7 +86,7 @@
             <label for="id_expires_at" class="block text-[13px] font-medium text-text mb-1.5">{{ form.expires_at.label }}</label>
             {{ form.expires_at }}
             {% if form.expires_at.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.expires_at.help_text }}</p>{% endif %}
-            {% if form.expires_at.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.expires_at.errors.0 }}</p>{% endif %}
+            {% include "cpanel/_field_errors.html" with field=form.expires_at %}
         </div>
 
         <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">

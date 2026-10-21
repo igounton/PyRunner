@@ -248,6 +248,49 @@ class StorageCardTests(ServicesBase):
         self.assertIn("function markRowTested(btn)", html)
 
 
+class AIOffBannerTests(ServicesBase):
+    """U109: a saved provider with the AI switch off says "AI is off" and offers the switch."""
+
+    def _provider(self):
+        from core.models import AIProvider
+
+        return AIProvider.objects.create(name="router", provider_type="openrouter", default_model="m")
+
+    def test_banner_shows_when_providers_exist_and_ai_is_off(self):
+        provider = self._provider()
+        gs = GlobalSettings.get_settings()
+        gs.active_ai_provider = provider
+        gs.claude_enabled = False
+        gs.save()
+        html = self.client.get(reverse("cpanel:services")).content.decode()
+        self.assertIn('id="ai-off-banner"', html)
+        self.assertIn("AI is off", html)
+        banner = html[html.index('id="ai-off-banner"'):]
+        banner = banner[:banner.index("</form>")]
+        self.assertIn(f'value="{provider.pk}"', banner)
+        self.assertIn('name="claude_enabled" value="on"', banner)
+        # the banner's form is the one the master switch already posts to
+        resp = self.client.post(reverse("cpanel:claude_settings"),
+                                {"claude_enabled": "on", "active_provider": str(provider.pk)})
+        self.assertEqual(resp.status_code, 302)
+        gs.refresh_from_db()
+        self.assertTrue(gs.claude_enabled)
+        self.assertEqual(gs.active_ai_provider_id, provider.pk)
+        html = self.client.get(reverse("cpanel:services")).content.decode()
+        self.assertNotIn('id="ai-off-banner"', html)
+
+    def test_no_banner_without_providers(self):
+        html = self.client.get(reverse("cpanel:services")).content.decode()
+        self.assertNotIn('id="ai-off-banner"', html)
+
+    def test_banner_falls_back_to_the_first_provider_when_none_is_active(self):
+        provider = self._provider()
+        html = self.client.get(reverse("cpanel:services")).content.decode()
+        banner = html[html.index('id="ai-off-banner"'):]
+        banner = banner[:banner.index("</form>")]
+        self.assertIn(f'name="active_provider" value="{provider.pk}"', banner)
+
+
 class NewProviderPlaceholderTests(SimpleTestCase):
     def test_add_forms_ask_for_the_key(self):
         def ph(form, name):

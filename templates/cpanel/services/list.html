@@ -313,6 +313,22 @@ url = storage.url("avatars/abc.jpg")</code></pre>
         </div>
         {% endif %}
 
+        {% if ai_providers and not claude_status.enabled %}
+        {% comment %}U109: a saved provider does nothing while the master switch is off — say so next to the providers and offer the switch.{% endcomment %}
+        <div id="ai-off-banner" class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-lg bg-warn/10 border border-warn/30" role="status">
+            <div class="min-w-0 text-sm">
+                <p class="font-medium text-warn">AI is off</p>
+                <p class="text-muted mt-0.5">Scripts, Py AI and brains don't use the saved provider{{ ai_providers|length|pluralize }} until AI is switched on.</p>
+            </div>
+            <form method="post" action="{% url 'cpanel:claude_settings' %}" class="flex-shrink-0">
+                {% csrf_token %}
+                <input type="hidden" name="claude_enabled" value="on">
+                <input type="hidden" name="active_provider" value="{% firstof settings.active_ai_provider_id ai_providers.0.id %}">
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Turn AI on</button>
+            </form>
+        </div>
+        {% endif %}
+
         {% if not claude_status.cli_available %}
         <div class="mt-4 p-3 rounded-lg bg-warn/10 border border-warn/30 text-warn text-sm">
             The Claude Code CLI was not found on the server. It ships with the current PyRun Docker image &mdash; rebuild/pull the latest image to enable AI.

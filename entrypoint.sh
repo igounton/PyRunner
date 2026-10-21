@@ -113,6 +113,21 @@ start_qcluster() {
 # worker (the Settings "Restart workers" button, a crash, an OOM kill) just
 # has to make the old process die.
 
+# pyrunner_qcluster leads its own process group (PGID = its PID), which its
+# django-q children (sentinel, pusher, monitor, workers) inherit. When the main
+# process is killed hard (kill -9, an OOM kill) those children survive,
+# reparented, and keep pulling tasks; starting a replacement next to them would
+# run two clusters (twice the workers, two schedulers). So kill whatever is
+# left of the dead worker's group first. Scripts start in their own session
+# and are not in this group.
+stop_leftover_workers() {
+    local pid=$1
+    if kill -0 -- "-$pid" 2>/dev/null; then
+        echo "[!] Stopping leftover processes of worker group $pid..."
+        kill -KILL -- "-$pid" 2>/dev/null || true
+    fi
+}
+
 # Start workers initially
 start_qcluster
 
@@ -129,6 +144,7 @@ monitor_workers() {
             local pid=$(cat "$QCLUSTER_PID_FILE")
             if ! kill -0 $pid 2>/dev/null; then
                 echo "[!] Worker (PID $pid) died unexpectedly, restarting in ${backoff}s..."
+                stop_leftover_workers "$pid"
                 sleep $backoff
                 start_qcluster
                 # Increase backoff (exponential with max)

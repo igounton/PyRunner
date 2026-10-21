@@ -202,6 +202,12 @@ begins tracking at the current release; earlier history is in the git log.
   connection: the run kept showing "running" until the stale-run check failed it
   minutes later, with its output lost. The worker now reconnects and retries the
   save for about a minute.
+- **A crashed worker no longer leaves a second one running.** When the worker's
+  main process was killed hard (`kill -9`, an out-of-memory kill), its child
+  processes kept running and the container's monitor started a new worker next
+  to them: two clusters with twice the configured workers, and "Restart
+  workers" could only stop the new one. The monitor now stops what is left of
+  the old worker before it starts the new one.
 - **Brain AI works on PostgreSQL.** Every brain feeder extraction and reader
   run failed on a PostgreSQL core database ("Extraction failed. Check the worker
   and retry."): the daily-cap check locked the brain row outside a transaction,

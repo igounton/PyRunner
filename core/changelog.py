@@ -152,8 +152,9 @@ CHANGELOG = [
                     "environment creation no longer reserves a broken name. "
                     "manage.py migrate_db copies every table to PostgreSQL, so users, "
                     "API tokens, AI providers and channels come along, brain AI "
-                    "calls work on a PostgreSQL core database, and a finished run keeps "
-                    "its result when that database restarts while it runs."
+                    "calls work on a PostgreSQL core database, a finished run keeps "
+                    "its result when that database restarts while it runs, and a "
+                    "worker killed hard is replaced cleanly instead of running twice."
                 ),
             },
             {

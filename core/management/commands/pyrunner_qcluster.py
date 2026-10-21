@@ -44,6 +44,7 @@ class Command(QClusterCommand):
         )
 
     def handle(self, *args, **options):
+        self._lead_process_group()
         if options.get("reconcile_orphans"):
             self._reconcile_orphans()
         try:
@@ -61,6 +62,27 @@ class Command(QClusterCommand):
                 "starting with environment defaults."
             )
         super().handle(*args, **options)
+
+    @staticmethod
+    def _lead_process_group():
+        """Make this process the leader of its own process group (POSIX only).
+
+        django-q's sentinel, pusher, monitor and workers are children of this
+        process and inherit the group. If this process is killed hard (kill -9,
+        an OOM kill) those children are not: they live on, reparented, and keep
+        working. entrypoint.sh's monitor then kills the whole group by this
+        PID before it starts a replacement, so a crash never leaves two
+        clusters running side by side. Scripts are not affected: they start in
+        their own session. Already a group or session leader (for example PID 1
+        in a worker-only container): nothing to do.
+        """
+        if not hasattr(os, "setpgid"):
+            return
+        try:
+            if os.getpgid(0) != os.getpid():
+                os.setpgid(0, 0)
+        except OSError:
+            pass  # a session leader cannot move; it already leads its group
 
     def _reconcile_orphans(self):
         """Fail runs orphaned by a container or worker restart. Never fatal."""

@@ -645,7 +645,10 @@ resources are:
   DataStores lists.
 - **Delete-guarded** — a user can't delete them from the generic pages (the
   message routes them to your plugin); a superuser can force-delete with explicit
-  confirmation, which cleanly drops dangling grants.
+  confirmation, which cleanly drops dangling grants. Archiving is not guarded:
+  anyone who can edit scripts in the workspace can archive a plugin-owned one,
+  which also pauses its schedule, and restoring it does not resume the schedule
+  (tick **Schedule Active** on the script's edit form again).
 - **Cleaned up on uninstall** — `Delete plugin → remove data` deletes exactly the
   rows you own; user rows are never touched.
 

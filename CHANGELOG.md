@@ -40,6 +40,23 @@ begins tracking at the current release; earlier history is in the git log.
   limit if your scripts start many processes (several headless browsers), and set
   one yourself on other deployments (`docker run --pids-limit`, or compose
   `pids_limit`).
+- **New image name, and Coolify keeps your old compose file.** New releases are
+  published as `hasanaboulhasan/pyrun`; an install that still pulls
+  `hasanaboulhasan/pyrunner:latest` stays on the last image published under that
+  name, so change the image name when you update. On Coolify, **Redeploy** pulls
+  the image named in the compose file the resource already has: a 1.x Docker
+  Compose resource keeps the 1.x compose, without `pids_limit: 2048`,
+  `RATELIMIT_TRUSTED_PROXY_DEPTH=1` (login lockout and per-IP rate limits then
+  see Traefik's address for every visitor) or the pass-through for
+  `DATABASE_URL`, `PYRUNNER_DATA_DB_URL` and `PYRUNNER_ALLOW_PRIVATE_NETWORK`.
+  Replace the resource's compose with the 2.0 `docker-compose.coolify.yml`
+  (keep your environment values) before you redeploy. A Docker Image resource
+  needs the new image name and `RATELIMIT_TRUSTED_PROXY_DEPTH=1` added by hand.
+  The Coolify install guide's *Upgrading from 1.x* section has the steps.
+- **An upgraded instance keeps the name "PyRunner".** 1.x saved its default
+  instance name in the database, and the upgrade doesn't change a saved name, so
+  the header, page titles and emails still say "PyRunner". Change it under
+  **Settings → General → Instance name** if you want "PyRun".
 
 ### Added
 - **Workspace Brains** — immutable revisions and deduplicated text blobs,

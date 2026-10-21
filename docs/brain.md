@@ -61,8 +61,10 @@ approve or reject; ordinary proposals can also be edited before review.
 Server-side URL intake allows HTTP/HTTPS, applies network policy to each redirect,
 and limits downloads to 15 seconds, three redirects and 512 KB. Paste text when a
 site cannot be fetched. The feeder retries transient failures up to three times.
-An optional daily cost cap is configured per Brain. If a call's cost is unknown,
-another capped call waits rather than assuming it was free.
+An optional daily cost cap is configured per Brain. While any call today has an
+unknown cost, including one that is still running, a capped Brain refuses the
+next call instead of assuming it was free: a source captured meanwhile fails
+with a `daily_cap` error and needs **Retry** once the running call has finished.
 
 Approval creates one revision atomically. Repeated approval cannot apply it twice.
 Disjoint concurrent changes are preserved; overlapping changes require a fresh

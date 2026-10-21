@@ -47,7 +47,7 @@ Open `http://localhost:8000` in your browser.
 ```bash
 # Generate the two required keys first (copy the output somewhere safe):
 docker run --rm --entrypoint python hasanaboulhasan/pyrun:latest \
-  -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+  -c "import secrets; print(secrets.token_urlsafe(50))"
 docker run --rm --entrypoint python hasanaboulhasan/pyrun:latest \
   -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 
@@ -55,6 +55,8 @@ docker run -d \
   --name pyrunner \
   -p 8000:8000 \
   -v pyrunner_data:/app/data \
+  -v pyrunner_plugins:/app/plugins \
+  --pids-limit 2048 \
   -e SECRET_KEY='<generated-secret-key>' \
   -e ENCRYPTION_KEY='<generated-fernet-key>' \
   -e DEBUG=False \
@@ -69,6 +71,24 @@ The three `False` overrides are for plain-HTTP access (like `http://localhost:80
 Without them, `DEBUG=False` redirects every request to HTTPS and marks cookies
 `Secure`, so a plain-HTTP deployment is unreachable. If you serve PyRun behind
 an HTTPS reverse proxy, remove them to keep the secure defaults.
+
+`/app/data` holds the database, scripts, environments and secrets, and
+`/app/plugins` holds installed plugins; keep both volumes. `--pids-limit` caps
+how many processes the container can start: scripts run as root, which ignores
+the per-run process limit, so this is what stops a fork bomb in a script from
+taking down the server.
+
+### Upgrading from 1.x
+
+Download a backup first (**Settings → Backup**). The image is now
+`hasanaboulhasan/pyrun` (1.x used `hasanaboulhasan/pyrunner`), so change the
+image name when you update. Some things behave differently in 2.0: *Selected*
+secret injection gives a script only the secrets attached to it, each script
+runs in its own working folder, and datastore and plugin API tokens are stored
+hashed. Read the [upgrade notes in the changelog](CHANGELOG.md#upgrade-notes-from-1x)
+before you update. A Coolify Docker Compose resource also needs the 2.0
+`docker-compose.coolify.yml` pasted in: Redeploy keeps the compose file the
+resource was created with.
 
 ## Configuration
 
@@ -194,7 +214,7 @@ lean.
 
 - **Backend**: Django, django-q2
 - **Frontend**: Tailwind CSS
-- **Database**: SQLite
+- **Database**: SQLite (default) or PostgreSQL (`DATABASE_URL`)
 - **Deployment**: Docker
 
 ## Requirements

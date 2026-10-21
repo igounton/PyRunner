@@ -6,8 +6,15 @@ in-process Brain tools use the same handlers, schemas and grant checks.
 ## Authentication and workspace
 
 In **Console → API tokens**, create a **Unified API** token. Choose its workspace,
-permissions and optional Brain binding/tier. The secret is shown once; new tokens
-are stored as digests. Save it in your client's secret store.
+permissions and optional Brain binding/tier. The secret is shown once; every API
+token (Unified, datastore and plugin) is stored only as a digest, and the 2.0
+upgrade hashed the datastore and plugin tokens 1.x kept in plaintext. Save it in
+your client's secret store.
+
+A backup restore deletes the tokens bound to a Brain or scoped to a single data
+store, even when it restores the same Brain or store on the same instance (the
+restore preview lists them); unbound tokens are kept. Create new tokens for the
+affected clients after a restore. Backups never carry API tokens.
 
 Send `Authorization: Bearer <token>` or `X-API-Key: <token>`. The token selects the
 workspace; callers cannot override it in the URL or request body. Existing
@@ -85,6 +92,13 @@ Streamable HTTP with JSON responses; it does not open SSE streams or allocate se
 `GET /mcp` returns 405. JSON-RPC batches are rejected; accepted notifications return
 202 without a body. Tool failures use `isError: true` with the same application
 error code/message as REST. Protocol errors use JSON-RPC errors.
+
+Over a rate limit both answer HTTP 429 with `Retry-After`, in two shapes: a
+`tools/call` returns a JSON-RPC result with `isError: true` and the
+`rate_limited` error, while `tools/list` and the other methods share a
+per-token limit (60 a minute) and return the REST error envelope
+(`{"ok":false,"error":{"code":"rate_limited",…}}`) without a JSON-RPC `id`.
+Treat any 429 as "wait and retry".
 
 The implementation supports protocol `2026-07-28` discovery/per-request metadata
 and legacy initialization for `2025-11-25`, `2025-06-18`, `2025-03-26`. Use a

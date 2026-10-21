@@ -114,8 +114,20 @@ what you preview is what you get.
 - Admins can pause/resume **all** schedules globally from Settings; cron
   schedules are included in the global pause/resume.
 
+- **Archiving** a script pauses its schedule. Restoring the script does not
+  resume it: tick **Schedule Active** again.
+
 Every change is recorded in the script's **schedule history** (including the
 cron expression before/after), so you can audit who changed what and when.
+
+**Saving an Interval script restarts its interval.** An Interval schedule runs
+for the first time as soon as it is created or turned on, then every N minutes.
+Every **Save** of the script form re-creates the schedule, even when you only
+changed the code or nothing at all, so the script runs again within about a
+minute and the interval counts from then. For an hourly job, a code fix saved at
+10:20 means an extra run at about 10:20 and the next ones at 11:20, 12:20, and
+so on. The clock-based modes (daily, weekly, monthly, yearly, cron) are not
+affected by saving.
 
 ---
 

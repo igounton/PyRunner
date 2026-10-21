@@ -338,6 +338,19 @@ begins tracking at the current release; earlier history is in the git log.
   and a pending invite's details wrap instead of running under its buttons.
 - **Accessibility.** The Services card toggles have accessible names, and the
   header and sidebar navigation are labelled landmarks.
+- **One console layout.** Every console page shares one shell and page header
+  (title, breadcrumb, actions) with a skip link. Create and edit forms sit at
+  form width with their help in a side panel and Cancel next to the primary
+  button at the bottom right; detail pages use the full width. Brains get
+  segmented tabs, the Services page opens only the first unconfigured card and
+  has a sticky section index, and Environments and Users are tables (Users can
+  be filtered and shows each user's workspaces). On phones, lists drop their
+  secondary columns instead of scrolling sideways, recent runs show status and
+  time under the script name, and selects leave room for their arrow. A signed-in
+  member who opens an admin-only page gets a 403 inside the console ("Only
+  instance admins can open this page.") instead of a redirect. The developer
+  links moved from the sidebar footer to an *About PyRun* card under
+  Settings → System. Plugin pages keep their own layout for now.
 
 ### Security
 - **External secret providers can no longer reach private hosts.** The custom,

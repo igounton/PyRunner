@@ -38,6 +38,25 @@ CHANGELOG = [
                 ),
             },
             {
+                "tag": "Changed",
+                "title": "Upgrading from 1.x: new image name, compose file and name",
+                "body": (
+                    "New releases are published as hasanaboulhasan/pyrun; an install "
+                    "that still pulls hasanaboulhasan/pyrunner:latest stays on the "
+                    "last image published under that name, so change the image name "
+                    "when you update. On Coolify, Redeploy uses the compose file the "
+                    "resource already has: a 1.x Docker Compose resource keeps the 1.x "
+                    "compose, without the process limit, the trusted-proxy depth (login "
+                    "lockout and per-IP limits then see the proxy's address for every "
+                    "visitor) or the database and private-network settings. Replace it "
+                    "with the 2.0 docker-compose.coolify.yml, keeping your environment "
+                    "values, before you redeploy; a Docker Image resource needs the new "
+                    "image name and RATELIMIT_TRUSTED_PROXY_DEPTH=1 added by hand. An "
+                    "upgraded instance keeps its saved name \"PyRunner\": change it "
+                    "under Settings → General → Instance name if you want \"PyRun\"."
+                ),
+            },
+            {
                 "tag": "Added",
                 "title": "Brains: knowledge with history and explicit access",
                 "body": (
@@ -183,6 +202,20 @@ CHANGELOG = [
                     "stacked headers and card lists where tables scrolled sideways, "
                     "the header fits tablet and small-laptop widths, and the Services "
                     "toggles and navigation have accessible names."
+                ),
+            },
+            {
+                "tag": "Improved",
+                "title": "One console layout on every page",
+                "body": (
+                    "Every console page shares one shell and page header with a skip "
+                    "link. Forms sit at form width with their help in a side panel and "
+                    "Cancel beside the primary button; detail pages use the full width. "
+                    "Brains get tabs, Services opens only the first unconfigured card "
+                    "and has a section index, and Environments and Users are tables. On "
+                    "phones, lists drop secondary columns instead of scrolling sideways. "
+                    "Members who open an admin-only page see a 403 inside the console, "
+                    "and the developer links moved to Settings → System → About PyRun."
                 ),
             },
             {

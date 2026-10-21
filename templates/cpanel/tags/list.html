@@ -1,81 +1,68 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Tags - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block heading %}Tags{% endblock %}
+{% block subtitle %}Organize and categorize your scripts with tags{% endblock %}
+{% block actions %}
+<a href="{% url 'cpanel:tag_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+    New tag
+</a>
+{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
-
-            <!-- Header -->
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h1 class="text-[22px] font-semibold tracking-tight">Tags</h1>
-                    <p class="text-sm text-muted mt-1">Organize and categorize your scripts with tags</p>
-                </div>
-                <a href="{% url 'cpanel:tag_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    New tag
-                </a>
-            </div>
-
-            <!-- Tags table -->
-            {% if tags %}
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="overflow-x-auto">
-                <table class="w-full min-w-[560px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Tag</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Scripts</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
-                            {% if user.is_superuser %}<th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>{% endif %}
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for tag in tags %}
-                        <tr class="group hover:bg-panel-hi/50 transition-colors">
-                            <td class="px-6 py-3.5">
-                                <span class="inline-flex items-center px-3 py-1 text-sm rounded-full tag-{{ tag.color }}">{{ tag.name }}</span>
-                            </td>
-                            <td class="px-6 py-3.5">
-                                <a href="{% url 'cpanel:script_list' %}?tag={{ tag.pk }}" class="text-sm text-info hover:underline">{{ tag.workspace_script_count }} script{{ tag.workspace_script_count|pluralize }}</a>
-                            </td>
-                            <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ tag.created_at|timesince }} ago</td>
-                            {% if user.is_superuser %}
-                            <td class="px-6 py-3.5">
-                                <div class="flex items-center justify-end gap-2">
-                                    <a href="{% url 'cpanel:tag_edit' pk=tag.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</a>
-                                    <form method="post" action="{% url 'cpanel:tag_delete' pk=tag.pk %}" onsubmit="return confirm('Are you sure you want to delete the tag &quot;{{ tag.name|escapejs }}&quot;? It will be removed from all scripts.');" class="inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
-                            {% endif %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-            </section>
-            {% else %}
-            <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
-                <div class="w-14 h-14 rounded-full bg-info/10 grid place-items-center mx-auto mb-4">
-                    <svg class="w-7 h-7 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-                </div>
-                <h3 class="text-base font-semibold mb-1">No tags yet</h3>
-                <p class="text-sm text-muted mb-6">Create tags to organize and filter your scripts.</p>
-                <a href="{% url 'cpanel:tag_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    Create tag
-                </a>
-            </section>
-            {% endif %}
-
-        </div>
+{% block page %}
+<!-- Tags table -->
+{% if tags %}
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[560px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Tag</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Scripts</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
+                {% if user.is_superuser %}<th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for tag in tags %}
+            <tr class="group hover:bg-panel-hi/50 transition-colors">
+                <td class="px-6 py-3.5">
+                    <span class="inline-flex items-center px-3 py-1 text-sm rounded-full tag-{{ tag.color }}">{{ tag.name }}</span>
+                </td>
+                <td class="px-6 py-3.5">
+                    <a href="{% url 'cpanel:script_list' %}?tag={{ tag.pk }}" class="text-sm text-info hover:underline">{{ tag.workspace_script_count }} script{{ tag.workspace_script_count|pluralize }}</a>
+                </td>
+                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ tag.created_at|timesince }} ago</td>
+                {% if user.is_superuser %}
+                <td class="px-6 py-3.5">
+                    <div class="flex items-center justify-end gap-2">
+                        <a href="{% url 'cpanel:tag_edit' pk=tag.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</a>
+                        <form method="post" action="{% url 'cpanel:tag_delete' pk=tag.pk %}" onsubmit="return confirm('Are you sure you want to delete the tag &quot;{{ tag.name|escapejs }}&quot;? It will be removed from all scripts.');" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
+                        </form>
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     </div>
-</div>
+</section>
+{% else %}
+<section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
+    <div class="w-14 h-14 rounded-full bg-info/10 grid place-items-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+    </div>
+    <h3 class="text-base font-semibold mb-1">No tags yet</h3>
+    <p class="text-sm text-muted mb-6">Create tags to organize and filter your scripts.</p>
+    <a href="{% url 'cpanel:tag_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        Create tag
+    </a>
+</section>
+{% endif %}
 {% endblock %}

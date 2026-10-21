@@ -1,81 +1,66 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Schedule History - {{ script.name }} - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block breadcrumbs %}
+<a href="{% url 'cpanel:script_list' %}">Scripts</a>
+<a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="hover:text-text transition-colors truncate max-w-[12rem]">{{ script.name }}</a>
+<span>Schedule history</span>
+{% endblock %}
+{% block heading %}Schedule history{% endblock %}
+{% block subtitle %}Changes to {{ script.name }}'s schedule configuration{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
-
-            <!-- Header -->
-            <div>
-                <nav class="flex items-center gap-1.5 eyebrow text-faint mb-3">
-                    <a href="{% url 'cpanel:script_list' %}" class="hover:text-text transition-colors">Scripts</a>
-                    <span>/</span>
-                    <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="hover:text-text transition-colors truncate max-w-[12rem]">{{ script.name }}</a>
-                    <span>/</span>
-                    <span class="text-muted">Schedule history</span>
-                </nav>
-                <h1 class="text-[22px] font-semibold tracking-tight">Schedule history</h1>
-                <p class="text-sm text-muted mt-1">Changes to {{ script.name }}'s schedule configuration</p>
-            </div>
-
-            {% if history %}
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="overflow-x-auto">
-                <table class="w-full min-w-[680px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Change type</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Details</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Changed by</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">When</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for entry in history %}
-                        <tr class="hover:bg-panel-hi/50 transition-colors">
-                            <td class="px-6 py-3.5">
-                                {% if entry.change_type == 'created' %}
-                                <span class="px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok">Created</span>
-                                {% elif entry.change_type == 'updated' %}
-                                <span class="px-2 py-0.5 text-xs rounded-md bg-info/10 text-info">Updated</span>
-                                {% elif entry.change_type == 'enabled' %}
-                                <span class="px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok">Enabled</span>
-                                {% elif entry.change_type == 'disabled' %}
-                                <span class="px-2 py-0.5 text-xs rounded-md bg-warn/10 text-warn">Disabled</span>
-                                {% elif entry.change_type == 'deleted' %}
-                                <span class="px-2 py-0.5 text-xs rounded-md bg-fail/10 text-fail">Deleted</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-3.5 text-text text-sm">
-                                {% if entry.new_config %}
-                                    {% if entry.new_config.run_mode %}Mode: {{ entry.new_config.run_mode }}{% endif %}
-                                    {% if entry.new_config.interval_minutes %} | Interval: {{ entry.new_config.interval_minutes }} min{% endif %}
-                                    {% if entry.new_config.daily_times %} | Times: {{ entry.new_config.daily_times|join:", " }}{% endif %}
-                                {% else %}—{% endif %}
-                            </td>
-                            <td class="px-6 py-3.5 text-muted text-sm">{% if entry.changed_by %}{{ entry.changed_by.email }}{% else %}<span class="text-faint">System</span>{% endif %}</td>
-                            <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ entry.created_at|date:"M d, Y H:i" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-            </section>
-            {% else %}
-            <section class="rounded-2xl border border-line bg-panel px-6 py-12 text-center">
-                <p class="text-sm text-muted">No schedule history yet.</p>
-            </section>
-            {% endif %}
-
-            <div>
-                <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="text-sm text-info hover:underline">&larr; Back to script</a>
-            </div>
-
-        </div>
+{% block page %}
+{% if history %}
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[680px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Change type</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Details</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Changed by</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">When</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for entry in history %}
+            <tr class="hover:bg-panel-hi/50 transition-colors">
+                <td class="px-6 py-3.5">
+                    {% if entry.change_type == 'created' %}
+                    <span class="px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok">Created</span>
+                    {% elif entry.change_type == 'updated' %}
+                    <span class="px-2 py-0.5 text-xs rounded-md bg-info/10 text-info">Updated</span>
+                    {% elif entry.change_type == 'enabled' %}
+                    <span class="px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok">Enabled</span>
+                    {% elif entry.change_type == 'disabled' %}
+                    <span class="px-2 py-0.5 text-xs rounded-md bg-warn/10 text-warn">Disabled</span>
+                    {% elif entry.change_type == 'deleted' %}
+                    <span class="px-2 py-0.5 text-xs rounded-md bg-fail/10 text-fail">Deleted</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-3.5 text-text text-sm">
+                    {% if entry.new_config %}
+                        {% if entry.new_config.run_mode %}Mode: {{ entry.new_config.run_mode }}{% endif %}
+                        {% if entry.new_config.interval_minutes %} | Interval: {{ entry.new_config.interval_minutes }} min{% endif %}
+                        {% if entry.new_config.daily_times %} | Times: {{ entry.new_config.daily_times|join:", " }}{% endif %}
+                    {% else %}—{% endif %}
+                </td>
+                <td class="px-6 py-3.5 text-muted text-sm">{% if entry.changed_by %}{{ entry.changed_by.email }}{% else %}<span class="text-faint">System</span>{% endif %}</td>
+                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ entry.created_at|date:"M d, Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     </div>
+</section>
+{% else %}
+<section class="rounded-2xl border border-line bg-panel px-6 py-12 text-center">
+    <p class="text-sm text-muted">No schedule history yet.</p>
+</section>
+{% endif %}
+
+<div>
+    <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="text-sm text-info hover:underline">&larr; Back to script</a>
 </div>
 {% endblock %}

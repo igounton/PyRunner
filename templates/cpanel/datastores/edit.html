@@ -1,59 +1,44 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Edit {{ datastore.name }} - Data Stores - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block breadcrumbs %}
+<a href="{% url 'cpanel:datastore_list' %}">Data Stores</a>
+<a href="{% url 'cpanel:datastore_detail' pk=datastore.pk %}" class="hover:text-text transition-colors truncate max-w-[12rem]">{{ datastore.name }}</a>
+<span>Edit</span>
+{% endblock %}
+{% block heading %}Edit data store{% endblock %}
+{% block subtitle %}Update the data store name and description{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-2xl mx-auto space-y-5">
+{% block page %}
+<form method="post" class="rounded-2xl border border-line bg-panel p-6 space-y-5">
+    {% csrf_token %}
 
-            <!-- Header -->
-            <div>
-                <nav class="flex items-center gap-1.5 eyebrow text-faint mb-3">
-                    <a href="{% url 'cpanel:datastore_list' %}" class="hover:text-text transition-colors">Data Stores</a>
-                    <span>/</span>
-                    <a href="{% url 'cpanel:datastore_detail' pk=datastore.pk %}" class="hover:text-text transition-colors truncate max-w-[12rem]">{{ datastore.name }}</a>
-                    <span>/</span>
-                    <span class="text-muted">Edit</span>
-                </nav>
-                <h1 class="text-[22px] font-semibold tracking-tight">Edit data store</h1>
-                <p class="text-sm text-muted mt-1">Update the data store name and description</p>
-            </div>
+    <div>
+        <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
+        {{ form.name }}
+        {% if form.name.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.name.help_text }}</p>{% endif %}
+        {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
+    </div>
 
-            <form method="post" class="rounded-2xl border border-line bg-panel p-6 space-y-5">
-                {% csrf_token %}
+    <div>
+        <label for="id_description" class="block text-[13px] font-medium text-text mb-1.5">{{ form.description.label }}</label>
+        {{ form.description }}
+        {% if form.description.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.description.help_text }}</p>{% endif %}
+        {% if form.description.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.description.errors.0 }}</p>{% endif %}
+    </div>
 
-                <div>
-                    <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
-                    {{ form.name }}
-                    {% if form.name.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.name.help_text }}</p>{% endif %}
-                    {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
-                </div>
-
-                <div>
-                    <label for="id_description" class="block text-[13px] font-medium text-text mb-1.5">{{ form.description.label }}</label>
-                    {{ form.description }}
-                    {% if form.description.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.description.help_text }}</p>{% endif %}
-                    {% if form.description.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.description.errors.0 }}</p>{% endif %}
-                </div>
-
-                <div class="rounded-lg border border-warn/30 bg-warn/10 p-4 flex items-start gap-3">
-                    <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    <div class="text-sm text-muted">
-                        <p class="font-medium text-warn">Changing the name?</p>
-                        <p class="mt-1">If you change the name, scripts using the old name will fail. Update your scripts to use the new name.</p>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">
-                    <a href="{% url 'cpanel:datastore_detail' pk=datastore.pk %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>
-                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save changes</button>
-                </div>
-            </form>
-
+    <div class="rounded-lg border border-warn/30 bg-warn/10 p-4 flex items-start gap-3">
+        <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div class="text-sm text-muted">
+            <p class="font-medium text-warn">Changing the name?</p>
+            <p class="mt-1">If you change the name, scripts using the old name will fail. Update your scripts to use the new name.</p>
         </div>
     </div>
-</div>
+
+    <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">
+        <a href="{% url 'cpanel:datastore_detail' pk=datastore.pk %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>
+        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save changes</button>
+    </div>
+</form>
 {% endblock %}

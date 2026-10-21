@@ -96,7 +96,7 @@ class LibraryAndTagTests(DataBase):
         lib.save_revision({"a.py": "x = 1\n"})
         lib.save_revision({"a.py": "x = 2\n"})
         resp = self.client.get(reverse("cpanel:library_detail", kwargs={"pk": lib.pk}))
-        self.assertContains(resp, ">\n                                                Diff\n")
+        self.assertRegex(resp.content.decode(), r">\s*Diff\s*</a>")
         self.assertNotContains(resp, "View &amp; diff\n")
 
     def test_swatches_are_named_and_members_get_no_actions_column(self):

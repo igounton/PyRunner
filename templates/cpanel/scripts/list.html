@@ -1,159 +1,143 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Scripts - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block heading %}Scripts{% endblock %}
+{% block subtitle %}Your Python scripts {% if scripts %}· <span class="font-mono tnum text-text">{{ scripts|length }}</span> {% if status_filter %}{{ status_filter }}{% else %}active{% endif %}{% endif %}{% endblock %}
+{% block actions %}
+<a href="{% url 'cpanel:script_create' %}"
+   class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+    New script
+</a>
+{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
-
-            <!-- Header -->
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h1 class="text-[22px] font-semibold tracking-tight">Scripts</h1>
-                    <p class="text-sm text-muted mt-1">
-                        Your Python scripts
-                        {% if scripts %}· <span class="font-mono tnum text-text">{{ scripts|length }}</span> {% if status_filter %}{{ status_filter }}{% else %}active{% endif %}{% endif %}
-                    </p>
-                </div>
-                <a href="{% url 'cpanel:script_create' %}"
-                   class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    New script
-                </a>
-            </div>
-
-            <!-- Filters -->
-            <div class="flex items-center flex-wrap gap-3 justify-between">
-                <div class="inline-flex flex-wrap max-w-full items-center gap-1 p-1 rounded-lg border border-line bg-panel">
-                    <a href="{% url 'cpanel:script_list' %}{% if selected_tag %}?tag={{ selected_tag.pk }}{% endif %}"
-                       class="px-3 py-1.5 text-sm rounded-md transition-colors {% if not status_filter %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text{% endif %}">All</a>
-                    <a href="{% url 'cpanel:script_list' %}?status=enabled{% if selected_tag %}&tag={{ selected_tag.pk }}{% endif %}"
-                       class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'enabled' %}bg-ok/10 text-ok font-medium{% else %}text-muted hover:text-text{% endif %}">Enabled</a>
-                    <a href="{% url 'cpanel:script_list' %}?status=disabled{% if selected_tag %}&tag={{ selected_tag.pk }}{% endif %}"
-                       class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'disabled' %}bg-warn/10 text-warn font-medium{% else %}text-muted hover:text-text{% endif %}">Disabled</a>
-                    <a href="{% url 'cpanel:script_list' %}?status=archived{% if selected_tag %}&tag={{ selected_tag.pk }}{% endif %}"
-                       class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'archived' %}bg-fail/10 text-fail font-medium{% else %}text-muted hover:text-text{% endif %}">Archived</a>
-                </div>
-
-                {% if all_tags %}
-                <div class="flex items-center gap-2">
-                    <span class="eyebrow text-faint">Tag</span>
-                    <select onchange="filterByTag(this.value)"
-                            class="px-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
-                        <option value="">All tags</option>
-                        {% for tag in all_tags %}
-                        <option value="{{ tag.pk }}" {% if selected_tag.pk == tag.pk %}selected{% endif %}>{{ tag.name }}</option>
-                        {% endfor %}
-                    </select>
-                    {% if selected_tag %}
-                    <a href="{% url 'cpanel:script_list' %}{% if status_filter %}?status={{ status_filter }}{% endif %}"
-                       class="text-sm text-muted hover:text-text transition-colors">Clear</a>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                {% include "cpanel/_owner_filter.html" with owners=owners selected_owner=selected_owner %}
-            </div>
-
-            <script>
-            function filterByTag(tagId) {
-                const url = new URL(window.location.href);
-                if (tagId) { url.searchParams.set('tag', tagId); }
-                else { url.searchParams.delete('tag'); }
-                window.location.href = url.toString();
-            }
-            </script>
-
-            <!-- Scripts table -->
-            {% if scripts %}
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="overflow-x-auto">
-                <table class="w-full min-w-[820px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Name</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Environment</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Tags</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Runs</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Success</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for script in scripts %}
-                        <tr class="hover:bg-panel-hi/50 transition-colors">
-                            <td class="px-6 py-3.5 max-w-xs">
-                                <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="text-[13.5px] font-medium text-text hover:text-ok transition-colors">{{ script.name }}</a>
-                                {% include "cpanel/_owner_pill.html" with obj=script %}
-                                {% if script.description %}
-                                <p class="text-xs text-faint truncate mt-0.5">{{ script.description|truncatechars:60 }}</p>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-3.5">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-panel-hi text-muted">{{ script.environment.name }}</span>
-                            </td>
-                            <td class="px-6 py-3.5">
-                                <div class="flex flex-wrap gap-1">
-                                    {% for tag in script.tags.all %}
-                                    <a href="{% url 'cpanel:script_list' %}?tag={{ tag.pk }}{% if status_filter %}&status={{ status_filter }}{% endif %}"
-                                       class="inline-flex items-center px-2 py-0.5 text-xs rounded-full tag-{{ tag.color }} hover:opacity-80 transition-opacity">{{ tag.name }}</a>
-                                    {% empty %}
-                                    <span class="text-faint text-sm">—</span>
-                                    {% endfor %}
-                                </div>
-                            </td>
-                            <td class="px-6 py-3.5">
-                                {% if script.is_archived %}
-                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-fail/10 text-fail"><span class="w-1.5 h-1.5 rounded-full bg-fail"></span>Archived</span>
-                                {% elif script.is_enabled %}
-                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Enabled</span>
-                                {% else %}
-                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-warn/10 text-warn"><span class="w-1.5 h-1.5 rounded-full bg-warn"></span>Disabled</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-text">{{ script.run_count }}</td>
-                            <td class="px-6 py-3.5 text-right">
-                                {% if script.run_count > 0 %}
-                                <span class="font-mono tnum text-sm {% if script.success_rate >= 80 %}text-ok{% elif script.success_rate >= 50 %}text-warn{% else %}text-fail{% endif %}">{{ script.success_rate|floatformat:0 }}%</span>
-                                {% else %}
-                                <span class="text-faint">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ script.updated_at|timesince }} ago</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-            </section>
-            {% else %}
-            <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
-                <div class="w-14 h-14 rounded-full bg-ok/10 grid place-items-center mx-auto mb-4">
-                    <svg class="w-7 h-7 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-                </div>
-                <h3 class="text-base font-semibold mb-1">
-                    {% if status_filter or selected_tag %}No scripts match these filters{% else %}No scripts yet{% endif %}
-                </h3>
-                <p class="text-sm text-muted mb-6">
-                    {% if status_filter or selected_tag %}Try a different status or tag.{% else %}Create your first Python script to get started.{% endif %}
-                </p>
-                {% if status_filter or selected_tag %}
-                <a href="{% url 'cpanel:script_list' %}" class="text-sm text-info hover:underline">Clear filters</a>
-                {% else %}
-                <a href="{% url 'cpanel:script_create' %}"
-                   class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    Create script
-                </a>
-                {% endif %}
-            </section>
-            {% endif %}
-
-        </div>
+{% block page %}
+<!-- Filters -->
+<div class="flex items-center flex-wrap gap-3 justify-between">
+    <div class="inline-flex flex-wrap max-w-full items-center gap-1 p-1 rounded-lg border border-line bg-panel">
+        <a href="{% url 'cpanel:script_list' %}{% if selected_tag %}?tag={{ selected_tag.pk }}{% endif %}"
+           class="px-3 py-1.5 text-sm rounded-md transition-colors {% if not status_filter %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text{% endif %}">All</a>
+        <a href="{% url 'cpanel:script_list' %}?status=enabled{% if selected_tag %}&tag={{ selected_tag.pk }}{% endif %}"
+           class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'enabled' %}bg-ok/10 text-ok font-medium{% else %}text-muted hover:text-text{% endif %}">Enabled</a>
+        <a href="{% url 'cpanel:script_list' %}?status=disabled{% if selected_tag %}&tag={{ selected_tag.pk }}{% endif %}"
+           class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'disabled' %}bg-warn/10 text-warn font-medium{% else %}text-muted hover:text-text{% endif %}">Disabled</a>
+        <a href="{% url 'cpanel:script_list' %}?status=archived{% if selected_tag %}&tag={{ selected_tag.pk }}{% endif %}"
+           class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'archived' %}bg-fail/10 text-fail font-medium{% else %}text-muted hover:text-text{% endif %}">Archived</a>
     </div>
+
+    {% if all_tags %}
+    <div class="flex items-center gap-2">
+        <span class="eyebrow text-faint">Tag</span>
+        <select onchange="filterByTag(this.value)"
+                class="px-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
+            <option value="">All tags</option>
+            {% for tag in all_tags %}
+            <option value="{{ tag.pk }}" {% if selected_tag.pk == tag.pk %}selected{% endif %}>{{ tag.name }}</option>
+            {% endfor %}
+        </select>
+        {% if selected_tag %}
+        <a href="{% url 'cpanel:script_list' %}{% if status_filter %}?status={{ status_filter }}{% endif %}"
+           class="text-sm text-muted hover:text-text transition-colors">Clear</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% include "cpanel/_owner_filter.html" with owners=owners selected_owner=selected_owner %}
 </div>
+
+<script>
+function filterByTag(tagId) {
+    const url = new URL(window.location.href);
+    if (tagId) { url.searchParams.set('tag', tagId); }
+    else { url.searchParams.delete('tag'); }
+    window.location.href = url.toString();
+}
+</script>
+
+<!-- Scripts table -->
+{% if scripts %}
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[820px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Name</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Environment</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Tags</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Runs</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Success</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Updated</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for script in scripts %}
+            <tr class="hover:bg-panel-hi/50 transition-colors">
+                <td class="px-6 py-3.5 max-w-xs">
+                    <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="text-[13.5px] font-medium text-text hover:text-ok transition-colors">{{ script.name }}</a>
+                    {% include "cpanel/_owner_pill.html" with obj=script %}
+                    {% if script.description %}
+                    <p class="text-xs text-faint truncate mt-0.5">{{ script.description|truncatechars:60 }}</p>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-3.5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-panel-hi text-muted">{{ script.environment.name }}</span>
+                </td>
+                <td class="px-6 py-3.5">
+                    <div class="flex flex-wrap gap-1">
+                        {% for tag in script.tags.all %}
+                        <a href="{% url 'cpanel:script_list' %}?tag={{ tag.pk }}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+                           class="inline-flex items-center px-2 py-0.5 text-xs rounded-full tag-{{ tag.color }} hover:opacity-80 transition-opacity">{{ tag.name }}</a>
+                        {% empty %}
+                        <span class="text-faint text-sm">—</span>
+                        {% endfor %}
+                    </div>
+                </td>
+                <td class="px-6 py-3.5">
+                    {% if script.is_archived %}
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-fail/10 text-fail"><span class="w-1.5 h-1.5 rounded-full bg-fail"></span>Archived</span>
+                    {% elif script.is_enabled %}
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Enabled</span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-warn/10 text-warn"><span class="w-1.5 h-1.5 rounded-full bg-warn"></span>Disabled</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-text">{{ script.run_count }}</td>
+                <td class="px-6 py-3.5 text-right">
+                    {% if script.run_count > 0 %}
+                    <span class="font-mono tnum text-sm {% if script.success_rate >= 80 %}text-ok{% elif script.success_rate >= 50 %}text-warn{% else %}text-fail{% endif %}">{{ script.success_rate|floatformat:0 }}%</span>
+                    {% else %}
+                    <span class="text-faint">—</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ script.updated_at|timesince }} ago</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% else %}
+<section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
+    <div class="w-14 h-14 rounded-full bg-ok/10 grid place-items-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+    </div>
+    <h3 class="text-base font-semibold mb-1">
+        {% if status_filter or selected_tag %}No scripts match these filters{% else %}No scripts yet{% endif %}
+    </h3>
+    <p class="text-sm text-muted mb-6">
+        {% if status_filter or selected_tag %}Try a different status or tag.{% else %}Create your first Python script to get started.{% endif %}
+    </p>
+    {% if status_filter or selected_tag %}
+    <a href="{% url 'cpanel:script_list' %}" class="text-sm text-info hover:underline">Clear filters</a>
+    {% else %}
+    <a href="{% url 'cpanel:script_create' %}"
+       class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        Create script
+    </a>
+    {% endif %}
+</section>
+{% endif %}
 {% endblock %}

@@ -1,136 +1,123 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Databases - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block heading %}Databases{% endblock %}
+{% block subtitle %}Managed PostgreSQL databases for scripts and plugins — real SQL, isolated per database{% endblock %}
+{% block actions %}
+{% if server.configured %}
+<a href="{% url 'cpanel:database_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+    New database
+</a>
+{% endif %}
+{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
+{% block page %}
+<!-- Data server card -->
+{% if server.configured %}
+<div class="rounded-2xl border border-line bg-panel p-4 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+        <span class="w-10 h-10 rounded-lg bg-info/10 grid place-items-center flex-shrink-0">
+            <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+        </span>
+        <div>
+            <p class="eyebrow text-faint">Data server</p>
+            <p class="text-sm font-mono text-text">{{ server.host }}:{{ server.port }} / {{ server.dbname }}</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-2">
+        <a href="{% url 'cpanel:database_monitor' %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Monitor</a>
+        <form method="post" action="{% url 'cpanel:database_server_test' %}">
+            {% csrf_token %}
+            <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test connection</button>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="rounded-2xl border border-warn/30 bg-warn/5 p-5 flex items-start gap-3">
+    <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    <div class="text-sm text-muted">
+        <p class="font-medium text-text">No data server attached</p>
+        <p class="mt-1">Set <code class="font-mono text-info">PYRUNNER_DATA_DB_URL</code> to a PostgreSQL URL (a separate database from PyRun's own) and restart to enable managed databases. Works with a SQLite core — no migration needed. See <code class="font-mono">.env.example</code> for the setup snippet.</p>
+    </div>
+</div>
+{% endif %}
 
-            <!-- Header -->
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h1 class="text-[22px] font-semibold tracking-tight">Databases</h1>
-                    <p class="text-sm text-muted mt-1">Managed PostgreSQL databases for scripts and plugins — real SQL, isolated per database</p>
-                </div>
-                {% if server.configured %}
-                <a href="{% url 'cpanel:database_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    New database
-                </a>
-                {% endif %}
-            </div>
-
-            <!-- Data server card -->
-            {% if server.configured %}
-            <div class="rounded-2xl border border-line bg-panel p-4 flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <span class="w-10 h-10 rounded-lg bg-info/10 grid place-items-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
-                    </span>
-                    <div>
-                        <p class="eyebrow text-faint">Data server</p>
-                        <p class="text-sm font-mono text-text">{{ server.host }}:{{ server.port }} / {{ server.dbname }}</p>
+{% if databases %}
+<!-- Databases table -->
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[860px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Name</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Description</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Tables</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Size</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Conns</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Scripts</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for db in databases %}
+            <tr class="group hover:bg-panel-hi/50 transition-colors">
+                <td class="px-6 py-3.5">
+                    <a href="{% url 'cpanel:database_detail' pk=db.pk %}" class="font-mono text-sm text-info hover:underline">{{ db.name }}</a>
+                    {% include "cpanel/_owner_pill.html" with obj=db %}
+                </td>
+                <td class="px-6 py-3.5 text-sm text-muted max-w-xs truncate">{{ db.description|default:"—" }}</td>
+                <td class="px-6 py-3.5">
+                    {% if db.status == "ready" %}
+                    <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Ready</span>
+                    {% elif db.status == "error" %}
+                    <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-fail/10 text-fail"><span class="w-1.5 h-1.5 rounded-full bg-fail"></span>Error</span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-info/10 text-info"><span class="w-1.5 h-1.5 rounded-full bg-info"></span>Provisioning</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.table_count }}{% else %}—{% endif %}</td>
+                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.size_display }}{% else %}—{% endif %}</td>
+                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.connections }}{% else %}—{% endif %}</td>
+                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ db.granted_count }}</td>
+                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ db.created_at|timesince }} ago</td>
+                <td class="px-6 py-3.5">
+                    <div class="flex items-center justify-end gap-2">
+                        <a href="{% url 'cpanel:database_detail' pk=db.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">View</a>
                     </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <a href="{% url 'cpanel:database_monitor' %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Monitor</a>
-                    <form method="post" action="{% url 'cpanel:database_server_test' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test connection</button>
-                    </form>
-                </div>
-            </div>
-            {% else %}
-            <div class="rounded-2xl border border-warn/30 bg-warn/5 p-5 flex items-start gap-3">
-                <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                <div class="text-sm text-muted">
-                    <p class="font-medium text-text">No data server attached</p>
-                    <p class="mt-1">Set <code class="font-mono text-info">PYRUNNER_DATA_DB_URL</code> to a PostgreSQL URL (a separate database from PyRun's own) and restart to enable managed databases. Works with a SQLite core — no migration needed. See <code class="font-mono">.env.example</code> for the setup snippet.</p>
-                </div>
-            </div>
-            {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
 
-            {% if databases %}
-            <!-- Databases table -->
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="overflow-x-auto">
-                <table class="w-full min-w-[860px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Name</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Description</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Tables</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Size</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Conns</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Scripts</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for db in databases %}
-                        <tr class="group hover:bg-panel-hi/50 transition-colors">
-                            <td class="px-6 py-3.5">
-                                <a href="{% url 'cpanel:database_detail' pk=db.pk %}" class="font-mono text-sm text-info hover:underline">{{ db.name }}</a>
-                                {% include "cpanel/_owner_pill.html" with obj=db %}
-                            </td>
-                            <td class="px-6 py-3.5 text-sm text-muted max-w-xs truncate">{{ db.description|default:"—" }}</td>
-                            <td class="px-6 py-3.5">
-                                {% if db.status == "ready" %}
-                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Ready</span>
-                                {% elif db.status == "error" %}
-                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-fail/10 text-fail"><span class="w-1.5 h-1.5 rounded-full bg-fail"></span>Error</span>
-                                {% else %}
-                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-info/10 text-info"><span class="w-1.5 h-1.5 rounded-full bg-info"></span>Provisioning</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.table_count }}{% else %}—{% endif %}</td>
-                            <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.size_display }}{% else %}—{% endif %}</td>
-                            <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.connections }}{% else %}—{% endif %}</td>
-                            <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ db.granted_count }}</td>
-                            <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ db.created_at|timesince }} ago</td>
-                            <td class="px-6 py-3.5">
-                                <div class="flex items-center justify-end gap-2">
-                                    <a href="{% url 'cpanel:database_detail' pk=db.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">View</a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-            </section>
-
-            <!-- Usage info -->
-            <div class="rounded-2xl border border-line bg-panel p-5">
-                <h3 class="text-sm font-medium text-text mb-2">Using databases in scripts</h3>
-                <p class="text-sm text-muted mb-3">Grant a database to a script on the database's page, then connect with the <code class="font-mono text-info">pyrunner_db</code> helper — a real PostgreSQL connection, scoped to this database only. Requires <code class="font-mono text-info">psycopg[binary]</code> in the script's environment.</p>
-                <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text whitespace-pre overflow-x-auto">import pyrunner_db
+<!-- Usage info -->
+<div class="rounded-2xl border border-line bg-panel p-5">
+    <h3 class="text-sm font-medium text-text mb-2">Using databases in scripts</h3>
+    <p class="text-sm text-muted mb-3">Grant a database to a script on the database's page, then connect with the <code class="font-mono text-info">pyrunner_db</code> helper — a real PostgreSQL connection, scoped to this database only. Requires <code class="font-mono text-info">psycopg[binary]</code> in the script's environment.</p>
+    <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text whitespace-pre overflow-x-auto">import pyrunner_db
 
 with pyrunner_db.connect("{{ databases.0.name|default:'my_database' }}") as conn:
     conn.execute("CREATE TABLE IF NOT EXISTS items (id serial PRIMARY KEY, data jsonb)")
     conn.execute("INSERT INTO items (data) VALUES (%s)", ('{"hello": "world"}',))
     rows = conn.execute("SELECT * FROM items").fetchall()</code>
-            </div>
-            {% elif server.configured %}
-            <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
-                <div class="w-14 h-14 rounded-full bg-info/10 grid place-items-center mx-auto mb-4">
-                    <svg class="w-7 h-7 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6v6c0 1.66 3.582 3 8 3s8-1.34 8-3V6M4 6c0 1.66 3.582 3 8 3s8-1.34 8-3-3.582-3-8-3-8 1.34-8 3zm16 6v6c0 1.66-3.582 3-8 3s-8-1.34-8-3v-6"/></svg>
-                </div>
-                <h3 class="text-base font-semibold mb-1">No databases yet</h3>
-                <p class="text-sm text-muted mb-6">Create a database to give your scripts and plugins real SQL storage — tables, joins, transactions.</p>
-                <a href="{% url 'cpanel:database_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    Create database
-                </a>
-            </section>
-            {% endif %}
-
-        </div>
-    </div>
 </div>
+{% elif server.configured %}
+<section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
+    <div class="w-14 h-14 rounded-full bg-info/10 grid place-items-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6v6c0 1.66 3.582 3 8 3s8-1.34 8-3V6M4 6c0 1.66 3.582 3 8 3s8-1.34 8-3-3.582-3-8-3-8 1.34-8 3zm16 6v6c0 1.66-3.582 3-8 3s-8-1.34-8-3v-6"/></svg>
+    </div>
+    <h3 class="text-base font-semibold mb-1">No databases yet</h3>
+    <p class="text-sm text-muted mb-6">Create a database to give your scripts and plugins real SQL storage — tables, joins, transactions.</p>
+    <a href="{% url 'cpanel:database_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        Create database
+    </a>
+</section>
+{% endif %}
 {% endblock %}

@@ -1,169 +1,155 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Databases Monitor - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block breadcrumbs %}
+<a href="{% url 'cpanel:database_list' %}">Databases</a>
+<span>Monitor</span>
+{% endblock %}
+{% block heading %}Monitor{% endblock %}
+{% block subtitle %}Live activity for this workspace's databases on {{ server.host }}:{{ server.port }} / {{ server.dbname }}{% endblock %}
+{% block actions %}
+<a href="{% url 'cpanel:database_monitor' %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Refresh</a>
+{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
+{% block page %}
+{% if not activity.ok %}
+<div class="rounded-2xl border border-fail/30 bg-fail/5 p-4 text-sm text-muted">
+    <span class="font-medium text-fail">Data server unreachable:</span> {{ activity.error }}
+</div>
+{% endif %}
 
-            <!-- Header -->
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <nav class="flex items-center gap-1.5 eyebrow text-faint mb-3">
-                        <a href="{% url 'cpanel:database_list' %}" class="hover:text-text transition-colors">Databases</a>
-                        <span>/</span>
-                        <span class="text-muted">Monitor</span>
-                    </nav>
-                    <h1 class="text-[22px] font-semibold tracking-tight">Monitor</h1>
-                    <p class="text-sm text-muted mt-1">Live activity for this workspace's databases on {{ server.host }}:{{ server.port }} / {{ server.dbname }}</p>
-                </div>
-                <a href="{% url 'cpanel:database_monitor' %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Refresh</a>
-            </div>
-
-            {% if not activity.ok %}
-            <div class="rounded-2xl border border-fail/30 bg-fail/5 p-4 text-sm text-muted">
-                <span class="font-medium text-fail">Data server unreachable:</span> {{ activity.error }}
-            </div>
-            {% endif %}
-
-            <!-- Summary tiles -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div class="rounded-2xl border border-line bg-panel p-4">
-                    <p class="eyebrow text-faint">Active queries</p>
-                    <p class="text-xl font-semibold font-mono tnum mt-1 {% if activity.active %}text-info{% else %}text-text{% endif %}">{{ activity.active }}</p>
-                </div>
-                <div class="rounded-2xl border border-line bg-panel p-4">
-                    <p class="eyebrow text-faint">Long-running (&gt;30s)</p>
-                    <p class="text-xl font-semibold font-mono tnum mt-1 {% if activity.long_running %}text-warn{% else %}text-text{% endif %}">{{ activity.long_running }}</p>
-                </div>
-                <div class="rounded-2xl border border-line bg-panel p-4">
-                    <p class="eyebrow text-faint">Blocked</p>
-                    <p class="text-xl font-semibold font-mono tnum mt-1 {% if activity.blocked %}text-fail{% else %}text-text{% endif %}">{{ activity.blocked }}</p>
-                </div>
-                <div class="rounded-2xl border border-line bg-panel p-4">
-                    <p class="eyebrow text-faint">Idle in transaction</p>
-                    <p class="text-xl font-semibold font-mono tnum mt-1 {% if activity.idle_in_transaction %}text-warn{% else %}text-text{% endif %}">{{ activity.idle_in_transaction }}</p>
-                </div>
-            </div>
-
-            <!-- Databases overview -->
-            {% if databases %}
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="px-5 pt-4 pb-1"><h2 class="text-sm font-medium text-text">Databases</h2></div>
-                <div class="overflow-x-auto">
-                <table class="w-full min-w-[520px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal">Database</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Tables</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Size</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Connections</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for db in databases %}
-                        <tr class="hover:bg-panel-hi/50 transition-colors">
-                            <td class="px-5 py-2.5"><a href="{% url 'cpanel:database_detail' pk=db.pk %}" class="font-mono text-sm text-info hover:underline">{{ db.name }}</a></td>
-                            <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.table_count }}{% else %}—{% endif %}</td>
-                            <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.size_display }}{% else %}—{% endif %}</td>
-                            <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.connections }}{% else %}—{% endif %}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-            </section>
-            {% endif %}
-
-            <!-- Live sessions -->
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="px-5 pt-4 pb-1 flex items-center justify-between">
-                    <h2 class="text-sm font-medium text-text">Live sessions</h2>
-                    <span class="text-xs text-faint">{{ activity.sessions|length }} session{{ activity.sessions|length|pluralize }}</span>
-                </div>
-                {% if activity.sessions %}
-                <div class="overflow-x-auto">
-                <table class="w-full min-w-[760px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal">PID</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal">Database</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal">State</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Runtime</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal">Query</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for s in activity.sessions %}
-                        <tr class="hover:bg-panel-hi/50 transition-colors">
-                            <td class="px-5 py-2.5 font-mono tnum text-sm text-muted">{{ s.pid }}</td>
-                            <td class="px-5 py-2.5 font-mono text-sm text-text">{{ s.database }}</td>
-                            <td class="px-5 py-2.5">
-                                {% if s.blocked_by %}
-                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-fail/10 text-fail">blocked ({{ s.blocked_by }})</span>
-                                {% elif s.long_running %}
-                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-warn/10 text-warn">active — long</span>
-                                {% elif s.state == "active" %}
-                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-info/10 text-info">active</span>
-                                {% elif s.state == "idle in transaction" %}
-                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-warn/10 text-warn">idle in txn</span>
-                                {% else %}
-                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-panel-hi text-muted">{{ s.state|default:"—" }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{% if s.seconds is not None %}{{ s.seconds }}s{% else %}—{% endif %}</td>
-                            <td class="px-5 py-2.5"><code class="block max-w-lg truncate font-mono text-xs text-muted" title="{{ s.query }}">{{ s.query|default:"—" }}</code></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-                {% else %}
-                <p class="px-5 pb-4 text-sm text-muted">No live sessions from this workspace's databases.</p>
-                {% endif %}
-            </section>
-
-            <!-- Slow queries -->
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="px-5 pt-4 pb-1"><h2 class="text-sm font-medium text-text">Slow queries <span class="text-xs text-faint font-normal">(pg_stat_statements, by total time)</span></h2></div>
-                {% if not slow.available %}
-                <div class="mx-5 mb-4 mt-2 rounded-lg border border-warn/30 bg-warn/5 p-3 text-sm text-muted">{{ slow.reason }}</div>
-                {% elif slow.queries %}
-                <div class="overflow-x-auto">
-                <table class="w-full min-w-[760px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal">Database</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Calls</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Total ms</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Mean ms</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Rows</th>
-                            <th class="px-5 py-2.5 eyebrow text-faint font-normal">Query</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for q in slow.queries %}
-                        <tr class="hover:bg-panel-hi/50 transition-colors">
-                            <td class="px-5 py-2.5 font-mono text-sm text-text">{{ q.database }}</td>
-                            <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{{ q.calls }}</td>
-                            <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{{ q.total_ms }}</td>
-                            <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{{ q.mean_ms }}</td>
-                            <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{{ q.rows }}</td>
-                            <td class="px-5 py-2.5"><code class="block max-w-lg truncate font-mono text-xs text-muted" title="{{ q.query }}">{{ q.query }}</code></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-                {% else %}
-                <p class="px-5 pb-4 text-sm text-muted">No recorded statements from this workspace's databases yet.</p>
-                {% endif %}
-            </section>
-
-        </div>
+<!-- Summary tiles -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="rounded-2xl border border-line bg-panel p-4">
+        <p class="eyebrow text-faint">Active queries</p>
+        <p class="text-xl font-semibold font-mono tnum mt-1 {% if activity.active %}text-info{% else %}text-text{% endif %}">{{ activity.active }}</p>
+    </div>
+    <div class="rounded-2xl border border-line bg-panel p-4">
+        <p class="eyebrow text-faint">Long-running (&gt;30s)</p>
+        <p class="text-xl font-semibold font-mono tnum mt-1 {% if activity.long_running %}text-warn{% else %}text-text{% endif %}">{{ activity.long_running }}</p>
+    </div>
+    <div class="rounded-2xl border border-line bg-panel p-4">
+        <p class="eyebrow text-faint">Blocked</p>
+        <p class="text-xl font-semibold font-mono tnum mt-1 {% if activity.blocked %}text-fail{% else %}text-text{% endif %}">{{ activity.blocked }}</p>
+    </div>
+    <div class="rounded-2xl border border-line bg-panel p-4">
+        <p class="eyebrow text-faint">Idle in transaction</p>
+        <p class="text-xl font-semibold font-mono tnum mt-1 {% if activity.idle_in_transaction %}text-warn{% else %}text-text{% endif %}">{{ activity.idle_in_transaction }}</p>
     </div>
 </div>
+
+<!-- Databases overview -->
+{% if databases %}
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="px-5 pt-4 pb-1"><h2 class="text-sm font-medium text-text">Databases</h2></div>
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[520px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal">Database</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Tables</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Size</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Connections</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for db in databases %}
+            <tr class="hover:bg-panel-hi/50 transition-colors">
+                <td class="px-5 py-2.5"><a href="{% url 'cpanel:database_detail' pk=db.pk %}" class="font-mono text-sm text-info hover:underline">{{ db.name }}</a></td>
+                <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.table_count }}{% else %}—{% endif %}</td>
+                <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.size_display }}{% else %}—{% endif %}</td>
+                <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.connections }}{% else %}—{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- Live sessions -->
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="px-5 pt-4 pb-1 flex items-center justify-between">
+        <h2 class="text-sm font-medium text-text">Live sessions</h2>
+        <span class="text-xs text-faint">{{ activity.sessions|length }} session{{ activity.sessions|length|pluralize }}</span>
+    </div>
+    {% if activity.sessions %}
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[760px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal">PID</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal">Database</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal">State</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Runtime</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal">Query</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for s in activity.sessions %}
+            <tr class="hover:bg-panel-hi/50 transition-colors">
+                <td class="px-5 py-2.5 font-mono tnum text-sm text-muted">{{ s.pid }}</td>
+                <td class="px-5 py-2.5 font-mono text-sm text-text">{{ s.database }}</td>
+                <td class="px-5 py-2.5">
+                    {% if s.blocked_by %}
+                    <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-fail/10 text-fail">blocked ({{ s.blocked_by }})</span>
+                    {% elif s.long_running %}
+                    <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-warn/10 text-warn">active — long</span>
+                    {% elif s.state == "active" %}
+                    <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-info/10 text-info">active</span>
+                    {% elif s.state == "idle in transaction" %}
+                    <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-warn/10 text-warn">idle in txn</span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-panel-hi text-muted">{{ s.state|default:"—" }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{% if s.seconds is not None %}{{ s.seconds }}s{% else %}—{% endif %}</td>
+                <td class="px-5 py-2.5"><code class="block max-w-lg truncate font-mono text-xs text-muted" title="{{ s.query }}">{{ s.query|default:"—" }}</code></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="px-5 pb-4 text-sm text-muted">No live sessions from this workspace's databases.</p>
+    {% endif %}
+</section>
+
+<!-- Slow queries -->
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="px-5 pt-4 pb-1"><h2 class="text-sm font-medium text-text">Slow queries <span class="text-xs text-faint font-normal">(pg_stat_statements, by total time)</span></h2></div>
+    {% if not slow.available %}
+    <div class="mx-5 mb-4 mt-2 rounded-lg border border-warn/30 bg-warn/5 p-3 text-sm text-muted">{{ slow.reason }}</div>
+    {% elif slow.queries %}
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[760px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal">Database</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Calls</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Total ms</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Mean ms</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal text-right">Rows</th>
+                <th class="px-5 py-2.5 eyebrow text-faint font-normal">Query</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for q in slow.queries %}
+            <tr class="hover:bg-panel-hi/50 transition-colors">
+                <td class="px-5 py-2.5 font-mono text-sm text-text">{{ q.database }}</td>
+                <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{{ q.calls }}</td>
+                <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{{ q.total_ms }}</td>
+                <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{{ q.mean_ms }}</td>
+                <td class="px-5 py-2.5 text-right font-mono tnum text-sm text-muted">{{ q.rows }}</td>
+                <td class="px-5 py-2.5"><code class="block max-w-lg truncate font-mono text-xs text-muted" title="{{ q.query }}">{{ q.query }}</code></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="px-5 pb-4 text-sm text-muted">No recorded statements from this workspace's databases yet.</p>
+    {% endif %}
+</section>
 {% endblock %}

@@ -127,6 +127,22 @@ select:not([multiple]):not([size]) {
         letter-spacing: 0.2em;
         text-transform: uppercase;
     }
+
+    /* Page breadcrumb trail (cpanel/layout.html). Children are links/spans;
+       the separators are drawn here, the last crumb is the current page. */
+    .crumbs {
+        @apply flex items-center gap-1.5 min-w-0 text-faint;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 10.5px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+    .crumbs > * { @apply truncate min-w-0; }
+    .crumbs > :not(:last-child) { @apply flex-shrink-0 max-w-[14rem]; }
+    .crumbs > * + *::before { content: "/"; @apply mr-1.5 text-faint; }
+    .crumbs > a { @apply transition-colors; }
+    .crumbs > a:hover { @apply text-text; }
+    .crumbs > :last-child { @apply text-muted; }
 }
 
 @layer utilities {

@@ -1,97 +1,81 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Token Created - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block breadcrumbs %}
+{% if user.is_superuser %}<a href="{% url 'cpanel:settings' %}">Settings</a>{% endif %}
+<a href="{% url 'cpanel:api_token_list' %}">API Tokens</a>
+<span>Created</span>
+{% endblock %}
+{% block heading %}API token created{% endblock %}
+{% block subtitle %}Copy your new token now — it won't be shown again{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-2xl mx-auto space-y-5">
-
-            <!-- Header -->
-            <div>
-                <nav class="flex items-center gap-1.5 eyebrow text-faint mb-3">
-                    <a href="{% url 'cpanel:settings' %}" class="hover:text-text transition-colors">Settings</a>
-                    <span>/</span>
-                    <a href="{% url 'cpanel:api_token_list' %}" class="hover:text-text transition-colors">API Tokens</a>
-                    <span>/</span>
-                    <span class="text-muted">Created</span>
-                </nav>
-                <h1 class="text-[22px] font-semibold tracking-tight">API token created</h1>
-                <p class="text-sm text-muted mt-1">Copy your new token now — it won't be shown again</p>
-            </div>
-
-            <div class="rounded-2xl border border-line bg-panel p-6">
-                <!-- Success -->
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-full bg-ok/10 grid place-items-center flex-shrink-0">
-                        <svg class="w-6 h-6 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                    </div>
-                    <div>
-                        <h2 class="font-semibold text-text">Token "{{ token_obj.name }}" created successfully</h2>
-                        <p class="text-sm text-muted">{% if token_obj.scope == "api" %}{{ token_obj.scope_display }}{% elif token_obj.datastore %}Access: {{ token_obj.datastore.name }} datastore{% else %}Access: all datastores{% endif %}</p>
-                    </div>
-                </div>
-
-                <!-- Token display -->
-                <div class="mb-6">
-                    <label class="block text-[13px] font-medium text-text mb-1.5">Your API token</label>
-                    <div class="relative">
-                        <input type="text" id="token-value" value="{{ token_value }}" readonly
-                               class="w-full px-3.5 py-2.5 pr-24 bg-ink border border-line-soft rounded-lg text-text font-mono text-sm focus:outline-none">
-                        <button type="button" onclick="copyToken()" id="copy-btn"
-                                class="absolute right-2 top-1/2 -translate-y-1/2 text-[13px] font-medium px-3 py-1.5 rounded-md bg-ok text-ink hover:opacity-90 transition">Copy</button>
-                    </div>
-                </div>
-
-                <!-- Warning -->
-                <div class="mb-6 rounded-lg border border-warn/30 bg-warn/10 p-4 flex items-start gap-3">
-                    <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    <div class="text-sm">
-                        <p class="font-medium text-warn">Copy this token now!</p>
-                        <p class="text-muted mt-1">This is the only time you'll see this token. Store it securely — if you lose it, you'll need to create a new one.</p>
-                    </div>
-                </div>
-
-                <!-- Usage examples -->
-                <div class="rounded-lg border border-line-soft bg-panel-hi/40 p-4">
-                    <h3 class="text-sm font-medium text-text mb-3">Quick start</h3>
-                    <p class="text-sm text-muted mb-3">Use your token to access the API:</p>
-                    <div class="space-y-3">
-                        {% if token_obj.scope == "api" %}
-                        <div>
-                            {% if token_obj.kind == "url" %}
-                            <p class="text-xs text-faint mb-1">MCP connector URL (replace YOUR_URL_TOKEN with the token above)</p>
-                            <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">{{ request.scheme }}://{{ request.get_host }}/mcp/k/YOUR_URL_TOKEN/</code>
-                            {% else %}
-                            <p class="text-xs text-faint mb-1">List available endpoints</p>
-                            <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer YOUR_TOKEN" {{ request.scheme }}://{{ request.get_host }}/api/v1/_catalog</code>
-                            {% endif %}
-                            <a href="{% url 'cpanel:connect' %}" class="block text-sm text-ok mt-3">Connector setup instructions</a>
-                        </div>
-                        {% else %}
-                        <div>
-                            <p class="text-xs text-faint mb-1">List datastores</p>
-                            <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer {{ token_value }}" {{ request.scheme }}://{{ request.get_host }}/api/v1/datastores/</code>
-                        </div>
-                        <div>
-                            <p class="text-xs text-faint mb-1">Get entries from a datastore</p>
-                            <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer {{ token_value }}" {{ request.scheme }}://{{ request.get_host }}/api/v1/datastores/YOUR_STORE/entries/</code>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-end pt-6 mt-6 border-t border-line-soft">
-                    <a href="{% url 'cpanel:api_token_list' %}" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Done</a>
-                </div>
-            </div>
-
+{% block page %}
+<div class="rounded-2xl border border-line bg-panel p-6">
+    <!-- Success -->
+    <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-full bg-ok/10 grid place-items-center flex-shrink-0">
+            <svg class="w-6 h-6 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div>
+            <h2 class="font-semibold text-text">Token "{{ token_obj.name }}" created successfully</h2>
+            <p class="text-sm text-muted">{% if token_obj.scope == "api" %}{{ token_obj.scope_display }}{% elif token_obj.datastore %}Access: {{ token_obj.datastore.name }} datastore{% else %}Access: all datastores{% endif %}</p>
         </div>
     </div>
-</div>
 
+    <!-- Token display -->
+    <div class="mb-6">
+        <label class="block text-[13px] font-medium text-text mb-1.5">Your API token</label>
+        <div class="relative">
+            <input type="text" id="token-value" value="{{ token_value }}" readonly
+                   class="w-full px-3.5 py-2.5 pr-24 bg-ink border border-line-soft rounded-lg text-text font-mono text-sm focus:outline-none">
+            <button type="button" onclick="copyToken()" id="copy-btn"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-[13px] font-medium px-3 py-1.5 rounded-md bg-ok text-ink hover:opacity-90 transition">Copy</button>
+        </div>
+    </div>
+
+    <!-- Warning -->
+    <div class="mb-6 rounded-lg border border-warn/30 bg-warn/10 p-4 flex items-start gap-3">
+        <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div class="text-sm">
+            <p class="font-medium text-warn">Copy this token now!</p>
+            <p class="text-muted mt-1">This is the only time you'll see this token. Store it securely — if you lose it, you'll need to create a new one.</p>
+        </div>
+    </div>
+
+    <!-- Usage examples -->
+    <div class="rounded-lg border border-line-soft bg-panel-hi/40 p-4">
+        <h3 class="text-sm font-medium text-text mb-3">Quick start</h3>
+        <p class="text-sm text-muted mb-3">Use your token to access the API:</p>
+        <div class="space-y-3">
+            {% if token_obj.scope == "api" %}
+            <div>
+                {% if token_obj.kind == "url" %}
+                <p class="text-xs text-faint mb-1">MCP connector URL (replace YOUR_URL_TOKEN with the token above)</p>
+                <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">{{ request.scheme }}://{{ request.get_host }}/mcp/k/YOUR_URL_TOKEN/</code>
+                {% else %}
+                <p class="text-xs text-faint mb-1">List available endpoints</p>
+                <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer YOUR_TOKEN" {{ request.scheme }}://{{ request.get_host }}/api/v1/_catalog</code>
+                {% endif %}
+                <a href="{% url 'cpanel:connect' %}" class="block text-sm text-ok mt-3">Connector setup instructions</a>
+            </div>
+            {% else %}
+            <div>
+                <p class="text-xs text-faint mb-1">List datastores</p>
+                <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer {{ token_value }}" {{ request.scheme }}://{{ request.get_host }}/api/v1/datastores/</code>
+            </div>
+            <div>
+                <p class="text-xs text-faint mb-1">Get entries from a datastore</p>
+                <code class="block p-2 bg-ink border border-line-soft rounded-lg text-xs font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer {{ token_value }}" {{ request.scheme }}://{{ request.get_host }}/api/v1/datastores/YOUR_STORE/entries/</code>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="flex items-center justify-end pt-6 mt-6 border-t border-line-soft">
+        <a href="{% url 'cpanel:api_token_list' %}" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Done</a>
+    </div>
+</div>
 <script>
 function copyToken() {
     const tokenInput = document.getElementById('token-value');

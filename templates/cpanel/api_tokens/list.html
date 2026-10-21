@@ -1,168 +1,154 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}API Tokens - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block breadcrumbs %}{% if user.is_superuser %}
+<a href="{% url 'cpanel:settings' %}">Settings</a>
+<span>API Tokens</span>
+{% endif %}{% endblock %}
+{% block heading %}API Tokens{% endblock %}
+{% block subtitle %}Manage API tokens for datastores, plugins and unified API endpoints{% endblock %}
+{% block actions %}
+<a href="{% url 'cpanel:api_token_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+    Create token
+</a>
+{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
-
-            <!-- Header -->
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <nav class="flex items-center gap-1.5 eyebrow text-faint mb-3">
-                        <a href="{% url 'cpanel:settings' %}" class="hover:text-text transition-colors">Settings</a>
-                        <span>/</span>
-                        <span class="text-muted">API Tokens</span>
-                    </nav>
-                    <h1 class="text-[22px] font-semibold tracking-tight">API Tokens</h1>
-                <p class="text-sm text-muted mt-1">Manage API tokens for datastores, plugins and unified API endpoints</p>
+{% block page %}
+<!-- Tokens table -->
+{% if tokens %}
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <!-- Phones: one card per token (U62) — the table would scroll Status and actions off-screen. -->
+    <ul class="sm:hidden divide-y divide-line-soft">
+        {% for token in tokens %}
+        <li class="p-4 space-y-2.5">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="font-medium text-text break-words">{{ token.name }}</p>
+                    <p class="font-mono text-xs text-faint mt-0.5">{{ token.get_masked_token }}</p>
                 </div>
-                <a href="{% url 'cpanel:api_token_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    Create token
-                </a>
+                <div class="text-right flex-shrink-0">{% include "cpanel/api_tokens/_token_status.html" %}</div>
             </div>
-
-            <!-- Tokens table -->
-            {% if tokens %}
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <!-- Phones: one card per token (U62) — the table would scroll Status and actions off-screen. -->
-                <ul class="sm:hidden divide-y divide-line-soft">
-                    {% for token in tokens %}
-                    <li class="p-4 space-y-2.5">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="font-medium text-text break-words">{{ token.name }}</p>
-                                <p class="font-mono text-xs text-faint mt-0.5">{{ token.get_masked_token }}</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">{% include "cpanel/api_tokens/_token_status.html" %}</div>
-                        </div>
-                        <div class="text-sm">{% include "cpanel/api_tokens/_token_scope.html" %}</div>
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-xs text-faint">Last used {% if token.last_used_at %}{{ token.last_used_at|timesince }} ago{% else %}never{% endif %}</span>
-                            <div class="flex items-center gap-2">{% include "cpanel/api_tokens/_token_actions.html" %}</div>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-                <div class="hidden sm:block overflow-x-auto">
-                <table class="w-full min-w-[720px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Name</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Token</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Scope</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Last used</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for token in tokens %}
-                        <tr class="group hover:bg-panel-hi/50 transition-colors">
-                            <td class="px-6 py-3.5"><span class="font-medium text-text">{{ token.name }}</span></td>
-                            <td class="px-6 py-3.5"><span class="font-mono text-sm text-faint">{{ token.get_masked_token }}</span></td>
-                            <td class="px-6 py-3.5 text-sm">{% include "cpanel/api_tokens/_token_scope.html" %}</td>
-                            <td class="px-6 py-3.5">{% include "cpanel/api_tokens/_token_status.html" %}</td>
-                            <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if token.last_used_at %}{{ token.last_used_at|timesince }} ago{% else %}Never{% endif %}</td>
-                            <td class="px-6 py-3.5">
-                                <div class="flex items-center justify-end gap-2">{% include "cpanel/api_tokens/_token_actions.html" %}</div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-            </section>
-
-            <!-- Usage info -->
-            <div class="rounded-2xl border border-line bg-panel p-5">
-                <h3 class="text-sm font-medium text-text mb-2">Using the API</h3>
-                <p class="text-sm text-muted mb-3">Unified API tokens discover their permitted endpoints at <code>/api/v1/_catalog</code>. They do not grant datastore or plugin API access.</p>
-                <p class="text-sm text-muted mb-3">Use your API token to access datastore data from external applications:</p>
-                <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer YOUR_TOKEN" {{ request.scheme }}://{{ request.get_host }}/api/v1/datastores/</code>
+            <div class="text-sm">{% include "cpanel/api_tokens/_token_scope.html" %}</div>
+            <div class="flex items-center justify-between gap-2">
+                <span class="text-xs text-faint">Last used {% if token.last_used_at %}{{ token.last_used_at|timesince }} ago{% else %}never{% endif %}</span>
+                <div class="flex items-center gap-2">{% include "cpanel/api_tokens/_token_actions.html" %}</div>
             </div>
-            {% else %}
-            <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
-                <div class="w-14 h-14 rounded-full bg-info/10 grid place-items-center mx-auto mb-4">
-                    <svg class="w-7 h-7 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                </div>
-                <h3 class="text-base font-semibold mb-1">No API tokens yet</h3>
-                <p class="text-sm text-muted mb-6">Create an API token to access your datastores programmatically.</p>
-                <a href="{% url 'cpanel:api_token_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    Create token
-                </a>
-            </section>
-            {% endif %}
-
-            <!-- Public pages (oversight: shared from plugin dashboards) -->
-            {% if public_pages %}
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="px-6 pt-5 pb-3">
-                    <h3 class="text-sm font-medium text-text">Public pages</h3>
-                    <p class="text-xs text-muted mt-1">Anyone with one of these links can view the page — no login. Revoking kills the URL permanently; re-sharing from the plugin issues a new one.</p>
-                </div>
-                <div class="overflow-x-auto">
-                <table class="w-full min-w-[720px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Plugin / page</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Link</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Last viewed</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for page in public_pages %}
-                        <tr class="group hover:bg-panel-hi/50 transition-colors">
-                            <td class="px-6 py-3.5 text-sm">
-                                <span class="font-medium text-text">{{ page.plugin_slug }}</span> <span class="text-muted">/ {{ page.page }}</span>
-                                {% if page.created_by %}<span class="block text-xs text-faint mt-0.5">shared by {{ page.created_by.email }}</span>{% endif %}
-                            </td>
-                            <td class="px-6 py-3.5">
-                                {% if page.is_active and not page.is_expired %}
-                                <a href="{{ page.url_path }}" target="_blank" rel="noopener" class="font-mono text-xs text-info hover:underline">{{ page.url_path|truncatechars:28 }}</a>
-                                {% else %}
-                                <span class="font-mono text-xs text-faint line-through">{{ page.url_path|truncatechars:28 }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-3.5">
-                                {% if page.is_active and not page.is_expired %}
-                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Live</span>
-                                {% elif page.is_expired %}
-                                <span class="px-2 py-0.5 text-xs rounded-md bg-panel-hi text-muted">Expired</span>
-                                {% else %}
-                                <span class="px-2 py-0.5 text-xs rounded-md bg-panel-hi text-muted">Revoked</span>
-                                {% endif %}
-                                {% if page.expires_at %}
-                                <span class="block text-xs text-faint mt-1">Expires {{ page.expires_at|date:"M d, Y" }}</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if page.last_accessed_at %}{{ page.last_accessed_at|timesince }} ago{% else %}Never{% endif %}</td>
-                            <td class="px-6 py-3.5">
-                                <div class="flex items-center justify-end gap-2">
-                                    {% if page.is_active and not page.is_expired %}
-                                    <form method="post" action="{% url 'cpanel:public_page_revoke' pk=page.pk %}" onsubmit="return confirm('Revoke this public page? Its URL becomes permanently dead; re-sharing from the plugin issues a new one.');" class="inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Revoke</button>
-                                    </form>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-            </section>
-            {% endif %}
-
-        </div>
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="hidden sm:block overflow-x-auto">
+    <table class="w-full min-w-[720px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Name</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Token</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Scope</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Last used</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for token in tokens %}
+            <tr class="group hover:bg-panel-hi/50 transition-colors">
+                <td class="px-6 py-3.5"><span class="font-medium text-text">{{ token.name }}</span></td>
+                <td class="px-6 py-3.5"><span class="font-mono text-sm text-faint">{{ token.get_masked_token }}</span></td>
+                <td class="px-6 py-3.5 text-sm">{% include "cpanel/api_tokens/_token_scope.html" %}</td>
+                <td class="px-6 py-3.5">{% include "cpanel/api_tokens/_token_status.html" %}</td>
+                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if token.last_used_at %}{{ token.last_used_at|timesince }} ago{% else %}Never{% endif %}</td>
+                <td class="px-6 py-3.5">
+                    <div class="flex items-center justify-end gap-2">{% include "cpanel/api_tokens/_token_actions.html" %}</div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     </div>
+</section>
+
+<!-- Usage info -->
+<div class="rounded-2xl border border-line bg-panel p-5">
+    <h3 class="text-sm font-medium text-text mb-2">Using the API</h3>
+    <p class="text-sm text-muted mb-3">Unified API tokens discover their permitted endpoints at <code>/api/v1/_catalog</code>. They do not grant datastore or plugin API access.</p>
+    <p class="text-sm text-muted mb-3">Use your API token to access datastore data from external applications:</p>
+    <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text overflow-x-auto">curl -H "Authorization: Bearer YOUR_TOKEN" {{ request.scheme }}://{{ request.get_host }}/api/v1/datastores/</code>
 </div>
+{% else %}
+<section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
+    <div class="w-14 h-14 rounded-full bg-info/10 grid place-items-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+    </div>
+    <h3 class="text-base font-semibold mb-1">No API tokens yet</h3>
+    <p class="text-sm text-muted mb-6">Create an API token to access your datastores programmatically.</p>
+    <a href="{% url 'cpanel:api_token_create' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        Create token
+    </a>
+</section>
+{% endif %}
+
+<!-- Public pages (oversight: shared from plugin dashboards) -->
+{% if public_pages %}
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="px-6 pt-5 pb-3">
+        <h3 class="text-sm font-medium text-text">Public pages</h3>
+        <p class="text-xs text-muted mt-1">Anyone with one of these links can view the page — no login. Revoking kills the URL permanently; re-sharing from the plugin issues a new one.</p>
+    </div>
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[720px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Plugin / page</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Link</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Last viewed</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for page in public_pages %}
+            <tr class="group hover:bg-panel-hi/50 transition-colors">
+                <td class="px-6 py-3.5 text-sm">
+                    <span class="font-medium text-text">{{ page.plugin_slug }}</span> <span class="text-muted">/ {{ page.page }}</span>
+                    {% if page.created_by %}<span class="block text-xs text-faint mt-0.5">shared by {{ page.created_by.email }}</span>{% endif %}
+                </td>
+                <td class="px-6 py-3.5">
+                    {% if page.is_active and not page.is_expired %}
+                    <a href="{{ page.url_path }}" target="_blank" rel="noopener" class="font-mono text-xs text-info hover:underline">{{ page.url_path|truncatechars:28 }}</a>
+                    {% else %}
+                    <span class="font-mono text-xs text-faint line-through">{{ page.url_path|truncatechars:28 }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-3.5">
+                    {% if page.is_active and not page.is_expired %}
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Live</span>
+                    {% elif page.is_expired %}
+                    <span class="px-2 py-0.5 text-xs rounded-md bg-panel-hi text-muted">Expired</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 text-xs rounded-md bg-panel-hi text-muted">Revoked</span>
+                    {% endif %}
+                    {% if page.expires_at %}
+                    <span class="block text-xs text-faint mt-1">Expires {{ page.expires_at|date:"M d, Y" }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if page.last_accessed_at %}{{ page.last_accessed_at|timesince }} ago{% else %}Never{% endif %}</td>
+                <td class="px-6 py-3.5">
+                    <div class="flex items-center justify-end gap-2">
+                        {% if page.is_active and not page.is_expired %}
+                        <form method="post" action="{% url 'cpanel:public_page_revoke' pk=page.pk %}" onsubmit="return confirm('Revoke this public page? Its URL becomes permanently dead; re-sharing from the plugin issues a new one.');" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Revoke</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endif %}
 {% endblock %}

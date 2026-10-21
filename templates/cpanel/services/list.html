@@ -1,919 +1,905 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 {% load static %}
 
 {% block title %}Services - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block heading %}Services{% endblock %}
+{% block subtitle %}Configure external service integrations{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
-
-            <!-- Header -->
-            <div>
-                <h1 class="text-[22px] font-semibold tracking-tight">Services</h1>
-                <p class="text-sm text-muted mt-1">Configure external service integrations</p>
+{% block page %}
+<!-- Object Storage Service Card -->
+<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="p-6 border-b border-line-soft">
+        <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+                <div class="w-12 h-12 rounded-lg bg-info/10 hidden sm:grid place-items-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+                </div>
+                <div class="min-w-0">
+                    <h2 class="text-lg font-semibold text-text">Object Storage</h2>
+                    <p class="text-sm text-muted">S3-compatible buckets for backups and plugin assets &mdash; Cloudflare R2, AWS S3, Backblaze B2, Spaces, MinIO, or any compatible endpoint</p>
+                </div>
             </div>
 
-            <!-- Object Storage Service Card -->
-            <div class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="p-6 border-b border-line-soft">
-                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                        <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-12 h-12 rounded-lg bg-info/10 hidden sm:grid place-items-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
-                            </div>
-                            <div class="min-w-0">
-                                <h2 class="text-lg font-semibold text-text">Object Storage</h2>
-                                <p class="text-sm text-muted">S3-compatible buckets for backups and plugin assets &mdash; Cloudflare R2, AWS S3, Backblaze B2, Spaces, MinIO, or any compatible endpoint</p>
-                            </div>
-                        </div>
+            <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
+                {% if s3_status.enabled and s3_status.configured %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Active</span>
+                {% elif s3_status.configured %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-warn/10 text-warn"><span class="w-1.5 h-1.5 rounded-full bg-warn"></span>Configured (disabled)</span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
+                {% endif %}
 
-                        <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
-                            {% if s3_status.enabled and s3_status.configured %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Active</span>
-                            {% elif s3_status.configured %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-warn/10 text-warn"><span class="w-1.5 h-1.5 rounded-full bg-warn"></span>Configured (disabled)</span>
-                            {% else %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
-                            {% endif %}
+                <button type="button" onclick="toggleS3Config()" id="s3-toggle-btn" aria-label="Show or hide the object storage settings" class="p-2 text-muted hover:text-text transition-colors">
+                    <svg id="s3-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+        </div>
 
-                            <button type="button" onclick="toggleS3Config()" id="s3-toggle-btn" aria-label="Show or hide the object storage settings" class="p-2 text-muted hover:text-text transition-colors">
-                                <svg id="s3-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                        </div>
-                    </div>
+        <div class="mt-4 flex flex-wrap gap-2.5">
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
+                <span class="eyebrow text-faint">Backups</span>
+                {% if s3_status.configured %}
+                <span class="text-text font-mono text-sm">{{ s3_status.bucket }}</span>
+                {% else %}
+                <span class="text-faint text-sm">Not configured</span>
+                {% endif %}
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
+                <span class="eyebrow text-faint">Plugin assets</span>
+                {% if assets_connection %}
+                <span class="text-text font-mono text-sm">{{ assets_connection.bucket }}</span>
+                {% else %}
+                <span class="text-faint text-sm">Unavailable</span>
+                {% endif %}
+            </div>
+            {% if s3_status.last_tested %}
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
+                <span class="eyebrow text-faint">Last tested</span>
+                <span class="text-text text-sm">{{ s3_status.last_tested|timesince }} ago</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
-                    <div class="mt-4 flex flex-wrap gap-2.5">
-                        <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
-                            <span class="eyebrow text-faint">Backups</span>
-                            {% if s3_status.configured %}
-                            <span class="text-text font-mono text-sm">{{ s3_status.bucket }}</span>
-                            {% else %}
-                            <span class="text-faint text-sm">Not configured</span>
-                            {% endif %}
-                        </div>
-                        <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
-                            <span class="eyebrow text-faint">Plugin assets</span>
-                            {% if assets_connection %}
-                            <span class="text-text font-mono text-sm">{{ assets_connection.bucket }}</span>
-                            {% else %}
-                            <span class="text-faint text-sm">Unavailable</span>
-                            {% endif %}
-                        </div>
-                        {% if s3_status.last_tested %}
-                        <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
-                            <span class="eyebrow text-faint">Last tested</span>
-                            <span class="text-text text-sm">{{ s3_status.last_tested|timesince }} ago</span>
-                        </div>
-                        {% endif %}
-                    </div>
+    <div id="s3-config" class="hidden">
+        <div class="p-6 space-y-6">
+
+            <!-- Saved connections -->
+            <div>
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <p class="text-[13px] font-medium text-text">Saved connections</p>
+                    <button type="button" onclick="storageNewConnection()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add connection</button>
                 </div>
 
-                <div id="s3-config" class="hidden">
-                    <div class="p-6 space-y-6">
+                {% if storage_connections %}
+                <div class="border border-line-soft rounded-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                    <table class="w-full text-sm min-w-[720px]">
+                        <thead>
+                            <tr class="text-left bg-panel-hi/40">
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Name</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Type</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Bucket</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">URLs</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Last tested</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in storage_connections %}
+                            <tr class="border-t border-line-soft">
+                                <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">
+                                    {{ c.name }}
+                                    {% if c.is_default %}
+                                    <span class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md bg-ok/10 text-ok align-middle"><span class="w-1 h-1 rounded-full bg-ok"></span>Backups</span>
+                                    {% endif %}
+                                    {% if settings.assets_storage_id == c.id %}
+                                    <span class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md bg-info/10 text-info align-middle"><span class="w-1 h-1 rounded-full bg-info"></span>Assets</span>
+                                    {% endif %}
+                                    {% if not c.enabled %}
+                                    <span class="ml-1.5 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md bg-panel-hi text-faint align-middle">Disabled</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ c.get_provider_type_display }}</td>
+                                <td class="px-4 py-2.5 font-mono text-xs text-muted whitespace-nowrap"><span class="block max-w-[14rem] truncate" title="{{ c.bucket }}">{{ c.bucket|default:"—" }}</span></td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap">
+                                    {% if c.public_base_url %}
+                                    <span class="text-ok">Public</span>
+                                    {% else %}
+                                    <span class="text-faint">Presigned</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if c.last_tested_at %}{{ c.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
+                                <td class="px-4 py-2.5">
+                                    <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                                        {% if not c.is_default %}
+                                        <form method="post" action="{% url 'cpanel:storage_connection_default' connection_id=c.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Use for backups</button>
+                                        </form>
+                                        {% endif %}
+                                        <button type="button" onclick="storageTestRow('{{ c.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
+                                        <button type="button" onclick="storageEditConnection('{{ c.id }}')" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</button>
+                                        <form method="post" action="{% url 'cpanel:storage_connection_delete' connection_id=c.id %}" class="inline" onsubmit="return confirm('Delete connection \'{{ c.name|escapejs }}\'? Its saved credentials will be removed. Objects already in the bucket are NOT deleted.');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="border border-dashed border-line rounded-lg p-5 text-center text-sm text-muted">
+                    No connections saved yet. Add one to enable scheduled backups and plugin storage.
+                </div>
+                {% endif %}
+            </div>
 
-                        <!-- Saved connections -->
+            <!-- Add / edit connection form -->
+            <div id="storage-form-wrap" class="{% if not storage_form_open %}hidden {% endif %}border border-line-soft rounded-lg p-5 bg-panel-hi/30">
+                <p id="storage-form-title" class="text-[13px] font-medium text-text mb-4">{% if storage_form_open and storage_form.instance %}Edit connection{% else %}Add connection{% endif %}</p>
+                {% if storage_form.errors %}
+                <div id="storage-form-errors" class="mb-4 p-3 rounded-lg bg-fail/10 border border-fail/30 text-fail text-sm" role="alert">
+                    <p class="font-medium">Not saved &mdash; fix the following and save again:</p>
+                    <ul class="mt-1 list-disc pl-5">
+                        {% for error in storage_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                        {% for field in storage_form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <form method="post" action="{% url 'cpanel:storage_connection_save' %}" id="storage-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="connection_id" id="storage-connection-id" value="{% if storage_form_open and storage_form.instance %}{{ storage_form.instance.pk }}{% endif %}">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                         <div>
-                            <div class="flex items-center justify-between gap-3 mb-3">
-                                <p class="text-[13px] font-medium text-text">Saved connections</p>
-                                <button type="button" onclick="storageNewConnection()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add connection</button>
-                            </div>
-
-                            {% if storage_connections %}
-                            <div class="border border-line-soft rounded-lg overflow-hidden">
-                                <div class="overflow-x-auto">
-                                <table class="w-full text-sm min-w-[720px]">
-                                    <thead>
-                                        <tr class="text-left bg-panel-hi/40">
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Name</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Type</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Bucket</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">URLs</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Last tested</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for c in storage_connections %}
-                                        <tr class="border-t border-line-soft">
-                                            <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">
-                                                {{ c.name }}
-                                                {% if c.is_default %}
-                                                <span class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md bg-ok/10 text-ok align-middle"><span class="w-1 h-1 rounded-full bg-ok"></span>Backups</span>
-                                                {% endif %}
-                                                {% if settings.assets_storage_id == c.id %}
-                                                <span class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md bg-info/10 text-info align-middle"><span class="w-1 h-1 rounded-full bg-info"></span>Assets</span>
-                                                {% endif %}
-                                                {% if not c.enabled %}
-                                                <span class="ml-1.5 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md bg-panel-hi text-faint align-middle">Disabled</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ c.get_provider_type_display }}</td>
-                                            <td class="px-4 py-2.5 font-mono text-xs text-muted whitespace-nowrap"><span class="block max-w-[14rem] truncate" title="{{ c.bucket }}">{{ c.bucket|default:"—" }}</span></td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">
-                                                {% if c.public_base_url %}
-                                                <span class="text-ok">Public</span>
-                                                {% else %}
-                                                <span class="text-faint">Presigned</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if c.last_tested_at %}{{ c.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
-                                            <td class="px-4 py-2.5">
-                                                <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                                                    {% if not c.is_default %}
-                                                    <form method="post" action="{% url 'cpanel:storage_connection_default' connection_id=c.id %}" class="inline">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Use for backups</button>
-                                                    </form>
-                                                    {% endif %}
-                                                    <button type="button" onclick="storageTestRow('{{ c.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
-                                                    <button type="button" onclick="storageEditConnection('{{ c.id }}')" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</button>
-                                                    <form method="post" action="{% url 'cpanel:storage_connection_delete' connection_id=c.id %}" class="inline" onsubmit="return confirm('Delete connection \'{{ c.name|escapejs }}\'? Its saved credentials will be removed. Objects already in the bucket are NOT deleted.');">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Delete</button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                                </div>
-                            </div>
-                            {% else %}
-                            <div class="border border-dashed border-line rounded-lg p-5 text-center text-sm text-muted">
-                                No connections saved yet. Add one to enable scheduled backups and plugin storage.
-                            </div>
-                            {% endif %}
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.provider_type.label }}</label>
+                            {{ storage_form.provider_type }}
+                        </div>
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.name.label }}</label>
+                            {{ storage_form.name }}
                         </div>
 
-                        <!-- Add / edit connection form -->
-                        <div id="storage-form-wrap" class="{% if not storage_form_open %}hidden {% endif %}border border-line-soft rounded-lg p-5 bg-panel-hi/30">
-                            <p id="storage-form-title" class="text-[13px] font-medium text-text mb-4">{% if storage_form_open and storage_form.instance %}Edit connection{% else %}Add connection{% endif %}</p>
-                            {% if storage_form.errors %}
-                            <div id="storage-form-errors" class="mb-4 p-3 rounded-lg bg-fail/10 border border-fail/30 text-fail text-sm" role="alert">
-                                <p class="font-medium">Not saved &mdash; fix the following and save again:</p>
-                                <ul class="mt-1 list-disc pl-5">
-                                    {% for error in storage_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
-                                    {% for field in storage_form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
-                                </ul>
-                            </div>
-                            {% endif %}
-                            <form method="post" action="{% url 'cpanel:storage_connection_save' %}" id="storage-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="connection_id" id="storage-connection-id" value="{% if storage_form_open and storage_form.instance %}{{ storage_form.instance.pk }}{% endif %}">
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.provider_type.label }}</label>
-                                        {{ storage_form.provider_type }}
-                                    </div>
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.name.label }}</label>
-                                        {{ storage_form.name }}
-                                    </div>
-
-                                    <div class="md:col-span-2">
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.endpoint_url.label }}</label>
-                                        {{ storage_form.endpoint_url }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ storage_form.endpoint_url.help_text }}</p>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.region.label }}</label>
-                                        {{ storage_form.region }}
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.bucket.label }}</label>
-                                        {{ storage_form.bucket }}
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.access_key.label }}</label>
-                                        {{ storage_form.access_key }}
-                                        <p class="mt-1.5 text-xs text-ok hidden" id="storage-credentials-saved">Credentials are saved &mdash; leave blank to keep them.</p>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.secret_key.label }}</label>
-                                        {{ storage_form.secret_key }}
-                                    </div>
-
-                                    <div class="md:col-span-2">
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.public_base_url.label }}</label>
-                                        {{ storage_form.public_base_url }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ storage_form.public_base_url.help_text }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex flex-wrap gap-6 mb-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-                                    <label class="flex items-center gap-2 cursor-pointer">{{ storage_form.use_ssl }}<span class="text-sm text-muted">{{ storage_form.use_ssl.label }}</span></label>
-                                    <label class="flex items-center gap-2 cursor-pointer">{{ storage_form.path_style }}<span class="text-sm text-muted">{{ storage_form.path_style.label }}</span></label>
-                                    <label class="flex items-center gap-2 cursor-pointer">{{ storage_form.is_default }}<span class="text-sm text-muted">{{ storage_form.is_default.label }}</span></label>
-                                    <label class="flex items-center gap-2 cursor-pointer">{{ storage_form.enabled }}<span class="text-sm text-muted">{{ storage_form.enabled.label }}</span></label>
-                                </div>
-
-                                <p id="storage-notes" class="hidden mb-5 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-xs"></p>
-                                <p id="storage-docs" class="hidden mb-5 text-xs text-faint"></p>
-
-                                <div class="flex items-center gap-2.5">
-                                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save connection</button>
-                                    <button type="button" onclick="testS3Connection()" id="test-s3-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test connection</button>
-                                    <button type="button" onclick="storageCancelForm()" class="text-[13px] px-3.5 py-2 rounded-lg text-muted hover:text-text transition-colors">Cancel</button>
-                                </div>
-                            </form>
+                        <div class="md:col-span-2">
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.endpoint_url.label }}</label>
+                            {{ storage_form.endpoint_url }}
+                            <p class="mt-1.5 text-xs text-faint">{{ storage_form.endpoint_url.help_text }}</p>
                         </div>
 
-                        <!-- Plugin assets selector -->
-                        <form method="post" action="{% url 'cpanel:assets_storage' %}" class="flex flex-wrap items-end gap-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-                            {% csrf_token %}
-                            <div class="min-w-[280px]">
-                                <label class="block text-[13px] font-medium text-text mb-1.5">{{ assets_form.assets_storage.label }}</label>
-                                {{ assets_form.assets_storage }}
-                                <p class="mt-1.5 text-xs text-faint">{{ assets_form.assets_storage.help_text }}</p>
-                            </div>
-                            <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition mb-1">Save</button>
-                        </form>
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.region.label }}</label>
+                            {{ storage_form.region }}
+                        </div>
 
-                        <!-- Usage help -->
-                        <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
-                            <p class="text-text font-medium mb-2">How plugins use storage</p>
-                            <p class="mb-2">A plugin reads and writes through the SDK, confined to its own prefix:</p>
-                            <pre class="bg-ink border border-line-soft rounded-lg p-3 overflow-x-auto text-text"><code>from core.plugins.api import StorageAPI
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.bucket.label }}</label>
+                            {{ storage_form.bucket }}
+                        </div>
+
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.access_key.label }}</label>
+                            {{ storage_form.access_key }}
+                            <p class="mt-1.5 text-xs text-ok hidden" id="storage-credentials-saved">Credentials are saved &mdash; leave blank to keep them.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.secret_key.label }}</label>
+                            {{ storage_form.secret_key }}
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ storage_form.public_base_url.label }}</label>
+                            {{ storage_form.public_base_url }}
+                            <p class="mt-1.5 text-xs text-faint">{{ storage_form.public_base_url.help_text }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-6 mb-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                        <label class="flex items-center gap-2 cursor-pointer">{{ storage_form.use_ssl }}<span class="text-sm text-muted">{{ storage_form.use_ssl.label }}</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer">{{ storage_form.path_style }}<span class="text-sm text-muted">{{ storage_form.path_style.label }}</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer">{{ storage_form.is_default }}<span class="text-sm text-muted">{{ storage_form.is_default.label }}</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer">{{ storage_form.enabled }}<span class="text-sm text-muted">{{ storage_form.enabled.label }}</span></label>
+                    </div>
+
+                    <p id="storage-notes" class="hidden mb-5 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-xs"></p>
+                    <p id="storage-docs" class="hidden mb-5 text-xs text-faint"></p>
+
+                    <div class="flex items-center gap-2.5">
+                        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save connection</button>
+                        <button type="button" onclick="testS3Connection()" id="test-s3-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test connection</button>
+                        <button type="button" onclick="storageCancelForm()" class="text-[13px] px-3.5 py-2 rounded-lg text-muted hover:text-text transition-colors">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Plugin assets selector -->
+            <form method="post" action="{% url 'cpanel:assets_storage' %}" class="flex flex-wrap items-end gap-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                {% csrf_token %}
+                <div class="min-w-[280px]">
+                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ assets_form.assets_storage.label }}</label>
+                    {{ assets_form.assets_storage }}
+                    <p class="mt-1.5 text-xs text-faint">{{ assets_form.assets_storage.help_text }}</p>
+                </div>
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition mb-1">Save</button>
+            </form>
+
+            <!-- Usage help -->
+            <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
+                <p class="text-text font-medium mb-2">How plugins use storage</p>
+                <p class="mb-2">A plugin reads and writes through the SDK, confined to its own prefix:</p>
+                <pre class="bg-ink border border-line-soft rounded-lg p-3 overflow-x-auto text-text"><code>from core.plugins.api import StorageAPI
 
 storage = StorageAPI(OWNER)  # confined to apps/&lt;your-plugin&gt;/
 storage.put("avatars/abc.jpg", data, content_type="image/jpeg")
 url = storage.url("avatars/abc.jpg")</code></pre>
-                            <p class="mt-3">Pick an <span class="text-text">assets connection</span> above to enable it &mdash; keep it separate from the backup bucket, which should stay private. Without a <span class="text-text">public base URL</span>, <span class="font-mono text-text">url()</span> returns a presigned link that expires.</p>
-                        </div>
-
-                    </div>
-
-                    <div id="s3-test-result" class="hidden mx-6 mb-6 p-4 rounded-lg"></div>
-                </div>
-            </div>
-
-            {{ storage_connections_json|json_script:"storage-connections-data" }}
-            {{ storage_presets_json|json_script:"storage-presets-data" }}
-
-            <!-- AI Provider Service Card -->
-            <div class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="p-6 border-b border-line-soft">
-                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                        <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-12 h-12 rounded-lg bg-accent/10 hidden sm:grid place-items-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-                            </div>
-                            <div class="min-w-0">
-                                <h2 class="text-lg font-semibold text-text">AI Provider</h2>
-                                <p class="text-sm text-muted">Use AI in your scripts and Py AI &mdash; Anthropic Claude, Z.AI GLM, OpenRouter, Ollama, or any compatible endpoint</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
-                            {% if claude_status.enabled and claude_status.configured %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Active</span>
-                            {% elif claude_status.configured %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-warn/10 text-warn"><span class="w-1.5 h-1.5 rounded-full bg-warn"></span>Configured (disabled)</span>
-                            {% else %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
-                            {% endif %}
-
-                            <button type="button" onclick="toggleClaudeConfig()" id="claude-toggle-btn" aria-label="Show or hide the AI provider settings" class="p-2 text-muted hover:text-text transition-colors">
-                                <svg id="claude-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    {% if claude_status.provider %}
-                    <div class="mt-4 flex flex-wrap gap-2.5">
-                        <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
-                            <span class="eyebrow text-faint">Provider</span>
-                            <span class="text-text text-sm">{{ claude_status.provider_name }} <span class="text-faint">&middot; {{ claude_status.provider_type_label }}</span></span>
-                        </div>
-                        <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
-                            <span class="eyebrow text-faint">Model</span>
-                            <span class="text-text font-mono text-sm">{{ claude_status.model }}</span>
-                        </div>
-                        {% if claude_status.last_tested %}
-                        <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
-                            <span class="eyebrow text-faint">Last tested</span>
-                            <span class="text-text text-sm">{{ claude_status.last_tested|timesince }} ago</span>
-                        </div>
-                        {% endif %}
-                        <a href="{% url 'cpanel:claude_usage' %}" class="flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/30 rounded-lg text-accent hover:bg-accent/20 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                            <span class="text-sm font-medium">View usage</span>
-                        </a>
-                    </div>
-                    {% endif %}
-
-                    {% if not claude_status.cli_available %}
-                    <div class="mt-4 p-3 rounded-lg bg-warn/10 border border-warn/30 text-warn text-sm">
-                        The Claude Code CLI was not found on the server. It ships with the current PyRun Docker image &mdash; rebuild/pull the latest image to enable AI.
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div id="claude-config" class="hidden">
-                    <div class="p-6 space-y-6">
-
-                        <!-- Saved providers -->
-                        <div id="ai-saved-providers">
-                            <div class="flex items-center justify-between gap-3 mb-3">
-                                <p class="text-[13px] font-medium text-text">Saved providers</p>
-                                <button type="button" onclick="aiNewProvider()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add provider</button>
-                            </div>
-
-                            {% if ai_providers %}
-                            <div class="border border-line-soft rounded-lg overflow-hidden">
-                                <div class="overflow-x-auto">
-                                <table class="w-full text-sm min-w-[640px]">
-                                    <thead>
-                                        <tr class="text-left bg-panel-hi/40">
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Name</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Type</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Model</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Last tested</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for p in ai_providers %}
-                                        <tr class="border-t border-line-soft">
-                                            <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">
-                                                {{ p.name }}
-                                                {% if settings.active_ai_provider_id == p.id %}
-                                                <span class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md bg-ok/10 text-ok align-middle"><span class="w-1 h-1 rounded-full bg-ok"></span>Active</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.get_provider_type_display }}</td>
-                                            <td class="px-4 py-2.5 font-mono text-xs text-muted">{{ p.default_model|default:"—" }}</td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
-                                            <td class="px-4 py-2.5">
-                                                <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                                                    {% if settings.active_ai_provider_id != p.id %}
-                                                    <form method="post" action="{% url 'cpanel:ai_provider_activate' provider_id=p.id %}" class="inline">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Set active</button>
-                                                    </form>
-                                                    {% endif %}
-                                                    <button type="button" onclick="aiTestRow('{{ p.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
-                                                    <button type="button" onclick="aiEditProvider('{{ p.id }}')" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</button>
-                                                    <form method="post" action="{% url 'cpanel:ai_provider_delete' provider_id=p.id %}" class="inline" onsubmit="return confirm('Delete provider \'{{ p.name|escapejs }}\'? Its saved credential will be removed.');">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Delete</button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                                </div>
-                            </div>
-                            {% else %}
-                            <div class="border border-dashed border-line rounded-lg p-5 text-center text-sm text-muted">
-                                No providers saved yet. Add one to connect Anthropic Claude, Z.AI GLM, OpenRouter, or a local Ollama.
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Add / edit provider form -->
-                        <div id="ai-provider-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
-                            <p id="ai-provider-form-title" class="text-[13px] font-medium text-text mb-4">Add provider</p>
-                            <form method="post" action="{% url 'cpanel:ai_provider_save' %}" id="ai-provider-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="provider_id" id="ai-provider-id" value="">
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.provider_type.label }}</label>
-                                        {{ ai_provider_form.provider_type }}
-                                    </div>
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.name.label }}</label>
-                                        {{ ai_provider_form.name }}
-                                    </div>
-
-                                    <div id="ai-field-base-url" class="md:col-span-2">
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.base_url.label }}</label>
-                                        {{ ai_provider_form.base_url }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ ai_provider_form.base_url.help_text }}</p>
-                                    </div>
-
-                                    <div id="ai-field-auth-method">
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.auth_method.label }}</label>
-                                        {{ ai_provider_form.auth_method }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ ai_provider_form.auth_method.help_text }}</p>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5" id="ai-credential-label">{{ ai_provider_form.credential.label }}</label>
-                                        {{ ai_provider_form.credential }}
-                                        <p class="mt-1.5 text-xs text-faint" id="ai-credential-help"></p>
-                                        <p class="mt-1.5 text-xs text-ok hidden" id="ai-credential-saved">A credential is saved &mdash; leave blank to keep it.</p>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.default_model.label }}</label>
-                                        {{ ai_provider_form.default_model }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ ai_provider_form.default_model.help_text }}</p>
-                                    </div>
-                                </div>
-
-                                <p id="ai-provider-notes" class="hidden mb-5 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-xs"></p>
-
-                                <div class="flex items-center gap-2.5">
-                                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save provider</button>
-                                    <button type="button" onclick="aiTestForm()" id="ai-test-form-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test connection</button>
-                                    <button type="button" onclick="aiCancelProviderForm()" class="text-[13px] px-3.5 py-2 rounded-lg text-muted hover:text-text transition-colors">Cancel</button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Master settings -->
-                        <form method="post" action="{% url 'cpanel:claude_settings' %}" class="flex flex-wrap items-end gap-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-                            {% csrf_token %}
-                            <div class="min-w-[220px]">
-                                <label class="block text-[13px] font-medium text-text mb-1.5">{{ claude_form.active_provider.label }}</label>
-                                {{ claude_form.active_provider }}
-                                <p class="mt-1.5 text-xs text-faint">{{ claude_form.active_provider.help_text }}</p>
-                            </div>
-                            <label class="flex items-center gap-2 cursor-pointer pb-2.5">{{ claude_form.claude_enabled }}<span class="text-sm text-muted">{{ claude_form.claude_enabled.label }}</span></label>
-                            <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition mb-1">Save settings</button>
-                        </form>
-
-                        <!-- Usage help -->
-                        <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
-                            <p class="text-text font-medium mb-2">How to use in a script</p>
-                            <p class="mb-2">Install <span class="font-mono text-text">claude-agent-sdk</span> in the script's Environment, then:</p>
-                            <pre class="bg-ink border border-line-soft rounded-lg p-3 overflow-x-auto text-text"><code>from pyrunner_ai import ask_claude
-
-answer = ask_claude("Search the web for today's AI news and summarize it")
-print(answer)</code></pre>
-                            <p class="mt-3">Scripts always use the <span class="text-text">active provider</span>. Web search/fetch tools are available on Anthropic only; other providers still support your own tools and plain prompts.</p>
-                            <p class="mt-3">For an Anthropic subscription token, run <span class="font-mono text-text">claude setup-token</span> on your own machine (logged into Claude) and paste the token it prints (starts with <span class="font-mono text-text">sk-ant-oat01-</span>) &mdash; not the browser authorization code.</p>
-                            <p class="mt-3"><a href="{% url 'cpanel:script_create' %}?template=ai" class="text-info hover:underline transition">Create an example AI script &rarr;</a></p>
-                        </div>
-
-                    </div>
-
-                    <div id="claude-test-result" class="hidden" role="status" aria-live="polite" aria-atomic="true"></div>
-                </div>
-            </div>
-
-            {{ ai_providers_json|json_script:"ai-providers-data" }}
-            {{ ai_presets_json|json_script:"ai-presets-data" }}
-
-            <!-- Secret Providers Service Card -->
-            <div class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="p-6 border-b border-line-soft">
-                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                        <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-12 h-12 rounded-lg bg-info/10 hidden sm:grid place-items-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                            </div>
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <h2 class="text-lg font-semibold text-text">Secret Providers</h2>
-                                    <span class="px-1.5 py-0.5 rounded-md bg-warn/10 text-warn eyebrow leading-none">Beta</span>
-                                </div>
-                                <p class="text-sm text-muted">Resolve secret values live from an external manager &mdash; HashiCorp Vault / OpenBao &mdash; instead of storing them here. Point a secret at a provider from the secret form.</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
-                            {% if secret_providers %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>{{ secret_providers|length }} configured</span>
-                            {% else %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
-                            {% endif %}
-
-                            <button type="button" onclick="toggleSecretProvidersConfig()" aria-label="Show or hide the secret provider settings" class="p-2 text-muted hover:text-text transition-colors">
-                                <svg id="sp-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="sp-config" class="hidden">
-                    <div class="p-6 space-y-6">
-
-                        <!-- Saved providers -->
-                        <div>
-                            <div class="flex items-center justify-between gap-3 mb-3">
-                                <p class="text-[13px] font-medium text-text">Saved providers</p>
-                                <button type="button" onclick="spNewProvider()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add provider</button>
-                            </div>
-
-                            {% if secret_providers %}
-                            <div class="border border-line-soft rounded-lg overflow-hidden">
-                                <div class="overflow-x-auto">
-                                <table class="w-full text-sm min-w-[640px]">
-                                    <thead>
-                                        <tr class="text-left bg-panel-hi/40">
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Name</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Type</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">In use</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Last tested</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for p in secret_providers %}
-                                        <tr class="border-t border-line-soft">
-                                            <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">{{ p.name }}</td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.type_label }}</td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.secret_count }} secret{{ p.secret_count|pluralize }}</td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
-                                            <td class="px-4 py-2.5">
-                                                <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                                                    <button type="button" onclick="spTestRow('{{ p.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
-                                                    <button type="button" onclick="spEditProvider('{{ p.id }}')" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</button>
-                                                    <form method="post" action="{% url 'cpanel:secret_provider_delete' provider_id=p.id %}" class="inline" onsubmit="return confirm('Delete secret provider \'{{ p.name|escapejs }}\'? Its saved credentials will be removed.');">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Delete</button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                                </div>
-                            </div>
-                            {% else %}
-                            <div class="border border-dashed border-line rounded-lg p-5 text-center text-sm text-muted">
-                                No secret providers yet. Add one to resolve secret values from HashiCorp Vault or OpenBao.
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Add / edit provider form -->
-                        <div id="sp-provider-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
-                            <p id="sp-provider-form-title" class="text-[13px] font-medium text-text mb-4">Add provider</p>
-                            <form method="post" action="{% url 'cpanel:secret_provider_save' %}" id="sp-provider-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="provider_id" id="sp-provider-id" value="">
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ secret_provider_form.provider_type.label }}</label>
-                                        {{ secret_provider_form.provider_type }}
-                                    </div>
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ secret_provider_form.name.label }}</label>
-                                        {{ secret_provider_form.name }}
-                                    </div>
-
-                                    <!-- Adapter-specific fields, rendered from the registry -->
-                                    <div id="sp-dynamic-fields" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5"></div>
-
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ secret_provider_form.cache_ttl.label }}</label>
-                                        {{ secret_provider_form.cache_ttl }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ secret_provider_form.cache_ttl.help_text }}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ secret_provider_form.on_error.label }}</label>
-                                        {{ secret_provider_form.on_error }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ secret_provider_form.on_error.help_text }}</p>
-                                    </div>
-                                </div>
-
-                                <p id="sp-provider-docs" class="hidden mb-5 text-xs text-muted"></p>
-
-                                <div class="flex items-center gap-2.5">
-                                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save provider</button>
-                                    <button type="button" onclick="spTestForm()" id="sp-test-form-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test connection</button>
-                                    <button type="button" onclick="spCancelProviderForm()" class="text-[13px] px-3.5 py-2 rounded-lg text-muted hover:text-text transition-colors">Cancel</button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Usage help -->
-                        <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
-                            <p class="text-text font-medium mb-2">How it works</p>
-                            <p class="mb-2">A secret with source <span class="text-text">External provider</span> stores only a reference (e.g. <span class="font-mono text-text">kv/myapp#API_KEY</span>). Its value is fetched from the provider when a run starts, injected and masked exactly like a stored secret, and cached in-process for the provider's TTL.</p>
-                            <p>If a fetch fails, the run fails before it starts (fail-closed) &mdash; unless the provider's on-error is set to serve the last cached value. Rotate a value in the provider and the next run past the TTL picks it up.</p>
-                        </div>
-
-                    </div>
-
-                    <div id="sp-test-result" class="hidden mx-6 mb-6 p-4 rounded-lg"></div>
-                </div>
-            </div>
-
-            {{ secret_providers_json|json_script:"secret-providers-data" }}
-            {{ secret_backends_json|json_script:"secret-backends-data" }}
-
-            <!-- Embedding Providers Service Card -->
-            <div class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="p-6 border-b border-line-soft">
-                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                        <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-12 h-12 rounded-lg bg-accent/10 hidden sm:grid place-items-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20l5-5m0 0l4 4 7-7m-11 3V9a2 2 0 012-2h3m6 0h.01M6 4h.01M18 4h.01M12 12h.01"/></svg>
-                            </div>
-                            <div class="min-w-0">
-                                <h2 class="text-lg font-semibold text-text">Embedding Providers</h2>
-                                <p class="text-sm text-muted">Turn text into vectors for semantic search &mdash; OpenAI, Voyage, Jina, Z.AI, a local Ollama, or any OpenAI-compatible endpoint</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
-                            {% if embedding_providers %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>{{ embedding_providers|length }} configured</span>
-                            {% else %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
-                            {% endif %}
-                            <button type="button" onclick="toggleEmbeddingConfig()" aria-label="Show or hide the embedding provider settings" class="p-2 text-muted hover:text-text transition-colors">
-                                <svg id="embedding-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="embedding-config" class="hidden">
-                    <div class="p-6 space-y-6">
-                        <div>
-                            <div class="flex items-center justify-between gap-3 mb-3">
-                                <p class="text-[13px] font-medium text-text">Saved providers</p>
-                                <button type="button" onclick="embNewProvider()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add provider</button>
-                            </div>
-
-                            {% if embedding_providers %}
-                            <div class="border border-line-soft rounded-lg overflow-hidden">
-                                <div class="overflow-x-auto">
-                                <table class="w-full text-sm min-w-[760px]">
-                                    <thead>
-                                        <tr class="text-left bg-panel-hi/40">
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Name</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Type</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Model</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Dimension</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Collections</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Last tested</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for p in embedding_providers %}
-                                        <tr class="border-t border-line-soft">
-                                            <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">
-                                                {{ p.name }}
-                                                {% if not p.enabled %}<span class="ml-1.5 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md bg-panel-hi text-faint align-middle">Disabled</span>{% endif %}
-                                            </td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.get_provider_type_display }}</td>
-                                            <td class="px-4 py-2.5 font-mono text-xs text-muted">{{ p.model }}</td>
-                                            <td class="px-4 py-2.5 text-right font-mono tnum text-muted">{% if p.dimension %}{{ p.dimension }}{% else %}<span class="text-warn" title="Run Test to record the dimension">untested</span>{% endif %}</td>
-                                            <td class="px-4 py-2.5 text-right font-mono tnum text-muted">{{ p.collection_count }}</td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
-                                            <td class="px-4 py-2.5">
-                                                <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                                                    <button type="button" onclick="embTestRow('{{ p.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
-                                                    <button type="button" onclick="embEditProvider('{{ p.id }}')" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</button>
-                                                    <form method="post" action="{% url 'cpanel:embedding_provider_delete' provider_id=p.id %}" class="inline" onsubmit="return confirm('Delete embedding provider \'{{ p.name|escapejs }}\'? Collections that use it must be deleted first.');">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Delete</button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                                </div>
-                            </div>
-                            {% else %}
-                            <div class="border border-dashed border-line rounded-lg p-5 text-center text-sm text-muted">
-                                No embedding providers yet. Add one to let collections embed text and search by meaning.
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Add / edit provider form -->
-                        <div id="emb-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
-                            <p id="emb-form-title" class="text-[13px] font-medium text-text mb-4">Add provider</p>
-                            <form method="post" action="{% url 'cpanel:embedding_provider_save' %}" id="emb-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="provider_id" id="emb-provider-id" value="">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ embedding_provider_form.provider_type.label }}</label>
-                                        {{ embedding_provider_form.provider_type }}
-                                    </div>
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ embedding_provider_form.name.label }}</label>
-                                        {{ embedding_provider_form.name }}
-                                    </div>
-                                    <div class="md:col-span-2" id="emb-field-base-url">
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ embedding_provider_form.base_url.label }}</label>
-                                        {{ embedding_provider_form.base_url }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ embedding_provider_form.base_url.help_text }}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5" id="emb-credential-label">{{ embedding_provider_form.credential.label }}</label>
-                                        {{ embedding_provider_form.credential }}
-                                        <p class="mt-1.5 text-xs text-faint" id="emb-credential-help"></p>
-                                        <p class="mt-1.5 text-xs text-ok hidden" id="emb-credential-saved">A key is saved &mdash; leave blank to keep it.</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ embedding_provider_form.model.label }}</label>
-                                        {{ embedding_provider_form.model }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ embedding_provider_form.model.help_text }}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ embedding_provider_form.max_batch.label }}</label>
-                                        {{ embedding_provider_form.max_batch }}
-                                    </div>
-                                </div>
-                                <div class="flex flex-wrap gap-6 mb-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-                                    <label class="flex items-center gap-2 cursor-pointer">{{ embedding_provider_form.enabled }}<span class="text-sm text-muted">{{ embedding_provider_form.enabled.label }}</span></label>
-                                </div>
-                                <p id="emb-notes" class="hidden mb-5 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-xs"></p>
-                                <p id="emb-docs" class="hidden mb-5 text-xs text-faint"></p>
-                                <div class="flex items-center gap-2.5">
-                                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save provider</button>
-                                    <button type="button" onclick="embTestForm(this)" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
-                                    <button type="button" onclick="document.getElementById('emb-form-wrap').classList.add('hidden')" class="text-[13px] px-3.5 py-2 rounded-lg text-muted hover:text-text transition-colors">Cancel</button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
-                            <p class="text-text font-medium mb-2">How collections use a provider</p>
-                            <p>A collection pins the provider's <span class="text-text">model</span> and the <span class="text-text">dimension</span> recorded by Test when it is created. Changing the model later resets the dimension and means a new collection &mdash; the vector space never changes under existing points. Usage (tokens, calls) is counted on the provider and on each collection.</p>
-                        </div>
-                    </div>
-                    <div id="emb-test-result" class="hidden mx-6 mb-6 p-4 rounded-lg"></div>
-                </div>
-            </div>
-
-            {{ embedding_providers_json|json_script:"embedding-providers-data" }}
-            {{ embedding_presets_json|json_script:"embedding-presets-data" }}
-
-            <!-- Vector Stores Service Card -->
-            <div class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="p-6 border-b border-line-soft">
-                    <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                        <div class="flex items-center gap-4 min-w-0">
-                            <div class="w-12 h-12 rounded-lg bg-info/10 hidden sm:grid place-items-center flex-shrink-0">
-                                <svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
-                            </div>
-                            <div class="min-w-0">
-                                <h2 class="text-lg font-semibold text-text">Vector Stores</h2>
-                                <p class="text-sm text-muted">Where vector collections live &mdash; the built-in Local store (SQLite + numpy on the data volume) or a Qdrant server</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
-                            {% if vector_connections %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>{{ vector_connections|length }} connection{{ vector_connections|length|pluralize }}</span>
-                            {% else %}
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
-                            {% endif %}
-                            <button type="button" onclick="toggleVectorConfig()" aria-label="Show or hide the vector store settings" class="p-2 text-muted hover:text-text transition-colors">
-                                <svg id="vector-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="vector-config" class="hidden">
-                    <div class="p-6 space-y-6">
-                        <div>
-                            <div class="flex items-center justify-between gap-3 mb-3">
-                                <p class="text-[13px] font-medium text-text">Connections</p>
-                                <button type="button" onclick="vecNewConnection()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add connection</button>
-                            </div>
-
-                            {% if vector_connections %}
-                            <div class="border border-line-soft rounded-lg overflow-hidden">
-                                <div class="overflow-x-auto">
-                                <table class="w-full text-sm min-w-[720px]">
-                                    <thead>
-                                        <tr class="text-left bg-panel-hi/40">
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Name</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Backend</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Target</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Collections</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2">Last tested</th>
-                                            <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for c in vector_connections %}
-                                        <tr class="border-t border-line-soft">
-                                            <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">
-                                                {{ c.name }}
-                                                {% if c.is_default %}<span class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md bg-ok/10 text-ok align-middle"><span class="w-1 h-1 rounded-full bg-ok"></span>Default</span>{% endif %}
-                                                {% if not c.enabled %}<span class="ml-1.5 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md bg-panel-hi text-faint align-middle">Disabled</span>{% endif %}
-                                                {% if c.exposes_credentials %}<span class="ml-1.5 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md bg-warn/10 text-warn align-middle" title="Scripts that can open a collection here may receive this server's URL and API key through credentials().">Key shared with runs</span>{% endif %}
-                                            </td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ c.get_provider_type_display }}</td>
-                                            <td class="px-4 py-2.5 font-mono text-xs text-muted">{% if c.is_local %}{{ vectors_dir }}{% else %}{{ c.url|default:"—" }}{% endif %}</td>
-                                            <td class="px-4 py-2.5 text-right font-mono tnum text-muted">{{ c.collection_count }}</td>
-                                            <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if c.last_tested_at %}{{ c.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
-                                            <td class="px-4 py-2.5">
-                                                <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                                                    {% if not c.is_default %}
-                                                    <form method="post" action="{% url 'cpanel:vector_connection_default' connection_id=c.id %}" class="inline">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Make default</button>
-                                                    </form>
-                                                    {% endif %}
-                                                    <button type="button" onclick="vecTestRow('{{ c.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
-                                                    <button type="button" onclick="vecEditConnection('{{ c.id }}')" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</button>
-                                                    <form method="post" action="{% url 'cpanel:vector_connection_delete' connection_id=c.id %}" class="inline" onsubmit="return confirm('Delete vector connection \'{{ c.name|escapejs }}\'? Collections on it must be deleted first.');">
-                                                        {% csrf_token %}
-                                                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Delete</button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                                </div>
-                            </div>
-                            {% else %}
-                            <div class="border border-dashed border-line rounded-lg p-5 text-center text-sm text-muted">
-                                No connections. Add the Local store (no settings needed) or a Qdrant server.
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Add / edit connection form -->
-                        <div id="vec-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
-                            <p id="vec-form-title" class="text-[13px] font-medium text-text mb-4">Add connection</p>
-                            <form method="post" action="{% url 'cpanel:vector_connection_save' %}" id="vec-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="connection_id" id="vec-connection-id" value="">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ vector_connection_form.provider_type.label }}</label>
-                                        {{ vector_connection_form.provider_type }}
-                                    </div>
-                                    <div>
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ vector_connection_form.name.label }}</label>
-                                        {{ vector_connection_form.name }}
-                                    </div>
-                                    <div class="md:col-span-2 vec-qdrant-only">
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ vector_connection_form.url.label }}</label>
-                                        {{ vector_connection_form.url }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ vector_connection_form.url.help_text }}</p>
-                                    </div>
-                                    <div class="vec-qdrant-only">
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ vector_connection_form.api_key.label }}</label>
-                                        {{ vector_connection_form.api_key }}
-                                        <p class="mt-1.5 text-xs text-ok hidden" id="vec-credentials-saved">A key is saved &mdash; leave blank to keep it.</p>
-                                    </div>
-                                    <div class="vec-qdrant-only">
-                                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ vector_connection_form.collection_prefix.label }}</label>
-                                        {{ vector_connection_form.collection_prefix }}
-                                        <p class="mt-1.5 text-xs text-faint">{{ vector_connection_form.collection_prefix.help_text }}</p>
-                                    </div>
-                                </div>
-                                <div class="flex flex-wrap gap-6 mb-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-                                    <label class="flex items-center gap-2 cursor-pointer">{{ vector_connection_form.enabled }}<span class="text-sm text-muted">{{ vector_connection_form.enabled.label }}</span></label>
-                                    <label class="flex items-center gap-2 cursor-pointer">{{ vector_connection_form.is_default }}<span class="text-sm text-muted">{{ vector_connection_form.is_default.label }}</span></label>
-                                    <div class="vec-qdrant-only w-full">
-                                        <label class="flex items-center gap-2 cursor-pointer">{{ vector_connection_form.expose_credentials }}<span class="text-sm text-muted">{{ vector_connection_form.expose_credentials.label }}</span></label>
-                                        <p class="mt-1.5 text-xs text-faint">{{ vector_connection_form.expose_credentials.help_text }}</p>
-                                    </div>
-                                </div>
-                                <p id="vec-local-note" class="hidden mb-5 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-xs">The Local store needs no settings: one SQLite file per collection under {{ vectors_dir }}, searched exactly with numpy. Comfortable to ~{{ vector_soft_limit }} points per collection; single-container deployments only.</p>
-                                <p id="vec-qdrant-note" class="hidden mb-5 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-xs">Each collection becomes one Qdrant collection named after its workspace and name (with the prefix above, if any), created when the collection is. Searches and filters run on the server; backups carry the collection's settings, not its points. A Qdrant container on the same Docker network needs PYRUNNER_ALLOW_PRIVATE_NETWORK=true.</p>
-                                <div class="flex items-center gap-2.5">
-                                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save connection</button>
-                                    <button type="button" onclick="vecTestForm(this)" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
-                                    <button type="button" onclick="document.getElementById('vec-form-wrap').classList.add('hidden')" class="text-[13px] px-3.5 py-2 rounded-lg text-muted hover:text-text transition-colors">Cancel</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    <div id="vec-test-result" class="hidden mx-6 mb-6 p-4 rounded-lg"></div>
-                </div>
-            </div>
-
-            {{ vector_connections_json|json_script:"vector-connections-data" }}
-
-            <!-- Future services placeholder -->
-            <div class="rounded-2xl border border-dashed border-line bg-panel/50 p-8 text-center">
-                <div class="w-12 h-12 rounded-lg bg-panel-hi grid place-items-center mx-auto mb-4">
-                    <svg class="w-6 h-6 text-faint" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                </div>
-                <h3 class="text-muted font-medium mb-1">More services coming soon</h3>
-                <p class="text-sm text-faint">Additional integrations like SMTP, webhooks, and more will be added here.</p>
+                <p class="mt-3">Pick an <span class="text-text">assets connection</span> above to enable it &mdash; keep it separate from the backup bucket, which should stay private. Without a <span class="text-text">public base URL</span>, <span class="font-mono text-text">url()</span> returns a presigned link that expires.</p>
             </div>
 
         </div>
+
+        <div id="s3-test-result" class="hidden mx-6 mb-6 p-4 rounded-lg"></div>
     </div>
 </div>
 
+{{ storage_connections_json|json_script:"storage-connections-data" }}
+{{ storage_presets_json|json_script:"storage-presets-data" }}
+
+<!-- AI Provider Service Card -->
+<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="p-6 border-b border-line-soft">
+        <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+                <div class="w-12 h-12 rounded-lg bg-accent/10 hidden sm:grid place-items-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                </div>
+                <div class="min-w-0">
+                    <h2 class="text-lg font-semibold text-text">AI Provider</h2>
+                    <p class="text-sm text-muted">Use AI in your scripts and Py AI &mdash; Anthropic Claude, Z.AI GLM, OpenRouter, Ollama, or any compatible endpoint</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
+                {% if claude_status.enabled and claude_status.configured %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Active</span>
+                {% elif claude_status.configured %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-warn/10 text-warn"><span class="w-1.5 h-1.5 rounded-full bg-warn"></span>Configured (disabled)</span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
+                {% endif %}
+
+                <button type="button" onclick="toggleClaudeConfig()" id="claude-toggle-btn" aria-label="Show or hide the AI provider settings" class="p-2 text-muted hover:text-text transition-colors">
+                    <svg id="claude-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+        </div>
+
+        {% if claude_status.provider %}
+        <div class="mt-4 flex flex-wrap gap-2.5">
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
+                <span class="eyebrow text-faint">Provider</span>
+                <span class="text-text text-sm">{{ claude_status.provider_name }} <span class="text-faint">&middot; {{ claude_status.provider_type_label }}</span></span>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
+                <span class="eyebrow text-faint">Model</span>
+                <span class="text-text font-mono text-sm">{{ claude_status.model }}</span>
+            </div>
+            {% if claude_status.last_tested %}
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-panel-hi border border-line-soft rounded-lg">
+                <span class="eyebrow text-faint">Last tested</span>
+                <span class="text-text text-sm">{{ claude_status.last_tested|timesince }} ago</span>
+            </div>
+            {% endif %}
+            <a href="{% url 'cpanel:claude_usage' %}" class="flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/30 rounded-lg text-accent hover:bg-accent/20 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span class="text-sm font-medium">View usage</span>
+            </a>
+        </div>
+        {% endif %}
+
+        {% if not claude_status.cli_available %}
+        <div class="mt-4 p-3 rounded-lg bg-warn/10 border border-warn/30 text-warn text-sm">
+            The Claude Code CLI was not found on the server. It ships with the current PyRun Docker image &mdash; rebuild/pull the latest image to enable AI.
+        </div>
+        {% endif %}
+    </div>
+
+    <div id="claude-config" class="hidden">
+        <div class="p-6 space-y-6">
+
+            <!-- Saved providers -->
+            <div id="ai-saved-providers">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <p class="text-[13px] font-medium text-text">Saved providers</p>
+                    <button type="button" onclick="aiNewProvider()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add provider</button>
+                </div>
+
+                {% if ai_providers %}
+                <div class="border border-line-soft rounded-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                    <table class="w-full text-sm min-w-[640px]">
+                        <thead>
+                            <tr class="text-left bg-panel-hi/40">
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Name</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Type</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Model</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Last tested</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in ai_providers %}
+                            <tr class="border-t border-line-soft">
+                                <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">
+                                    {{ p.name }}
+                                    {% if settings.active_ai_provider_id == p.id %}
+                                    <span class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md bg-ok/10 text-ok align-middle"><span class="w-1 h-1 rounded-full bg-ok"></span>Active</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.get_provider_type_display }}</td>
+                                <td class="px-4 py-2.5 font-mono text-xs text-muted">{{ p.default_model|default:"—" }}</td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
+                                <td class="px-4 py-2.5">
+                                    <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                                        {% if settings.active_ai_provider_id != p.id %}
+                                        <form method="post" action="{% url 'cpanel:ai_provider_activate' provider_id=p.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Set active</button>
+                                        </form>
+                                        {% endif %}
+                                        <button type="button" onclick="aiTestRow('{{ p.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
+                                        <button type="button" onclick="aiEditProvider('{{ p.id }}')" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</button>
+                                        <form method="post" action="{% url 'cpanel:ai_provider_delete' provider_id=p.id %}" class="inline" onsubmit="return confirm('Delete provider \'{{ p.name|escapejs }}\'? Its saved credential will be removed.');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="border border-dashed border-line rounded-lg p-5 text-center text-sm text-muted">
+                    No providers saved yet. Add one to connect Anthropic Claude, Z.AI GLM, OpenRouter, or a local Ollama.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Add / edit provider form -->
+            <div id="ai-provider-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
+                <p id="ai-provider-form-title" class="text-[13px] font-medium text-text mb-4">Add provider</p>
+                <form method="post" action="{% url 'cpanel:ai_provider_save' %}" id="ai-provider-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="provider_id" id="ai-provider-id" value="">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.provider_type.label }}</label>
+                            {{ ai_provider_form.provider_type }}
+                        </div>
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.name.label }}</label>
+                            {{ ai_provider_form.name }}
+                        </div>
+
+                        <div id="ai-field-base-url" class="md:col-span-2">
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.base_url.label }}</label>
+                            {{ ai_provider_form.base_url }}
+                            <p class="mt-1.5 text-xs text-faint">{{ ai_provider_form.base_url.help_text }}</p>
+                        </div>
+
+                        <div id="ai-field-auth-method">
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.auth_method.label }}</label>
+                            {{ ai_provider_form.auth_method }}
+                            <p class="mt-1.5 text-xs text-faint">{{ ai_provider_form.auth_method.help_text }}</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5" id="ai-credential-label">{{ ai_provider_form.credential.label }}</label>
+                            {{ ai_provider_form.credential }}
+                            <p class="mt-1.5 text-xs text-faint" id="ai-credential-help"></p>
+                            <p class="mt-1.5 text-xs text-ok hidden" id="ai-credential-saved">A credential is saved &mdash; leave blank to keep it.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ ai_provider_form.default_model.label }}</label>
+                            {{ ai_provider_form.default_model }}
+                            <p class="mt-1.5 text-xs text-faint">{{ ai_provider_form.default_model.help_text }}</p>
+                        </div>
+                    </div>
+
+                    <p id="ai-provider-notes" class="hidden mb-5 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-xs"></p>
+
+                    <div class="flex items-center gap-2.5">
+                        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save provider</button>
+                        <button type="button" onclick="aiTestForm()" id="ai-test-form-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test connection</button>
+                        <button type="button" onclick="aiCancelProviderForm()" class="text-[13px] px-3.5 py-2 rounded-lg text-muted hover:text-text transition-colors">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Master settings -->
+            <form method="post" action="{% url 'cpanel:claude_settings' %}" class="flex flex-wrap items-end gap-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                {% csrf_token %}
+                <div class="min-w-[220px]">
+                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ claude_form.active_provider.label }}</label>
+                    {{ claude_form.active_provider }}
+                    <p class="mt-1.5 text-xs text-faint">{{ claude_form.active_provider.help_text }}</p>
+                </div>
+                <label class="flex items-center gap-2 cursor-pointer pb-2.5">{{ claude_form.claude_enabled }}<span class="text-sm text-muted">{{ claude_form.claude_enabled.label }}</span></label>
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition mb-1">Save settings</button>
+            </form>
+
+            <!-- Usage help -->
+            <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
+                <p class="text-text font-medium mb-2">How to use in a script</p>
+                <p class="mb-2">Install <span class="font-mono text-text">claude-agent-sdk</span> in the script's Environment, then:</p>
+                <pre class="bg-ink border border-line-soft rounded-lg p-3 overflow-x-auto text-text"><code>from pyrunner_ai import ask_claude
+
+answer = ask_claude("Search the web for today's AI news and summarize it")
+print(answer)</code></pre>
+                <p class="mt-3">Scripts always use the <span class="text-text">active provider</span>. Web search/fetch tools are available on Anthropic only; other providers still support your own tools and plain prompts.</p>
+                <p class="mt-3">For an Anthropic subscription token, run <span class="font-mono text-text">claude setup-token</span> on your own machine (logged into Claude) and paste the token it prints (starts with <span class="font-mono text-text">sk-ant-oat01-</span>) &mdash; not the browser authorization code.</p>
+                <p class="mt-3"><a href="{% url 'cpanel:script_create' %}?template=ai" class="text-info hover:underline transition">Create an example AI script &rarr;</a></p>
+            </div>
+
+        </div>
+
+        <div id="claude-test-result" class="hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+    </div>
+</div>
+
+{{ ai_providers_json|json_script:"ai-providers-data" }}
+{{ ai_presets_json|json_script:"ai-presets-data" }}
+
+<!-- Secret Providers Service Card -->
+<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="p-6 border-b border-line-soft">
+        <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+                <div class="w-12 h-12 rounded-lg bg-info/10 hidden sm:grid place-items-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-lg font-semibold text-text">Secret Providers</h2>
+                        <span class="px-1.5 py-0.5 rounded-md bg-warn/10 text-warn eyebrow leading-none">Beta</span>
+                    </div>
+                    <p class="text-sm text-muted">Resolve secret values live from an external manager &mdash; HashiCorp Vault / OpenBao &mdash; instead of storing them here. Point a secret at a provider from the secret form.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
+                {% if secret_providers %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>{{ secret_providers|length }} configured</span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
+                {% endif %}
+
+                <button type="button" onclick="toggleSecretProvidersConfig()" aria-label="Show or hide the secret provider settings" class="p-2 text-muted hover:text-text transition-colors">
+                    <svg id="sp-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sp-config" class="hidden">
+        <div class="p-6 space-y-6">
+
+            <!-- Saved providers -->
+            <div>
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <p class="text-[13px] font-medium text-text">Saved providers</p>
+                    <button type="button" onclick="spNewProvider()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add provider</button>
+                </div>
+
+                {% if secret_providers %}
+                <div class="border border-line-soft rounded-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                    <table class="w-full text-sm min-w-[640px]">
+                        <thead>
+                            <tr class="text-left bg-panel-hi/40">
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Name</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Type</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">In use</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Last tested</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in secret_providers %}
+                            <tr class="border-t border-line-soft">
+                                <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">{{ p.name }}</td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.type_label }}</td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.secret_count }} secret{{ p.secret_count|pluralize }}</td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
+                                <td class="px-4 py-2.5">
+                                    <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                                        <button type="button" onclick="spTestRow('{{ p.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
+                                        <button type="button" onclick="spEditProvider('{{ p.id }}')" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</button>
+                                        <form method="post" action="{% url 'cpanel:secret_provider_delete' provider_id=p.id %}" class="inline" onsubmit="return confirm('Delete secret provider \'{{ p.name|escapejs }}\'? Its saved credentials will be removed.');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="border border-dashed border-line rounded-lg p-5 text-center text-sm text-muted">
+                    No secret providers yet. Add one to resolve secret values from HashiCorp Vault or OpenBao.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Add / edit provider form -->
+            <div id="sp-provider-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
+                <p id="sp-provider-form-title" class="text-[13px] font-medium text-text mb-4">Add provider</p>
+                <form method="post" action="{% url 'cpanel:secret_provider_save' %}" id="sp-provider-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="provider_id" id="sp-provider-id" value="">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ secret_provider_form.provider_type.label }}</label>
+                            {{ secret_provider_form.provider_type }}
+                        </div>
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ secret_provider_form.name.label }}</label>
+                            {{ secret_provider_form.name }}
+                        </div>
+
+                        <!-- Adapter-specific fields, rendered from the registry -->
+                        <div id="sp-dynamic-fields" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ secret_provider_form.cache_ttl.label }}</label>
+                            {{ secret_provider_form.cache_ttl }}
+                            <p class="mt-1.5 text-xs text-faint">{{ secret_provider_form.cache_ttl.help_text }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ secret_provider_form.on_error.label }}</label>
+                            {{ secret_provider_form.on_error }}
+                            <p class="mt-1.5 text-xs text-faint">{{ secret_provider_form.on_error.help_text }}</p>
+                        </div>
+                    </div>
+
+                    <p id="sp-provider-docs" class="hidden mb-5 text-xs text-muted"></p>
+
+                    <div class="flex items-center gap-2.5">
+                        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save provider</button>
+                        <button type="button" onclick="spTestForm()" id="sp-test-form-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test connection</button>
+                        <button type="button" onclick="spCancelProviderForm()" class="text-[13px] px-3.5 py-2 rounded-lg text-muted hover:text-text transition-colors">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Usage help -->
+            <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
+                <p class="text-text font-medium mb-2">How it works</p>
+                <p class="mb-2">A secret with source <span class="text-text">External provider</span> stores only a reference (e.g. <span class="font-mono text-text">kv/myapp#API_KEY</span>). Its value is fetched from the provider when a run starts, injected and masked exactly like a stored secret, and cached in-process for the provider's TTL.</p>
+                <p>If a fetch fails, the run fails before it starts (fail-closed) &mdash; unless the provider's on-error is set to serve the last cached value. Rotate a value in the provider and the next run past the TTL picks it up.</p>
+            </div>
+
+        </div>
+
+        <div id="sp-test-result" class="hidden mx-6 mb-6 p-4 rounded-lg"></div>
+    </div>
+</div>
+
+{{ secret_providers_json|json_script:"secret-providers-data" }}
+{{ secret_backends_json|json_script:"secret-backends-data" }}
+
+<!-- Embedding Providers Service Card -->
+<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="p-6 border-b border-line-soft">
+        <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+                <div class="w-12 h-12 rounded-lg bg-accent/10 hidden sm:grid place-items-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20l5-5m0 0l4 4 7-7m-11 3V9a2 2 0 012-2h3m6 0h.01M6 4h.01M18 4h.01M12 12h.01"/></svg>
+                </div>
+                <div class="min-w-0">
+                    <h2 class="text-lg font-semibold text-text">Embedding Providers</h2>
+                    <p class="text-sm text-muted">Turn text into vectors for semantic search &mdash; OpenAI, Voyage, Jina, Z.AI, a local Ollama, or any OpenAI-compatible endpoint</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
+                {% if embedding_providers %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>{{ embedding_providers|length }} configured</span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
+                {% endif %}
+                <button type="button" onclick="toggleEmbeddingConfig()" aria-label="Show or hide the embedding provider settings" class="p-2 text-muted hover:text-text transition-colors">
+                    <svg id="embedding-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="embedding-config" class="hidden">
+        <div class="p-6 space-y-6">
+            <div>
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <p class="text-[13px] font-medium text-text">Saved providers</p>
+                    <button type="button" onclick="embNewProvider()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add provider</button>
+                </div>
+
+                {% if embedding_providers %}
+                <div class="border border-line-soft rounded-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                    <table class="w-full text-sm min-w-[760px]">
+                        <thead>
+                            <tr class="text-left bg-panel-hi/40">
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Name</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Type</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Model</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Dimension</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Collections</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Last tested</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in embedding_providers %}
+                            <tr class="border-t border-line-soft">
+                                <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">
+                                    {{ p.name }}
+                                    {% if not p.enabled %}<span class="ml-1.5 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md bg-panel-hi text-faint align-middle">Disabled</span>{% endif %}
+                                </td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ p.get_provider_type_display }}</td>
+                                <td class="px-4 py-2.5 font-mono text-xs text-muted">{{ p.model }}</td>
+                                <td class="px-4 py-2.5 text-right font-mono tnum text-muted">{% if p.dimension %}{{ p.dimension }}{% else %}<span class="text-warn" title="Run Test to record the dimension">untested</span>{% endif %}</td>
+                                <td class="px-4 py-2.5 text-right font-mono tnum text-muted">{{ p.collection_count }}</td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if p.last_tested_at %}{{ p.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
+                                <td class="px-4 py-2.5">
+                                    <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                                        <button type="button" onclick="embTestRow('{{ p.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
+                                        <button type="button" onclick="embEditProvider('{{ p.id }}')" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</button>
+                                        <form method="post" action="{% url 'cpanel:embedding_provider_delete' provider_id=p.id %}" class="inline" onsubmit="return confirm('Delete embedding provider \'{{ p.name|escapejs }}\'? Collections that use it must be deleted first.');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="border border-dashed border-line rounded-lg p-5 text-center text-sm text-muted">
+                    No embedding providers yet. Add one to let collections embed text and search by meaning.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Add / edit provider form -->
+            <div id="emb-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
+                <p id="emb-form-title" class="text-[13px] font-medium text-text mb-4">Add provider</p>
+                <form method="post" action="{% url 'cpanel:embedding_provider_save' %}" id="emb-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="provider_id" id="emb-provider-id" value="">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ embedding_provider_form.provider_type.label }}</label>
+                            {{ embedding_provider_form.provider_type }}
+                        </div>
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ embedding_provider_form.name.label }}</label>
+                            {{ embedding_provider_form.name }}
+                        </div>
+                        <div class="md:col-span-2" id="emb-field-base-url">
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ embedding_provider_form.base_url.label }}</label>
+                            {{ embedding_provider_form.base_url }}
+                            <p class="mt-1.5 text-xs text-faint">{{ embedding_provider_form.base_url.help_text }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5" id="emb-credential-label">{{ embedding_provider_form.credential.label }}</label>
+                            {{ embedding_provider_form.credential }}
+                            <p class="mt-1.5 text-xs text-faint" id="emb-credential-help"></p>
+                            <p class="mt-1.5 text-xs text-ok hidden" id="emb-credential-saved">A key is saved &mdash; leave blank to keep it.</p>
+                        </div>
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ embedding_provider_form.model.label }}</label>
+                            {{ embedding_provider_form.model }}
+                            <p class="mt-1.5 text-xs text-faint">{{ embedding_provider_form.model.help_text }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ embedding_provider_form.max_batch.label }}</label>
+                            {{ embedding_provider_form.max_batch }}
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-6 mb-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                        <label class="flex items-center gap-2 cursor-pointer">{{ embedding_provider_form.enabled }}<span class="text-sm text-muted">{{ embedding_provider_form.enabled.label }}</span></label>
+                    </div>
+                    <p id="emb-notes" class="hidden mb-5 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-xs"></p>
+                    <p id="emb-docs" class="hidden mb-5 text-xs text-faint"></p>
+                    <div class="flex items-center gap-2.5">
+                        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save provider</button>
+                        <button type="button" onclick="embTestForm(this)" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
+                        <button type="button" onclick="document.getElementById('emb-form-wrap').classList.add('hidden')" class="text-[13px] px-3.5 py-2 rounded-lg text-muted hover:text-text transition-colors">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
+                <p class="text-text font-medium mb-2">How collections use a provider</p>
+                <p>A collection pins the provider's <span class="text-text">model</span> and the <span class="text-text">dimension</span> recorded by Test when it is created. Changing the model later resets the dimension and means a new collection &mdash; the vector space never changes under existing points. Usage (tokens, calls) is counted on the provider and on each collection.</p>
+            </div>
+        </div>
+        <div id="emb-test-result" class="hidden mx-6 mb-6 p-4 rounded-lg"></div>
+    </div>
+</div>
+
+{{ embedding_providers_json|json_script:"embedding-providers-data" }}
+{{ embedding_presets_json|json_script:"embedding-presets-data" }}
+
+<!-- Vector Stores Service Card -->
+<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="p-6 border-b border-line-soft">
+        <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+                <div class="w-12 h-12 rounded-lg bg-info/10 hidden sm:grid place-items-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                </div>
+                <div class="min-w-0">
+                    <h2 class="text-lg font-semibold text-text">Vector Stores</h2>
+                    <p class="text-sm text-muted">Where vector collections live &mdash; the built-in Local store (SQLite + numpy on the data volume) or a Qdrant server</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0 self-end sm:self-auto">
+                {% if vector_connections %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>{{ vector_connections|length }} connection{{ vector_connections|length|pluralize }}</span>
+                {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md bg-panel-hi text-faint"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Not configured</span>
+                {% endif %}
+                <button type="button" onclick="toggleVectorConfig()" aria-label="Show or hide the vector store settings" class="p-2 text-muted hover:text-text transition-colors">
+                    <svg id="vector-chevron" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="vector-config" class="hidden">
+        <div class="p-6 space-y-6">
+            <div>
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <p class="text-[13px] font-medium text-text">Connections</p>
+                    <button type="button" onclick="vecNewConnection()" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">+ Add connection</button>
+                </div>
+
+                {% if vector_connections %}
+                <div class="border border-line-soft rounded-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                    <table class="w-full text-sm min-w-[720px]">
+                        <thead>
+                            <tr class="text-left bg-panel-hi/40">
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Name</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Backend</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Target</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Collections</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2">Last tested</th>
+                                <th class="eyebrow text-faint font-normal px-4 py-2 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in vector_connections %}
+                            <tr class="border-t border-line-soft">
+                                <td class="px-4 py-2.5 text-text font-medium whitespace-nowrap">
+                                    {{ c.name }}
+                                    {% if c.is_default %}<span class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-md bg-ok/10 text-ok align-middle"><span class="w-1 h-1 rounded-full bg-ok"></span>Default</span>{% endif %}
+                                    {% if not c.enabled %}<span class="ml-1.5 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md bg-panel-hi text-faint align-middle">Disabled</span>{% endif %}
+                                    {% if c.exposes_credentials %}<span class="ml-1.5 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md bg-warn/10 text-warn align-middle" title="Scripts that can open a collection here may receive this server's URL and API key through credentials().">Key shared with runs</span>{% endif %}
+                                </td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap">{{ c.get_provider_type_display }}</td>
+                                <td class="px-4 py-2.5 font-mono text-xs text-muted">{% if c.is_local %}{{ vectors_dir }}{% else %}{{ c.url|default:"—" }}{% endif %}</td>
+                                <td class="px-4 py-2.5 text-right font-mono tnum text-muted">{{ c.collection_count }}</td>
+                                <td class="px-4 py-2.5 text-muted whitespace-nowrap" data-last-tested>{% if c.last_tested_at %}{{ c.last_tested_at|timesince }} ago{% else %}&mdash;{% endif %}</td>
+                                <td class="px-4 py-2.5">
+                                    <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                                        {% if not c.is_default %}
+                                        <form method="post" action="{% url 'cpanel:vector_connection_default' connection_id=c.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Make default</button>
+                                        </form>
+                                        {% endif %}
+                                        <button type="button" onclick="vecTestRow('{{ c.id }}', this)" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
+                                        <button type="button" onclick="vecEditConnection('{{ c.id }}')" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</button>
+                                        <form method="post" action="{% url 'cpanel:vector_connection_delete' connection_id=c.id %}" class="inline" onsubmit="return confirm('Delete vector connection \'{{ c.name|escapejs }}\'? Collections on it must be deleted first.');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-fail/80 hover:text-fail hover:border-fail/50 transition-colors">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="border border-dashed border-line rounded-lg p-5 text-center text-sm text-muted">
+                    No connections. Add the Local store (no settings needed) or a Qdrant server.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Add / edit connection form -->
+            <div id="vec-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
+                <p id="vec-form-title" class="text-[13px] font-medium text-text mb-4">Add connection</p>
+                <form method="post" action="{% url 'cpanel:vector_connection_save' %}" id="vec-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="connection_id" id="vec-connection-id" value="">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ vector_connection_form.provider_type.label }}</label>
+                            {{ vector_connection_form.provider_type }}
+                        </div>
+                        <div>
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ vector_connection_form.name.label }}</label>
+                            {{ vector_connection_form.name }}
+                        </div>
+                        <div class="md:col-span-2 vec-qdrant-only">
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ vector_connection_form.url.label }}</label>
+                            {{ vector_connection_form.url }}
+                            <p class="mt-1.5 text-xs text-faint">{{ vector_connection_form.url.help_text }}</p>
+                        </div>
+                        <div class="vec-qdrant-only">
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ vector_connection_form.api_key.label }}</label>
+                            {{ vector_connection_form.api_key }}
+                            <p class="mt-1.5 text-xs text-ok hidden" id="vec-credentials-saved">A key is saved &mdash; leave blank to keep it.</p>
+                        </div>
+                        <div class="vec-qdrant-only">
+                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ vector_connection_form.collection_prefix.label }}</label>
+                            {{ vector_connection_form.collection_prefix }}
+                            <p class="mt-1.5 text-xs text-faint">{{ vector_connection_form.collection_prefix.help_text }}</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-6 mb-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                        <label class="flex items-center gap-2 cursor-pointer">{{ vector_connection_form.enabled }}<span class="text-sm text-muted">{{ vector_connection_form.enabled.label }}</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer">{{ vector_connection_form.is_default }}<span class="text-sm text-muted">{{ vector_connection_form.is_default.label }}</span></label>
+                        <div class="vec-qdrant-only w-full">
+                            <label class="flex items-center gap-2 cursor-pointer">{{ vector_connection_form.expose_credentials }}<span class="text-sm text-muted">{{ vector_connection_form.expose_credentials.label }}</span></label>
+                            <p class="mt-1.5 text-xs text-faint">{{ vector_connection_form.expose_credentials.help_text }}</p>
+                        </div>
+                    </div>
+                    <p id="vec-local-note" class="hidden mb-5 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-xs">The Local store needs no settings: one SQLite file per collection under {{ vectors_dir }}, searched exactly with numpy. Comfortable to ~{{ vector_soft_limit }} points per collection; single-container deployments only.</p>
+                    <p id="vec-qdrant-note" class="hidden mb-5 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-xs">Each collection becomes one Qdrant collection named after its workspace and name (with the prefix above, if any), created when the collection is. Searches and filters run on the server; backups carry the collection's settings, not its points. A Qdrant container on the same Docker network needs PYRUNNER_ALLOW_PRIVATE_NETWORK=true.</p>
+                    <div class="flex items-center gap-2.5">
+                        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save connection</button>
+                        <button type="button" onclick="vecTestForm(this)" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Test</button>
+                        <button type="button" onclick="document.getElementById('vec-form-wrap').classList.add('hidden')" class="text-[13px] px-3.5 py-2 rounded-lg text-muted hover:text-text transition-colors">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div id="vec-test-result" class="hidden mx-6 mb-6 p-4 rounded-lg"></div>
+    </div>
+</div>
+
+{{ vector_connections_json|json_script:"vector-connections-data" }}
+
+<!-- Future services placeholder -->
+<div class="rounded-2xl border border-dashed border-line bg-panel/50 p-8 text-center">
+    <div class="w-12 h-12 rounded-lg bg-panel-hi grid place-items-center mx-auto mb-4">
+        <svg class="w-6 h-6 text-faint" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+    </div>
+    <h3 class="text-muted font-medium mb-1">More services coming soon</h3>
+    <p class="text-sm text-faint">Additional integrations like SMTP, webhooks, and more will be added here.</p>
+</div>
 {% include "cpanel/_markdown_style.html" %}
 <script src="{% static 'js/markdown.js' %}"></script>
 <script>

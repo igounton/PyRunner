@@ -1,153 +1,139 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Runs - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block heading %}Runs{% endblock %}
+{% block subtitle %}Execution history across all scripts{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
+{% block page %}
+<!-- Filters -->
+<div class="flex items-center flex-wrap gap-3 justify-between">
+    <div class="inline-flex items-center flex-wrap gap-1 p-1 rounded-lg border border-line bg-panel">
+        <a href="{% url 'cpanel:run_list' %}{% if querystring_without_status %}?{{ querystring_without_status }}{% endif %}"
+           class="px-3 py-1.5 text-sm rounded-md transition-colors {% if not status_filter %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text{% endif %}">All</a>
+        {% for value, label in status_choices %}
+        <a href="{% url 'cpanel:run_list' %}?status={{ value }}{% if querystring_without_status %}&{{ querystring_without_status }}{% endif %}"
+           class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == value %}{% if value == 'success' %}bg-ok/10 text-ok{% elif value == 'failed' or value == 'timeout' %}bg-fail/10 text-fail{% elif value == 'running' %}bg-warn/10 text-warn{% else %}bg-panel-hi text-text{% endif %} font-medium{% else %}text-muted hover:text-text{% endif %}">{{ label }}</a>
+        {% endfor %}
+    </div>
 
-            <!-- Header -->
-            <div>
-                <h1 class="text-[22px] font-semibold tracking-tight">Runs</h1>
-                <p class="text-sm text-muted mt-1">Execution history across all scripts</p>
+    <div class="flex items-center flex-wrap gap-3 min-w-0 w-full sm:w-auto">
+        <!-- Text search: script name + error output; stdout on request -->
+        <form method="get" action="{% url 'cpanel:run_list' %}" class="flex items-center flex-wrap gap-2 min-w-0 w-full sm:w-auto">
+            {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+            {% if script_filter %}<input type="hidden" name="script" value="{{ script_filter }}">{% endif %}
+            <div class="relative flex-1 min-w-0 sm:flex-none">
+                <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-faint pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/></svg>
+                <input type="search" name="q" value="{{ search_query }}" maxlength="200" placeholder="Search name or error output"
+                       class="w-full sm:w-56 pl-8 pr-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text placeholder-faint/60 focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
             </div>
+            <label class="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none" title="Also search stdout. Slower on large histories.">
+                <input type="checkbox" name="deep" value="1" {% if search_output %}checked{% endif %} class="w-3.5 h-3.5 rounded text-ok bg-ink border-line focus:ring-ok/40 focus:ring-2">
+                Include output
+            </label>
+            <button type="submit" class="px-3 py-1.5 text-sm rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Search</button>
+        </form>
 
-            <!-- Filters -->
-            <div class="flex items-center flex-wrap gap-3 justify-between">
-                <div class="inline-flex items-center flex-wrap gap-1 p-1 rounded-lg border border-line bg-panel">
-                    <a href="{% url 'cpanel:run_list' %}{% if querystring_without_status %}?{{ querystring_without_status }}{% endif %}"
-                       class="px-3 py-1.5 text-sm rounded-md transition-colors {% if not status_filter %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text{% endif %}">All</a>
-                    {% for value, label in status_choices %}
-                    <a href="{% url 'cpanel:run_list' %}?status={{ value }}{% if querystring_without_status %}&{{ querystring_without_status }}{% endif %}"
-                       class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == value %}{% if value == 'success' %}bg-ok/10 text-ok{% elif value == 'failed' or value == 'timeout' %}bg-fail/10 text-fail{% elif value == 'running' %}bg-warn/10 text-warn{% else %}bg-panel-hi text-text{% endif %} font-medium{% else %}text-muted hover:text-text{% endif %}">{{ label }}</a>
-                    {% endfor %}
-                </div>
-
-                <div class="flex items-center flex-wrap gap-3 min-w-0 w-full sm:w-auto">
-                    <!-- Text search: script name + error output; stdout on request -->
-                    <form method="get" action="{% url 'cpanel:run_list' %}" class="flex items-center flex-wrap gap-2 min-w-0 w-full sm:w-auto">
-                        {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
-                        {% if script_filter %}<input type="hidden" name="script" value="{{ script_filter }}">{% endif %}
-                        <div class="relative flex-1 min-w-0 sm:flex-none">
-                            <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-faint pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/></svg>
-                            <input type="search" name="q" value="{{ search_query }}" maxlength="200" placeholder="Search name or error output"
-                                   class="w-full sm:w-56 pl-8 pr-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text placeholder-faint/60 focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
-                        </div>
-                        <label class="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none" title="Also search stdout. Slower on large histories.">
-                            <input type="checkbox" name="deep" value="1" {% if search_output %}checked{% endif %} class="w-3.5 h-3.5 rounded text-ok bg-ink border-line focus:ring-ok/40 focus:ring-2">
-                            Include output
-                        </label>
-                        <button type="submit" class="px-3 py-1.5 text-sm rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Search</button>
-                    </form>
-
-                    {% if scripts %}
-                    <div class="flex items-center gap-2 min-w-0 w-full sm:w-auto">
-                        <span class="eyebrow text-faint">Script</span>
-                        <select onchange="window.location.href='{% url 'cpanel:run_list' %}?script=' + this.value + '{% if querystring_without_script %}&{{ querystring_without_script|escapejs }}{% endif %}'"
-                                class="flex-1 min-w-0 sm:flex-none sm:max-w-xs px-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
-                            <option value="">All scripts</option>
-                            {% for script in scripts %}
-                            <option value="{{ script.pk }}" {% if script_filter == script.pk|stringformat:"s" %}selected{% endif %}>{{ script.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Runs table -->
-            {% if runs %}
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="overflow-x-auto">
-                <table class="w-full min-w-[720px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Script</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Duration</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Triggered by</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Started</th>
-                            <th class="px-6 py-3 w-10"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for run in runs %}
-                        <tr data-href="{% url 'cpanel:run_detail' pk=run.pk %}" tabindex="0"
-                            class="group cursor-pointer hover:bg-panel-hi/50 focus:outline-none focus-visible:bg-panel-hi/50 transition-colors">
-                            <td class="px-6 py-3.5">
-                                <span class="text-[13.5px] font-medium text-text group-hover:text-ok transition-colors">{{ run.script.name }}</span>
-                            </td>
-                            <td class="px-6 py-3.5">
-                                <div class="flex items-center gap-1.5">
-                                    {% include "cpanel/runs/_status_badge.html" %}
-                                    {% if run.stderr %}
-                                    <button type="button" data-error-toggle="run-err-{{ run.pk }}" aria-expanded="false"
-                                            aria-controls="run-err-{{ run.pk }}" title="Show error output"
-                                            class="inline-grid place-items-center w-5 h-5 rounded text-fail/60 hover:text-fail hover:bg-fail/10 transition-colors">
-                                        <svg class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                                    </button>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if run.duration_display %}{{ run.duration_display }}{% else %}—{% endif %}</td>
-                            <td class="px-6 py-3.5 text-sm text-muted truncate max-w-[12rem]">{% if run.triggered_by %}{{ run.triggered_by.email }}{% else %}<span class="text-faint">System</span>{% endif %}</td>
-                            <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if run.started_at %}{{ run.started_at|date:"M d, H:i" }}{% else %}{{ run.created_at|date:"M d, H:i" }}{% endif %}</td>
-                            <td class="px-6 py-3.5 text-right">
-                                <span class="inline-grid place-items-center w-7 h-7 rounded-md text-faint group-hover:text-text transition-colors" aria-hidden="true">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                                </span>
-                            </td>
-                        </tr>
-                        {% if run.stderr %}
-                        {% comment %}Collapsed by default. `hidden` also keeps this row out of the
-                           tbody's divide-y selector, so collapsed rows add no rule.{% endcomment %}
-                        <tr id="run-err-{{ run.pk }}" hidden class="bg-fail/[0.04] !border-t-0">
-                            <td colspan="6" class="px-6 pb-4">
-                                <div class="rounded-lg border border-fail/30 overflow-hidden">
-                                    <div class="flex items-center justify-between gap-3 px-3 py-1.5 border-b border-fail/30 bg-fail/10">
-                                        <span class="eyebrow text-fail/70">
-                                            stderr{% if run.exit_code is not None %} · exit {{ run.exit_code }}{% endif %}
-                                        </span>
-                                        <a href="{% url 'cpanel:run_detail' pk=run.pk %}" class="text-xs text-muted hover:text-text transition-colors">View full run &rarr;</a>
-                                    </div>
-                                    <pre class="bg-ink text-fail font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap px-3 py-2.5 max-h-64 overflow-auto">{{ run.get_stderr_preview }}</pre>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-            </section>
-
-            {% include "cpanel/_pagination.html" %}
-            {% else %}
-            <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
-                <div class="w-14 h-14 rounded-full bg-ok/10 grid place-items-center mx-auto mb-4">
-                    <svg class="w-7 h-7 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                </div>
-                <h3 class="text-base font-semibold mb-1">
-                    {% if search_query %}No runs match “{{ search_query }}”{% elif status_filter or script_filter %}No runs match these filters{% else %}No runs yet{% endif %}
-                </h3>
-                <p class="text-sm text-muted mb-6">
-                    {% if search_query and not search_output %}Searched script names and error output. Tick “Include output” to search stdout too.{% elif status_filter or script_filter or search_query %}Try a different status or script.{% else %}Run a script to see its execution history here.{% endif %}
-                </p>
-                {% if status_filter or script_filter or search_query %}
-                <a href="{% url 'cpanel:run_list' %}" class="text-sm text-info hover:underline">Clear filters</a>
-                {% else %}
-                <a href="{% url 'cpanel:script_list' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">View scripts</a>
-                {% endif %}
-            </section>
-            {% endif %}
-
+        {% if scripts %}
+        <div class="flex items-center gap-2 min-w-0 w-full sm:w-auto">
+            <span class="eyebrow text-faint">Script</span>
+            <select onchange="window.location.href='{% url 'cpanel:run_list' %}?script=' + this.value + '{% if querystring_without_script %}&{{ querystring_without_script|escapejs }}{% endif %}'"
+                    class="flex-1 min-w-0 sm:flex-none sm:max-w-xs px-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
+                <option value="">All scripts</option>
+                {% for script in scripts %}
+                <option value="{{ script.pk }}" {% if script_filter == script.pk|stringformat:"s" %}selected{% endif %}>{{ script.name }}</option>
+                {% endfor %}
+            </select>
         </div>
+        {% endif %}
     </div>
 </div>
 
+<!-- Runs table -->
+{% if runs %}
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[720px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Script</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Duration</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Triggered by</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Started</th>
+                <th class="px-6 py-3 w-10"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for run in runs %}
+            <tr data-href="{% url 'cpanel:run_detail' pk=run.pk %}" tabindex="0"
+                class="group cursor-pointer hover:bg-panel-hi/50 focus:outline-none focus-visible:bg-panel-hi/50 transition-colors">
+                <td class="px-6 py-3.5">
+                    <span class="text-[13.5px] font-medium text-text group-hover:text-ok transition-colors">{{ run.script.name }}</span>
+                </td>
+                <td class="px-6 py-3.5">
+                    <div class="flex items-center gap-1.5">
+                        {% include "cpanel/runs/_status_badge.html" %}
+                        {% if run.stderr %}
+                        <button type="button" data-error-toggle="run-err-{{ run.pk }}" aria-expanded="false"
+                                aria-controls="run-err-{{ run.pk }}" title="Show error output"
+                                class="inline-grid place-items-center w-5 h-5 rounded text-fail/60 hover:text-fail hover:bg-fail/10 transition-colors">
+                            <svg class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if run.duration_display %}{{ run.duration_display }}{% else %}—{% endif %}</td>
+                <td class="px-6 py-3.5 text-sm text-muted truncate max-w-[12rem]">{% if run.triggered_by %}{{ run.triggered_by.email }}{% else %}<span class="text-faint">System</span>{% endif %}</td>
+                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if run.started_at %}{{ run.started_at|date:"M d, H:i" }}{% else %}{{ run.created_at|date:"M d, H:i" }}{% endif %}</td>
+                <td class="px-6 py-3.5 text-right">
+                    <span class="inline-grid place-items-center w-7 h-7 rounded-md text-faint group-hover:text-text transition-colors" aria-hidden="true">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </span>
+                </td>
+            </tr>
+            {% if run.stderr %}
+            {% comment %}Collapsed by default. `hidden` also keeps this row out of the
+               tbody's divide-y selector, so collapsed rows add no rule.{% endcomment %}
+            <tr id="run-err-{{ run.pk }}" hidden class="bg-fail/[0.04] !border-t-0">
+                <td colspan="6" class="px-6 pb-4">
+                    <div class="rounded-lg border border-fail/30 overflow-hidden">
+                        <div class="flex items-center justify-between gap-3 px-3 py-1.5 border-b border-fail/30 bg-fail/10">
+                            <span class="eyebrow text-fail/70">
+                                stderr{% if run.exit_code is not None %} · exit {{ run.exit_code }}{% endif %}
+                            </span>
+                            <a href="{% url 'cpanel:run_detail' pk=run.pk %}" class="text-xs text-muted hover:text-text transition-colors">View full run &rarr;</a>
+                        </div>
+                        <pre class="bg-ink text-fail font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap px-3 py-2.5 max-h-64 overflow-auto">{{ run.get_stderr_preview }}</pre>
+                    </div>
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+
+{% include "cpanel/_pagination.html" %}
+{% else %}
+<section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
+    <div class="w-14 h-14 rounded-full bg-ok/10 grid place-items-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </div>
+    <h3 class="text-base font-semibold mb-1">
+        {% if search_query %}No runs match “{{ search_query }}”{% elif status_filter or script_filter %}No runs match these filters{% else %}No runs yet{% endif %}
+    </h3>
+    <p class="text-sm text-muted mb-6">
+        {% if search_query and not search_output %}Searched script names and error output. Tick “Include output” to search stdout too.{% elif status_filter or script_filter or search_query %}Try a different status or script.{% else %}Run a script to see its execution history here.{% endif %}
+    </p>
+    {% if status_filter or script_filter or search_query %}
+    <a href="{% url 'cpanel:run_list' %}" class="text-sm text-info hover:underline">Clear filters</a>
+    {% else %}
+    <a href="{% url 'cpanel:script_list' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">View scripts</a>
+    {% endif %}
+</section>
+{% endif %}
 <script>
 /* Expand a failed run's stderr inline, so the list answers "why did it fail?"
    without a round-trip to the detail page. */

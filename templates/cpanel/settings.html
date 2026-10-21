@@ -1,753 +1,742 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Settings - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block heading %}Settings{% endblock %}
+{% block subtitle %}Configure this PyRun instance — access, email, workers, retention, and backups.{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto">
-            <div class="mb-6">
-                <h1 class="text-[22px] font-semibold tracking-tight">Settings</h1>
-                <p class="text-sm text-muted mt-1">Configure this PyRun instance — access, email, workers, retention, and backups.</p>
-            </div>
+{% block page %}
+<!-- Tabs -->
+<div class="mb-6">
+    <div class="bg-panel border border-line rounded-xl p-1.5 inline-flex flex-wrap gap-1">
+        <button type="button" onclick="showTab('general')" id="tab-general" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-panel-hi text-text transition-colors">General</button>
+        <button type="button" onclick="showTab('security')" id="tab-security" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Security</button>
+        <button type="button" onclick="showTab('schedules')" id="tab-schedules" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Schedules</button>
+        <button type="button" onclick="showTab('notifications')" id="tab-notifications" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Email</button>
+        <button type="button" onclick="showTab('retention')" id="tab-retention" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Retention</button>
+        <button type="button" onclick="showTab('workers')" id="tab-workers" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Workers</button>
+        <button type="button" onclick="showTab('isolation')" id="tab-isolation" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Isolation</button>
+        <button type="button" onclick="showTab('system')" id="tab-system" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">System</button>
+        <button type="button" onclick="showTab('backup')" id="tab-backup" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Backup</button>
+        <button type="button" onclick="showTab('api')" id="tab-api" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">API</button>
+    </div>
+</div>
 
-            <!-- Tabs -->
-            <div class="mb-6">
-                <div class="bg-panel border border-line rounded-xl p-1.5 inline-flex flex-wrap gap-1">
-                    <button type="button" onclick="showTab('general')" id="tab-general" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-panel-hi text-text transition-colors">General</button>
-                    <button type="button" onclick="showTab('security')" id="tab-security" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Security</button>
-                    <button type="button" onclick="showTab('schedules')" id="tab-schedules" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Schedules</button>
-                    <button type="button" onclick="showTab('notifications')" id="tab-notifications" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Email</button>
-                    <button type="button" onclick="showTab('retention')" id="tab-retention" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Retention</button>
-                    <button type="button" onclick="showTab('workers')" id="tab-workers" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Workers</button>
-                    <button type="button" onclick="showTab('isolation')" id="tab-isolation" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Isolation</button>
-                    <button type="button" onclick="showTab('system')" id="tab-system" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">System</button>
-                    <button type="button" onclick="showTab('backup')" id="tab-backup" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Backup</button>
-                    <button type="button" onclick="showTab('api')" id="tab-api" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">API</button>
-                </div>
-            </div>
-
-            <!-- General Settings Tab -->
-            <div id="panel-general" class="tab-panel">
-                <form method="post" action="{% url 'cpanel:general_settings' %}">
-                    {% csrf_token %}
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                        <!-- Primary column: instance identity & formatting -->
-                        <div class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-1">Instance</h3>
-                            <p class="text-sm text-muted mb-5">Name your instance and choose the timezone times are displayed in across the console.</p>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ general_form.instance_name.label }}</label>
-                                    {{ general_form.instance_name }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ general_form.instance_name.help_text }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ general_form.timezone.label }}</label>
-                                    {{ general_form.timezone }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ general_form.timezone.help_text }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Side column: admin access URL -->
-                        <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-1">Admin access URL</h3>
-                            <p class="text-sm text-muted mb-5">The path segment that fronts the control panel. Keep it private to reduce exposure.</p>
-                            <label class="block text-[13px] font-medium text-text mb-1.5">{{ general_form.admin_url_slug.label }}</label>
-                            <div class="flex items-center gap-2">
-                                <span class="text-faint">/</span>
-                                {{ general_form.admin_url_slug }}
-                                <span class="text-faint">/</span>
-                            </div>
-                            <p class="mt-1.5 text-xs text-faint">{{ general_form.admin_url_slug.help_text }}</p>
-                            {% if general_form.admin_url_slug.errors %}<p class="mt-1.5 text-xs text-fail">{{ general_form.admin_url_slug.errors.0 }}</p>{% endif %}
-                        </div>
+<!-- General Settings Tab -->
+<div id="panel-general" class="tab-panel">
+    <form method="post" action="{% url 'cpanel:general_settings' %}">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <!-- Primary column: instance identity & formatting -->
+            <div class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-1">Instance</h3>
+                <p class="text-sm text-muted mb-5">Name your instance and choose the timezone times are displayed in across the console.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ general_form.instance_name.label }}</label>
+                        {{ general_form.instance_name }}
+                        <p class="mt-1.5 text-xs text-faint">{{ general_form.instance_name.help_text }}</p>
                     </div>
-                    <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
-                </form>
-            </div>
-
-            <!-- Security Tab -->
-            <div id="panel-security" class="tab-panel hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                    <!-- Primary column: login protection -->
-                    <form method="post" action="{% url 'cpanel:recaptcha_settings' %}" class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
-                        {% csrf_token %}
-                        <h3 class="text-base font-semibold text-text mb-1">Login protection (reCAPTCHA)</h3>
-                        <p class="text-sm text-muted mb-4">Require Google reCAPTCHA v2 (“I'm not a robot”) on the sign-in page to block automated login attempts.</p>
-
-                        <label class="flex items-center justify-between p-4 bg-panel-hi/40 border border-line-soft rounded-lg mb-4 cursor-pointer">
-                            <div>
-                                <p class="text-text font-medium">{{ recaptcha_form.recaptcha_enabled.label }}</p>
-                                <p class="text-sm text-muted">When enabled, users must pass the reCAPTCHA challenge to sign in.</p>
-                            </div>
-                            {{ recaptcha_form.recaptcha_enabled }}
-                        </label>
-
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-[13px] font-medium text-text mb-1.5">{{ recaptcha_form.recaptcha_site_key.label }}</label>
-                                {{ recaptcha_form.recaptcha_site_key }}
-                                <p class="mt-1.5 text-xs text-faint">{{ recaptcha_form.recaptcha_site_key.help_text }}</p>
-                                {% if recaptcha_form.recaptcha_site_key.errors %}<p class="mt-1.5 text-xs text-fail">{{ recaptcha_form.recaptcha_site_key.errors.0 }}</p>{% endif %}
-                            </div>
-                            <div>
-                                <label class="block text-[13px] font-medium text-text mb-1.5">{{ recaptcha_form.recaptcha_secret_key.label }}</label>
-                                {{ recaptcha_form.recaptcha_secret_key }}
-                                <p class="mt-1.5 text-xs text-faint">
-                                    {{ recaptcha_form.recaptcha_secret_key.help_text }}
-                                    {% if settings.recaptcha_secret_key_encrypted %}<span class="text-ok">A secret key is currently saved.</span>{% endif %}
-                                </p>
-                                {% if recaptcha_form.recaptcha_secret_key.errors %}<p class="mt-1.5 text-xs text-fail">{{ recaptcha_form.recaptcha_secret_key.errors.0 }}</p>{% endif %}
-                            </div>
-                        </div>
-
-                        <p class="mt-4 text-xs text-faint">
-                            Create v2 keys at
-                            <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener" class="text-info hover:underline">google.com/recaptcha/admin</a>.
-                            Add your domain to the key's allowed list.
-                        </p>
-
-                        <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save reCAPTCHA settings</button>
-                    </form>
-
-                    <!-- Side column: password + account -->
-                    <div class="lg:col-span-5 space-y-5">
-                        <div class="bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-4">Password</h3>
-                            {% if request.user.has_usable_password %}
-                            <div class="flex items-center gap-3 p-4 bg-panel-hi/40 border border-line-soft rounded-lg mb-4">
-                                <div class="w-10 h-10 rounded-full bg-ok/10 grid place-items-center shrink-0"><svg class="w-5 h-5 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
-                                <div>
-                                    <p class="text-text font-medium">Password set</p>
-                                    <p class="text-sm text-muted">You can sign in with your password</p>
-                                </div>
-                            </div>
-                            {% else %}
-                            <div class="flex items-center gap-3 p-4 bg-warn/10 border border-warn/30 rounded-lg mb-4">
-                                <div class="w-10 h-10 rounded-full bg-warn/20 grid place-items-center shrink-0"><svg class="w-5 h-5 text-warn" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
-                                <div>
-                                    <p class="text-text font-medium">No password set</p>
-                                    <p class="text-sm text-muted">Set a password below to sign in</p>
-                                </div>
-                            </div>
-                            {% endif %}
-                            <a href="{% url 'auth:change_password' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                {% if request.user.has_usable_password %}Change password{% else %}Set password{% endif %}
-                            </a>
-                        </div>
-
-                        <div class="bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-4">Account information</h3>
-                            <div class="space-y-3">
-                                <div class="flex justify-between gap-3 p-3 bg-panel-hi/40 border border-line-soft rounded-lg"><span class="text-muted">Email</span><span class="text-text font-mono truncate">{{ request.user.email }}</span></div>
-                                <div class="flex justify-between gap-3 p-3 bg-panel-hi/40 border border-line-soft rounded-lg"><span class="text-muted">Account type</span><span class="text-text">{% if request.user.is_superuser %}Administrator{% else %}User{% endif %}</span></div>
-                                <div class="flex justify-between gap-3 p-3 bg-panel-hi/40 border border-line-soft rounded-lg"><span class="text-muted">Verified</span><span class="{% if request.user.is_verified %}text-ok{% else %}text-warn{% endif %}">{% if request.user.is_verified %}Yes{% else %}No{% endif %}</span></div>
-                            </div>
-                        </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ general_form.timezone.label }}</label>
+                        {{ general_form.timezone }}
+                        <p class="mt-1.5 text-xs text-faint">{{ general_form.timezone.help_text }}</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Schedule Control Tab -->
-            <div id="panel-schedules" class="tab-panel hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                    <!-- Primary column: control -->
-                    <div class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
-                        <h3 class="text-base font-semibold text-text mb-1">Schedule control</h3>
-                        <p class="text-sm text-muted mb-5">Pause every scheduled run at once — useful during maintenance or incident response.</p>
-                        <div class="flex items-center justify-between gap-4 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-                            <div>
-                                <p class="text-text font-medium">Global schedule pause</p>
-                                <p class="text-sm text-muted">
-                                    {% if settings.schedules_paused %}All schedules are currently paused.{% if settings.schedules_paused_at %} Paused {{ settings.schedules_paused_at|timesince }} ago.{% endif %}{% else %}All schedules are running normally.{% endif %}
-                                </p>
-                            </div>
-                            <form method="post" action="{% url 'cpanel:toggle_global_pause' %}">
-                                {% csrf_token %}
-                                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg transition whitespace-nowrap {% if settings.schedules_paused %}bg-ok text-ink hover:opacity-90{% else %}bg-warn text-ink hover:opacity-90{% endif %}">{% if settings.schedules_paused %}Resume all{% else %}Pause all{% endif %}</button>
-                            </form>
-                        </div>
-                        <p class="mt-4 text-xs text-faint">
-                            {% if settings.schedules_paused %}Pausing schedules prevents any scheduled scripts from running automatically. Scripts can still be run manually.{% else %}When paused, all scheduled scripts will stop running until resumed.{% endif %}
-                        </p>
-                    </div>
+            <!-- Side column: admin access URL -->
+            <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-1">Admin access URL</h3>
+                <p class="text-sm text-muted mb-5">The path segment that fronts the control panel. Keep it private to reduce exposure.</p>
+                <label class="block text-[13px] font-medium text-text mb-1.5">{{ general_form.admin_url_slug.label }}</label>
+                <div class="flex items-center gap-2">
+                    <span class="text-faint">/</span>
+                    {{ general_form.admin_url_slug }}
+                    <span class="text-faint">/</span>
+                </div>
+                <p class="mt-1.5 text-xs text-faint">{{ general_form.admin_url_slug.help_text }}</p>
+                {% if general_form.admin_url_slug.errors %}<p class="mt-1.5 text-xs text-fail">{{ general_form.admin_url_slug.errors.0 }}</p>{% endif %}
+            </div>
+        </div>
+        <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
+    </form>
+</div>
 
-                    <!-- Side column: current status -->
-                    <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
-                        <h3 class="text-base font-semibold text-text mb-4">Current status</h3>
-                        <div class="flex items-center gap-3 p-4 rounded-lg border {% if settings.schedules_paused %}bg-warn/10 border-warn/30{% else %}bg-ok/10 border-ok/20{% endif %}">
-                            <span class="w-2.5 h-2.5 rounded-full {% if settings.schedules_paused %}bg-warn{% else %}bg-ok live-dot{% endif %}"></span>
-                            <div>
-                                <p class="font-medium {% if settings.schedules_paused %}text-warn{% else %}text-ok{% endif %}">{% if settings.schedules_paused %}Paused{% else %}Running{% endif %}</p>
-                                <p class="text-sm text-muted">{% if settings.schedules_paused %}Automatic runs are held{% else %}Schedules fire as configured{% endif %}</p>
-                            </div>
-                        </div>
-                    </div>
+<!-- Security Tab -->
+<div id="panel-security" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- Primary column: login protection -->
+        <form method="post" action="{% url 'cpanel:recaptcha_settings' %}" class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
+            {% csrf_token %}
+            <h3 class="text-base font-semibold text-text mb-1">Login protection (reCAPTCHA)</h3>
+            <p class="text-sm text-muted mb-4">Require Google reCAPTCHA v2 (“I'm not a robot”) on the sign-in page to block automated login attempts.</p>
+
+            <label class="flex items-center justify-between p-4 bg-panel-hi/40 border border-line-soft rounded-lg mb-4 cursor-pointer">
+                <div>
+                    <p class="text-text font-medium">{{ recaptcha_form.recaptcha_enabled.label }}</p>
+                    <p class="text-sm text-muted">When enabled, users must pass the reCAPTCHA challenge to sign in.</p>
+                </div>
+                {{ recaptcha_form.recaptcha_enabled }}
+            </label>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ recaptcha_form.recaptcha_site_key.label }}</label>
+                    {{ recaptcha_form.recaptcha_site_key }}
+                    <p class="mt-1.5 text-xs text-faint">{{ recaptcha_form.recaptcha_site_key.help_text }}</p>
+                    {% if recaptcha_form.recaptcha_site_key.errors %}<p class="mt-1.5 text-xs text-fail">{{ recaptcha_form.recaptcha_site_key.errors.0 }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ recaptcha_form.recaptcha_secret_key.label }}</label>
+                    {{ recaptcha_form.recaptcha_secret_key }}
+                    <p class="mt-1.5 text-xs text-faint">
+                        {{ recaptcha_form.recaptcha_secret_key.help_text }}
+                        {% if settings.recaptcha_secret_key_encrypted %}<span class="text-ok">A secret key is currently saved.</span>{% endif %}
+                    </p>
+                    {% if recaptcha_form.recaptcha_secret_key.errors %}<p class="mt-1.5 text-xs text-fail">{{ recaptcha_form.recaptcha_secret_key.errors.0 }}</p>{% endif %}
                 </div>
             </div>
 
-            <!-- Notifications Tab -->
-            <div id="panel-notifications" class="tab-panel hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                    <!-- Primary column: email configuration -->
-                    <form method="post" action="{% url 'cpanel:notification_settings' %}" class="lg:col-span-8 space-y-5">
-                        {% csrf_token %}
-                        <div class="bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-4">Email backend</h3>
-                            <div class="grid grid-cols-3 gap-4">
-                                {% for radio in notification_form.email_backend %}
-                                <label class="relative flex items-center justify-center p-4 border rounded-lg cursor-pointer transition-colors {% if radio.data.selected %}border-ok bg-ok/10{% else %}border-line hover:border-faint{% endif %}">
-                                    <input type="radio" name="email_backend" value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %} class="sr-only peer" onchange="toggleEmailBackend(this.value)">
-                                    <span class="text-text font-medium">{{ radio.choice_label }}</span>
-                                </label>
-                                {% endfor %}
-                            </div>
-                        </div>
+            <p class="mt-4 text-xs text-faint">
+                Create v2 keys at
+                <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener" class="text-info hover:underline">google.com/recaptcha/admin</a>.
+                Add your domain to the key's allowed list.
+            </p>
 
-                        <div id="smtp-config" class="bg-panel border border-line rounded-2xl p-6 {% if settings.email_backend != 'smtp' %}hidden{% endif %}">
-                            <h3 class="text-base font-semibold text-text mb-4">SMTP configuration</h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.smtp_host.label }}</label>
-                                    {{ notification_form.smtp_host }}
-                                    {% if notification_form.smtp_host.errors %}<p class="mt-1.5 text-xs text-fail">{{ notification_form.smtp_host.errors.0 }}</p>{% endif %}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.smtp_port.label }}</label>
-                                    {{ notification_form.smtp_port }}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.smtp_username.label }}</label>
-                                    {{ notification_form.smtp_username }}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.smtp_password.label }}</label>
-                                    {{ notification_form.smtp_password }}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.smtp_from_email.label }}</label>
-                                    {{ notification_form.smtp_from_email }}
-                                    {% if notification_form.smtp_from_email.errors %}<p class="mt-1.5 text-xs text-fail">{{ notification_form.smtp_from_email.errors.0 }}</p>{% endif %}
-                                </div>
-                                <div class="flex items-center gap-2 pt-8">
-                                    {{ notification_form.smtp_use_tls }}
-                                    <label class="text-sm text-muted">{{ notification_form.smtp_use_tls.label }}</label>
-                                </div>
-                            </div>
-                        </div>
+            <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save reCAPTCHA settings</button>
+        </form>
 
-                        <div id="resend-config" class="bg-panel border border-line rounded-2xl p-6 {% if settings.email_backend != 'resend' %}hidden{% endif %}">
-                            <h3 class="text-base font-semibold text-text mb-4">Resend configuration</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.resend_api_key.label }}</label>
-                                    {{ notification_form.resend_api_key }}
-                                    <p class="mt-1.5 text-xs text-faint">Leave blank to keep current API key</p>
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.resend_from_email.label }}</label>
-                                    {{ notification_form.resend_from_email }}
-                                    {% if notification_form.resend_from_email.errors %}<p class="mt-1.5 text-xs text-fail">{{ notification_form.resend_from_email.errors.0 }}</p>{% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-4">Default notification email</h3>
-                            <div>
-                                <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.default_notification_email.label }}</label>
-                                {{ notification_form.default_notification_email }}
-                                <p class="mt-1.5 text-xs text-faint">{{ notification_form.default_notification_email.help_text }}</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-2.5">
-                            <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
-                            <button type="button" onclick="sendTestEmail()" id="test-email-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Send test email</button>
-                        </div>
-
-                        <div id="test-email-result" class="hidden p-4 rounded-lg"></div>
-                    </form>
-
-                    <!-- Side column: status & guidance -->
-                    <div class="lg:col-span-4 space-y-5">
-                        {% if settings.email_backend == 'disabled' %}
-                        <div class="bg-fail/10 border border-fail/30 rounded-2xl p-6">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-6 h-6 text-fail mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                <div>
-                                    <h3 class="text-fail font-semibold mb-2">Email is disabled — security risk</h3>
-                                    <ul class="text-sm text-muted space-y-1 list-disc list-inside">
-                                        <li>Sign-in links are displayed on-screen instead of sent via email</li>
-                                        <li>Script failure/success notifications won't be sent</li>
-                                        <li>User invites must be shared manually</li>
-                                    </ul>
-                                    <p class="text-sm text-fail mt-3">Choose SMTP or Resend to enable secure email delivery.</p>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                        <div class="bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-3">Choosing a backend</h3>
-                            <div class="space-y-3 text-sm text-muted">
-                                <p><span class="text-text font-medium">SMTP</span> — works with any provider (Gmail, Mailgun, your own server). Needs host, port, and credentials.</p>
-                                <p><span class="text-text font-medium">Resend</span> — Resend's SMTP gateway (smtp.resend.com, port 587). Needs only an API key and a verified sender address.</p>
-                                <p class="text-xs text-faint pt-1">After saving, use <span class="text-text">Send test email</span> to confirm delivery to your default address.</p>
-                            </div>
-                        </div>
+        <!-- Side column: password + account -->
+        <div class="lg:col-span-5 space-y-5">
+            <div class="bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-4">Password</h3>
+                {% if request.user.has_usable_password %}
+                <div class="flex items-center gap-3 p-4 bg-panel-hi/40 border border-line-soft rounded-lg mb-4">
+                    <div class="w-10 h-10 rounded-full bg-ok/10 grid place-items-center shrink-0"><svg class="w-5 h-5 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+                    <div>
+                        <p class="text-text font-medium">Password set</p>
+                        <p class="text-sm text-muted">You can sign in with your password</p>
                     </div>
                 </div>
+                {% else %}
+                <div class="flex items-center gap-3 p-4 bg-warn/10 border border-warn/30 rounded-lg mb-4">
+                    <div class="w-10 h-10 rounded-full bg-warn/20 grid place-items-center shrink-0"><svg class="w-5 h-5 text-warn" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
+                    <div>
+                        <p class="text-text font-medium">No password set</p>
+                        <p class="text-sm text-muted">Set a password below to sign in</p>
+                    </div>
+                </div>
+                {% endif %}
+                <a href="{% url 'auth:change_password' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    {% if request.user.has_usable_password %}Change password{% else %}Set password{% endif %}
+                </a>
             </div>
 
-            <!-- Log Retention Tab -->
-            <div id="panel-retention" class="tab-panel hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                    <!-- Primary column: policy -->
-                    <form method="post" action="{% url 'cpanel:retention_settings' %}" class="lg:col-span-7">
-                        {% csrf_token %}
-                        <div class="bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-1">Retention policy</h3>
-                            <p class="text-sm text-muted mb-5">Control how long run logs are kept. A run is kept while it is newer than the age limit <em>or</em> among its script's last N runs; only runs outside both are deleted. 0 turns a rule off (both 0 keeps everything).</p>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ retention_form.retention_days.label }}</label>
-                                    {{ retention_form.retention_days }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ retention_form.retention_days.help_text }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ retention_form.retention_count.label }}</label>
-                                    {{ retention_form.retention_count }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ retention_form.retention_count.help_text }}</p>
-                                </div>
-                                <div class="flex items-center p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-                                    {{ retention_form.auto_cleanup_enabled }}
-                                    <div class="ml-3">
-                                        <label class="text-sm font-medium text-text">{{ retention_form.auto_cleanup_enabled.label }}</label>
-                                        <p class="text-xs text-faint">{{ retention_form.auto_cleanup_enabled.help_text }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
-                    </form>
-
-                    <!-- Side column: manual cleanup -->
-                    <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
-                        <h3 class="text-base font-semibold text-text mb-1">Manual cleanup</h3>
-                        <p class="text-sm text-muted mb-4">Run the policy now instead of waiting for the scheduled sweep.{% if settings.last_cleanup_at %} Last cleanup {{ settings.last_cleanup_at|timesince }} ago.{% endif %}</p>
-                        <div id="cleanup-preview" class="mb-4 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-                            <p class="text-sm text-muted">Click "Preview" to see what would be deleted based on current settings.</p>
-                        </div>
-                        <div class="flex items-center gap-2.5">
-                            <button type="button" onclick="loadCleanupPreview()" id="preview-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Preview</button>
-                            <form method="post" action="{% url 'cpanel:manual_cleanup' %}" id="cleanup-form" class="inline">
-                                {% csrf_token %}
-                                <button type="button" onclick="confirmCleanup()" id="cleanup-btn" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-fail text-ink hover:opacity-90 transition">Run cleanup now</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Worker Settings Tab -->
-            <div id="panel-workers" class="tab-panel hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                    <!-- Primary column: queue configuration -->
-                    <form method="post" action="{% url 'cpanel:worker_settings' %}" class="lg:col-span-7">
-                        {% csrf_token %}
-                        <div class="bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-1">Task queue configuration</h3>
-                            <p class="text-sm text-muted mb-5">Tune the Django-Q2 workers. Changes require a worker restart to take effect.</p>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ worker_form.q_workers.label }}</label>
-                                    {{ worker_form.q_workers }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ worker_form.q_workers.help_text }}</p>
-                                    {% if worker_form.q_workers.errors %}<p class="mt-1.5 text-xs text-fail">{{ worker_form.q_workers.errors.0 }}</p>{% endif %}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ worker_form.q_timeout.label }}</label>
-                                    {{ worker_form.q_timeout }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ worker_form.q_timeout.help_text }}</p>
-                                    {% if worker_form.q_timeout.errors %}<p class="mt-1.5 text-xs text-fail">{{ worker_form.q_timeout.errors.0 }}</p>{% endif %}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ worker_form.q_retry.label }}</label>
-                                    {{ worker_form.q_retry }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ worker_form.q_retry.help_text }}</p>
-                                    {% if effective_retry %}<p class="mt-1.5 text-xs text-info">Effective now: {{ effective_retry }} s (raised at worker start above the longest script or package timeout).</p>{% endif %}
-                                    {% if worker_form.q_retry.errors %}<p class="mt-1.5 text-xs text-fail">{{ worker_form.q_retry.errors.0 }}</p>{% endif %}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ worker_form.q_queue_limit.label }}</label>
-                                    {{ worker_form.q_queue_limit }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ worker_form.q_queue_limit.help_text }}</p>
-                                    {% if worker_form.q_queue_limit.errors %}<p class="mt-1.5 text-xs text-fail">{{ worker_form.q_queue_limit.errors.0 }}</p>{% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-5 flex items-center gap-4">
-                            <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
-                            <p class="text-xs text-faint">Remember to restart workers after saving.</p>
-                        </div>
-                    </form>
-
-                    <!-- Side column: restart status & control -->
-                    <div class="lg:col-span-5 space-y-5">
-                        {% if settings.worker_restart_required %}
-                        <div class="bg-warn/10 border border-warn/30 rounded-2xl p-6">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-6 h-6 text-warn mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                <div>
-                                    <h3 class="text-warn font-semibold mb-2">Worker restart required</h3>
-                                    <p class="text-sm text-muted">Settings were updated {{ settings.worker_settings_updated_at|timesince }} ago. Restart the workers for changes to take effect.</p>
-                                    <p class="text-xs text-faint mt-2">Run: <code class="bg-ink border border-line-soft px-2 py-1 rounded font-mono text-info">python manage.py qcluster</code></p>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                        <div class="bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-4">Worker control</h3>
-                            <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-                                <p class="text-text font-medium">Restart workers</p>
-                                <p class="text-sm text-muted mb-4">Gracefully restart task workers. Running tasks finish before the restart.</p>
-                                <button type="button" onclick="restartWorkers()" id="restart-workers-btn" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                    Restart
-                                </button>
-                            </div>
-                            <div id="restart-result" class="hidden mt-4 p-4 rounded-lg"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Execution / Isolation Tab -->
-            <div id="panel-isolation" class="tab-panel hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                    <!-- Primary column: isolation configuration -->
-                    <form method="post" action="{% url 'cpanel:execution_isolation_settings' %}" class="lg:col-span-7">
-                        {% csrf_token %}
-                        <div class="bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-1">Execution &amp; isolation</h3>
-                            <p class="text-sm text-muted mb-5">Contain what one script run can do to this instance. Resource limits apply immediately to every run. Scripts whose isolation policy asks for the sandbox run in the filesystem/network sandbox (bubblewrap or nsjail) when this host supports it — use Test now below to check. All limits are POSIX-only and have no effect on Windows.</p>
-
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ isolation_form.sandbox_default.label }}</label>
-                                    {{ isolation_form.sandbox_default }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ isolation_form.sandbox_default.help_text }}</p>
-                                    {% if isolation_form.sandbox_default.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_default.errors.0 }}</p>{% endif %}
-                                </div>
-
-                                <label class="flex items-center justify-between p-4 bg-panel-hi/40 border border-line-soft rounded-lg cursor-pointer">
-                                    <div class="pr-4">
-                                        <p class="text-text font-medium">{{ isolation_form.sandbox_fail_closed.label }}</p>
-                                        <p class="text-sm text-muted">{{ isolation_form.sandbox_fail_closed.help_text }}</p>
-                                    </div>
-                                    {{ isolation_form.sandbox_fail_closed }}
-                                </label>
-                            </div>
-
-                            <h4 class="text-sm font-semibold text-text mt-6 mb-1">Resource limits</h4>
-                            <p class="text-sm text-muted mb-4">Caps applied to each run via <code class="bg-ink border border-line-soft px-1.5 py-0.5 rounded font-mono text-info">setrlimit</code>. Use 0 to leave a limit unset.</p>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ isolation_form.sandbox_rlimit_memory_mb.label }}</label>
-                                    {{ isolation_form.sandbox_rlimit_memory_mb }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ isolation_form.sandbox_rlimit_memory_mb.help_text }}</p>
-                                    {% if isolation_form.sandbox_rlimit_memory_mb.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_rlimit_memory_mb.errors.0 }}</p>{% endif %}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ isolation_form.sandbox_rlimit_cpu_seconds.label }}</label>
-                                    {{ isolation_form.sandbox_rlimit_cpu_seconds }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ isolation_form.sandbox_rlimit_cpu_seconds.help_text }}</p>
-                                    {% if isolation_form.sandbox_rlimit_cpu_seconds.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_rlimit_cpu_seconds.errors.0 }}</p>{% endif %}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ isolation_form.sandbox_rlimit_nproc.label }}</label>
-                                    {{ isolation_form.sandbox_rlimit_nproc }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ isolation_form.sandbox_rlimit_nproc.help_text }}</p>
-                                    {% if nproc_not_enforced %}<p class="mt-1.5 text-xs text-warn">Not enforced while scripts run as root, which they do in this container: the kernel exempts root from this cap. Set a container PID limit instead (Docker <code class="font-mono">--pids-limit</code> or compose <code class="font-mono">pids_limit</code>).</p>{% endif %}
-                                    {% if isolation_form.sandbox_rlimit_nproc.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_rlimit_nproc.errors.0 }}</p>{% endif %}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ isolation_form.sandbox_rlimit_fsize_mb.label }}</label>
-                                    {{ isolation_form.sandbox_rlimit_fsize_mb }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ isolation_form.sandbox_rlimit_fsize_mb.help_text }}</p>
-                                    {% if isolation_form.sandbox_rlimit_fsize_mb.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_rlimit_fsize_mb.errors.0 }}</p>{% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
-                    </form>
-
-                    <!-- Side column: active-tier status -->
-                    <div class="lg:col-span-5 space-y-5">
-                        <div class="bg-panel border border-line rounded-2xl p-6">
-                            <h3 class="text-base font-semibold text-text mb-4">Active protection</h3>
-                            <div class="space-y-3">
-                                <div class="flex items-start gap-3 p-3 bg-panel-hi/40 border border-line-soft rounded-lg">
-                                    {% if settings.sandbox_rlimits_configured %}
-                                        <span class="mt-0.5 w-2 h-2 rounded-full bg-ok flex-shrink-0"></span>
-                                        <div>
-                                            <p class="text-text font-medium text-sm">Resource limits active</p>
-                                            <p class="text-xs text-muted">{% if nproc_not_enforced %}Per-run memory / CPU / file-size caps are enforced (POSIX hosts); the process cap is not enforced while scripts run as root.{% else %}Per-run memory / CPU / process / file-size caps are enforced (POSIX hosts).{% endif %}</p>
-                                        </div>
-                                    {% else %}
-                                        <span class="mt-0.5 w-2 h-2 rounded-full bg-faint flex-shrink-0"></span>
-                                        <div>
-                                            <p class="text-text font-medium text-sm">No resource limits set</p>
-                                            <p class="text-xs text-muted">Runs are uncapped — set limits to contain runaway scripts.</p>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="flex items-start gap-3 p-3 bg-panel-hi/40 border border-line-soft rounded-lg">
-                                    {% if settings.sandbox_capability == 'full' %}
-                                        <span class="mt-0.5 w-2 h-2 rounded-full bg-ok flex-shrink-0"></span>
-                                    {% elif settings.sandbox_capability == 'none' %}
-                                        <span class="mt-0.5 w-2 h-2 rounded-full bg-fail flex-shrink-0"></span>
-                                    {% else %}
-                                        <span class="mt-0.5 w-2 h-2 rounded-full bg-faint flex-shrink-0"></span>
-                                    {% endif %}
-                                    <div>
-                                        <p class="text-text font-medium text-sm">Filesystem / network sandbox</p>
-                                        <p id="sandbox-capability-text" class="text-xs text-muted">
-                                            Host capability: <span class="font-medium text-text">{{ settings.get_sandbox_capability_display }}</span>{% if settings.sandbox_checked_at %} — checked {{ settings.sandbox_checked_at|timesince }} ago{% else %} — not yet tested{% endif %}.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-4 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-                                <p class="text-text font-medium text-sm">Test sandbox on this host</p>
-                                <p class="text-xs text-muted mb-3">Probe whether this host can create the filesystem/network sandbox (needs unprivileged user namespaces). Re-run after a redeploy — capability can change.</p>
-                                <button type="button" onclick="testSandbox()" id="sandbox-test-btn" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    Test now
-                                </button>
-                                <div id="sandbox-test-result" class="hidden mt-3 text-xs"></div>
-                            </div>
-                            <p class="mt-4 text-xs text-faint">The isolation default decides which runs use the sandbox; with fail closed on, a run that needs the sandbox fails instead of running with resource limits only when the host can't provide it. Resource limits apply on every POSIX host regardless of the sandbox tier.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- System Info Tab -->
-            <div id="panel-system" class="tab-panel hidden">
-                <div class="bg-panel border border-line rounded-2xl p-6">
-                    <div class="flex items-center justify-between mb-5">
-                        <div>
-                            <h3 class="text-base font-semibold text-text">System information</h3>
-                            <p class="text-sm text-muted mt-1">A live snapshot of this instance and its task queue.</p>
-                        </div>
-                        <button type="button" onclick="loadSystemInfo()" id="refresh-system-btn" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors shrink-0">Refresh</button>
-                    </div>
-                    <div id="system-info-content" class="space-y-4">
-                        <p class="text-sm text-muted">Loading system information...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Backup & Restore Tab -->
-            <div id="panel-backup" class="tab-panel hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-                <!-- Create Backup -->
-                <div class="bg-panel border border-line rounded-2xl p-6">
-                    <h3 class="text-base font-semibold text-text mb-4">📦 Create backup</h3>
-                    <p class="text-sm text-muted mb-2">Export a backup of your PyRun instance: scripts, secrets, settings, libraries, data stores, brains and execution history.</p>
-                    <p class="text-xs text-faint mb-4">Not included: AI providers, channels, object-storage connections, API tokens, installed plugin files and script working folders — recreate them after restoring on a new server.</p>
-                    <form method="post" action="{% url 'cpanel:backup_create' %}" id="backup-create-form">
-                        {% csrf_token %}
-                        <div class="space-y-4 mb-6">
-                            <div>
-                                <label class="block text-[13px] font-medium text-text mb-2">{{ backup_create_form.backup_format.label }}</label>
-                                <div class="space-y-2">
-                                    {% for radio in backup_create_form.backup_format %}
-                                    <label class="flex items-center gap-3">{{ radio.tag }}<span class="text-sm text-muted">{{ radio.choice_label }}</span></label>
-                                    {% endfor %}
-                                </div>
-                                <p class="mt-1.5 text-xs text-faint">{{ backup_create_form.backup_format.help_text }}</p>
-                            </div>
-                            <div class="flex items-center gap-3">{{ backup_create_form.include_datastores }}<label for="id_include_datastores" class="text-sm text-muted">{{ backup_create_form.include_datastores.label }}</label></div>
-                            <div class="flex items-center gap-3">{{ backup_create_form.include_runs }}<label for="id_include_runs" class="text-sm text-muted">{{ backup_create_form.include_runs.label }}</label></div>
-                            <div class="ml-8">
-                                <label for="id_max_runs" class="block text-[13px] font-medium text-text mb-1.5">{{ backup_create_form.max_runs.label }}</label>
-                                {{ backup_create_form.max_runs }}
-                                <p class="mt-1.5 text-xs text-faint">{{ backup_create_form.max_runs.help_text }}</p>
-                            </div>
-                            <div class="flex items-center gap-3">{{ backup_create_form.include_package_operations }}<label for="id_include_package_operations" class="text-sm text-muted">{{ backup_create_form.include_package_operations.label }}</label></div>
-                        </div>
-                        <div class="p-4 bg-warn/10 border border-warn/30 rounded-lg mb-4">
-                            <p class="text-sm text-warn">⚠ <strong>Important:</strong> Backup contains encrypted secrets. Keep your ENCRYPTION_KEY secure! The backup can only be restored with the same encryption key.</p>
-                        </div>
-                        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Download backup</button>
-                    </form>
-                </div>
-
-                <!-- Restore Backup -->
-                <div class="bg-panel border border-line rounded-2xl p-6">
-                    <h3 class="text-base font-semibold text-text mb-4">📥 Restore backup</h3>
-                    <p class="text-sm text-muted mb-4">Upload a backup file to restore your PyRun instance.</p>
-                    <form id="backup-restore-form" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="space-y-4 mb-6">
-                            <div>
-                                <label for="id_backup_file" class="block text-[13px] font-medium text-text mb-1.5">{{ backup_restore_form.backup_file.label }}</label>
-                                <input type="file" id="id_backup_file" name="backup_file" accept=".json,.json.gz,.gz"
-                                       class="block w-full text-sm text-muted file:mr-3 file:py-2 file:px-3.5 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-ok file:text-ink hover:file:opacity-90 cursor-pointer"
-                                       onchange="handleBackupUpload(event)">
-                                <p class="mt-1.5 text-xs text-faint">{{ backup_restore_form.backup_file.help_text }}</p>
-                            </div>
-                        </div>
-                        <div class="p-4 bg-fail/10 border border-fail/30 rounded-lg mb-4">
-                            <p class="text-sm text-fail mb-2"><strong>⚠ WARNING:</strong> This will delete all existing data and replace it with the backup!</p>
-                            <ul class="text-xs text-fail/80 ml-4 space-y-1">
-                                <li>• ENCRYPTION_KEY must match the backup</li>
-                                <li>• Current data will be backed up automatically first</li>
-                                <li>• Environments are rebuilt in the background after a restore (missing venvs recreated, saved packages reinstalled)</li>
-                            </ul>
-                        </div>
-                        <div id="upload-status" class="hidden mb-4"></div>
-                    </form>
-                </div>
-                </div>
-
-                <!-- Scheduled S3 Backups -->
-                <div class="bg-panel border border-line rounded-2xl p-6 mt-5">
-                    <h3 class="text-base font-semibold text-text mb-4">☁️ Scheduled S3 backups</h3>
-                    <p class="text-sm text-muted mb-4">Automatically backup your PyRun instance to S3-compatible storage on a schedule.</p>
-                    {% if backup_schedule_status.s3_configured and not backup_schedule_status.s3_enabled %}
-                    <div class="p-4 bg-warn/10 border border-warn/30 rounded-lg mb-4">
-                        <p class="text-sm text-warn">⚠ <strong>Backup storage switched off:</strong> the connection “{{ backup_schedule_status.connection_name }}” is turned off — turn it on in <a href="{% url 'cpanel:services' %}" class="underline hover:text-text">Services</a> to run backups.</p>
-                    </div>
-                    {% elif not backup_schedule_status.s3_configured %}
-                    <div class="p-4 bg-warn/10 border border-warn/30 rounded-lg mb-4">
-                        <p class="text-sm text-warn">⚠ <strong>S3 not configured:</strong> You must first configure and enable S3 storage in the <a href="{% url 'cpanel:services' %}" class="underline hover:text-text">Services</a> page.</p>
-                    </div>
-                    {% endif %}
-                    <form method="post" action="{% url 'cpanel:backup_schedule_settings' %}" id="backup-schedule-form">
-                        {% csrf_token %}
-                        <div class="mb-6">
-                            <div class="flex items-center gap-3 mb-4">{{ backup_schedule_form.s3_backup_enabled }}<label for="id_s3_backup_enabled" class="text-sm text-muted">{{ backup_schedule_form.s3_backup_enabled.label }}</label></div>
-                            <div class="grid sm:grid-cols-2 gap-x-5 gap-y-4">
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_schedule.label }}</label>
-                                    {{ backup_schedule_form.s3_backup_schedule }}
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_time.label }}</label>
-                                    {{ backup_schedule_form.s3_backup_time }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ backup_schedule_form.s3_backup_time.help_text }}</p>
-                                </div>
-                                <div id="weekly-day-container">
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_day.label }}</label>
-                                    {{ backup_schedule_form.s3_backup_day }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ backup_schedule_form.s3_backup_day.help_text }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_prefix.label }}</label>
-                                    {{ backup_schedule_form.s3_backup_prefix }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ backup_schedule_form.s3_backup_prefix.help_text }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_retention_count.label }}</label>
-                                    {{ backup_schedule_form.s3_backup_retention_count }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ backup_schedule_form.s3_backup_retention_count.help_text }}</p>
-                                </div>
-                            </div>
-                            <div class="pt-4 mt-4 border-t border-line-soft">
-                                <p class="text-[13px] font-medium text-text mb-3">Backup contents</p>
-                                <div class="flex items-center gap-3 mb-2">{{ backup_schedule_form.s3_backup_include_datastores }}<label for="id_s3_backup_include_datastores" class="text-sm text-muted">{{ backup_schedule_form.s3_backup_include_datastores.label }}</label></div>
-                                <div class="flex items-center gap-3 mb-2">{{ backup_schedule_form.s3_backup_include_runs }}<label for="id_s3_backup_include_runs" class="text-sm text-muted">{{ backup_schedule_form.s3_backup_include_runs.label }}</label></div>
-                                <div class="ml-8">
-                                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_max_runs.label }}</label>
-                                    {{ backup_schedule_form.s3_backup_max_runs }}
-                                    <p class="mt-1.5 text-xs text-faint">{{ backup_schedule_form.s3_backup_max_runs.help_text }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed" {% if not backup_schedule_status.s3_configured %}disabled{% endif %}>Save schedule</button>
-                            <button type="button" id="backup-run-now-btn" onclick="runBackupNow()" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-ok/40 bg-ok/10 text-ok hover:bg-ok/20 transition disabled:opacity-40 disabled:cursor-not-allowed" {% if not backup_schedule_status.s3_configured or not backup_schedule_status.s3_enabled %}disabled{% endif %}>Run backup now</button>
-                        </div>
-                        <p id="backup-run-now-result" class="hidden mt-3 text-sm" role="status"></p>
-                    </form>
-
-                    {% if backup_schedule_status.last_run %}
-                    <div class="mt-6 pt-4 border-t border-line-soft">
-                        <h4 class="text-sm font-medium text-text mb-3">Last backup status</h4>
-                        <div class="grid grid-cols-2 gap-4 text-sm">
-                            <div><span class="text-muted">Last run:</span><span class="text-text ml-2">{{ backup_schedule_status.last_run|date:"Y-m-d H:i T" }}</span></div>
-                            <div>
-                                <span class="text-muted">Status:</span>
-                                {% if backup_schedule_status.last_status == "success" %}
-                                <span class="ml-2 px-2 py-0.5 bg-ok/10 text-ok rounded-md text-xs">Success</span>
-                                {% elif backup_schedule_status.last_status == "failed" %}
-                                <span class="ml-2 px-2 py-0.5 bg-fail/10 text-fail rounded-md text-xs">Failed</span>
-                                {% else %}<span class="ml-2 text-muted">-</span>{% endif %}
-                            </div>
-                            {% if backup_schedule_status.last_size %}<div><span class="text-muted">Size:</span><span class="text-text ml-2">{{ backup_schedule_status.last_size|filesizeformat }}</span></div>{% endif %}
-                            {% if backup_schedule_status.next_run %}<div><span class="text-muted">Next run:</span><span class="text-text ml-2">{{ backup_schedule_status.next_run|date:"Y-m-d H:i T" }}</span></div>{% endif %}
-                            {% if backup_schedule_status.bucket %}<div class="col-span-2"><span class="text-muted">Stored in:</span><span class="text-text ml-2 font-mono text-xs break-all">{{ backup_schedule_status.bucket }}/{{ backup_schedule_status.prefix|default:"" }}</span> <span class="text-faint text-xs">({{ backup_schedule_status.connection_name }}, newest {{ backup_schedule_status.retention_count }} kept)</span></div>{% endif %}
-                        </div>
-                        {% if backup_schedule_status.last_status == "failed" and backup_schedule_status.last_error %}
-                        <div class="mt-3 p-3 bg-fail/10 border border-fail/30 rounded-lg"><p class="text-sm text-fail">{{ backup_schedule_status.last_error }}</p></div>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- API Tab -->
-            <div id="panel-api" class="tab-panel hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                    <!-- Primary column: access & tokens -->
-                    <div class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
-                        <h3 class="text-base font-semibold text-text mb-1">API access</h3>
-                        <p class="text-sm text-muted mb-3">PyRun exposes a read-only REST API for your datastores. Create a token to let external applications fetch entries.</p>
-                        <p class="text-sm text-muted mb-5">Brains are available over the Unified API (REST) and MCP — see <a href="{% url 'cpanel:connect' %}" class="text-info hover:underline">Connect</a> for the MCP URL, ready-made client snippets and the token catalog.</p>
-                        <a href="{% url 'cpanel:api_token_list' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                            Manage API tokens
-                        </a>
-                        <div class="mt-5 pt-5 border-t border-line-soft">
-                            <p class="text-sm text-muted mb-2">Each datastore has API documentation with curl examples on its detail page.</p>
-                            <a href="{% url 'cpanel:datastore_list' %}" class="text-sm text-info hover:underline inline-flex items-center gap-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
-                                View datastores
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Side column: endpoint reference -->
-                    <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
-                        <h3 class="text-base font-semibold text-text mb-3">Endpoints</h3>
-                        <div class="p-4 bg-ink border border-line-soft rounded-lg space-y-2 text-[13px] font-mono text-muted">
-                            <p><span class="text-ok">GET</span> /api/v1/datastores/</p>
-                            <p><span class="text-ok">GET</span> /api/v1/datastores/{name}/</p>
-                            <p><span class="text-ok">GET</span> /api/v1/datastores/{name}/entries/</p>
-                            <p><span class="text-ok">GET</span> /api/v1/datastores/{name}/entries/{key}/</p>
-                        </div>
-                        <h3 class="text-base font-semibold text-text mt-5 mb-3">Unified API and MCP</h3>
-                        <div class="p-4 bg-ink border border-line-soft rounded-lg space-y-2 text-[13px] font-mono text-muted">
-                            <p><span class="text-ok">GET</span> /api/v1/_catalog</p>
-                            <p><span class="text-ok">GET</span> /api/v1/_openapi.json</p>
-                            <p>/api/v1/brain.* <span class="text-faint">(methods in _catalog)</span></p>
-                            <p><span class="text-info">POST</span> /mcp</p>
-                        </div>
-                    </div>
+            <div class="bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-4">Account information</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between gap-3 p-3 bg-panel-hi/40 border border-line-soft rounded-lg"><span class="text-muted">Email</span><span class="text-text font-mono truncate">{{ request.user.email }}</span></div>
+                    <div class="flex justify-between gap-3 p-3 bg-panel-hi/40 border border-line-soft rounded-lg"><span class="text-muted">Account type</span><span class="text-text">{% if request.user.is_superuser %}Administrator{% else %}User{% endif %}</span></div>
+                    <div class="flex justify-between gap-3 p-3 bg-panel-hi/40 border border-line-soft rounded-lg"><span class="text-muted">Verified</span><span class="{% if request.user.is_verified %}text-ok{% else %}text-warn{% endif %}">{% if request.user.is_verified %}Yes{% else %}No{% endif %}</span></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Schedule Control Tab -->
+<div id="panel-schedules" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- Primary column: control -->
+        <div class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
+            <h3 class="text-base font-semibold text-text mb-1">Schedule control</h3>
+            <p class="text-sm text-muted mb-5">Pause every scheduled run at once — useful during maintenance or incident response.</p>
+            <div class="flex items-center justify-between gap-4 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                <div>
+                    <p class="text-text font-medium">Global schedule pause</p>
+                    <p class="text-sm text-muted">
+                        {% if settings.schedules_paused %}All schedules are currently paused.{% if settings.schedules_paused_at %} Paused {{ settings.schedules_paused_at|timesince }} ago.{% endif %}{% else %}All schedules are running normally.{% endif %}
+                    </p>
+                </div>
+                <form method="post" action="{% url 'cpanel:toggle_global_pause' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg transition whitespace-nowrap {% if settings.schedules_paused %}bg-ok text-ink hover:opacity-90{% else %}bg-warn text-ink hover:opacity-90{% endif %}">{% if settings.schedules_paused %}Resume all{% else %}Pause all{% endif %}</button>
+                </form>
+            </div>
+            <p class="mt-4 text-xs text-faint">
+                {% if settings.schedules_paused %}Pausing schedules prevents any scheduled scripts from running automatically. Scripts can still be run manually.{% else %}When paused, all scheduled scripts will stop running until resumed.{% endif %}
+            </p>
+        </div>
+
+        <!-- Side column: current status -->
+        <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
+            <h3 class="text-base font-semibold text-text mb-4">Current status</h3>
+            <div class="flex items-center gap-3 p-4 rounded-lg border {% if settings.schedules_paused %}bg-warn/10 border-warn/30{% else %}bg-ok/10 border-ok/20{% endif %}">
+                <span class="w-2.5 h-2.5 rounded-full {% if settings.schedules_paused %}bg-warn{% else %}bg-ok live-dot{% endif %}"></span>
+                <div>
+                    <p class="font-medium {% if settings.schedules_paused %}text-warn{% else %}text-ok{% endif %}">{% if settings.schedules_paused %}Paused{% else %}Running{% endif %}</p>
+                    <p class="text-sm text-muted">{% if settings.schedules_paused %}Automatic runs are held{% else %}Schedules fire as configured{% endif %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notifications Tab -->
+<div id="panel-notifications" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- Primary column: email configuration -->
+        <form method="post" action="{% url 'cpanel:notification_settings' %}" class="lg:col-span-8 space-y-5">
+            {% csrf_token %}
+            <div class="bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-4">Email backend</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    {% for radio in notification_form.email_backend %}
+                    <label class="relative flex items-center justify-center p-4 border rounded-lg cursor-pointer transition-colors {% if radio.data.selected %}border-ok bg-ok/10{% else %}border-line hover:border-faint{% endif %}">
+                        <input type="radio" name="email_backend" value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %} class="sr-only peer" onchange="toggleEmailBackend(this.value)">
+                        <span class="text-text font-medium">{{ radio.choice_label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div id="smtp-config" class="bg-panel border border-line rounded-2xl p-6 {% if settings.email_backend != 'smtp' %}hidden{% endif %}">
+                <h3 class="text-base font-semibold text-text mb-4">SMTP configuration</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.smtp_host.label }}</label>
+                        {{ notification_form.smtp_host }}
+                        {% if notification_form.smtp_host.errors %}<p class="mt-1.5 text-xs text-fail">{{ notification_form.smtp_host.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.smtp_port.label }}</label>
+                        {{ notification_form.smtp_port }}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.smtp_username.label }}</label>
+                        {{ notification_form.smtp_username }}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.smtp_password.label }}</label>
+                        {{ notification_form.smtp_password }}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.smtp_from_email.label }}</label>
+                        {{ notification_form.smtp_from_email }}
+                        {% if notification_form.smtp_from_email.errors %}<p class="mt-1.5 text-xs text-fail">{{ notification_form.smtp_from_email.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div class="flex items-center gap-2 pt-8">
+                        {{ notification_form.smtp_use_tls }}
+                        <label class="text-sm text-muted">{{ notification_form.smtp_use_tls.label }}</label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resend-config" class="bg-panel border border-line rounded-2xl p-6 {% if settings.email_backend != 'resend' %}hidden{% endif %}">
+                <h3 class="text-base font-semibold text-text mb-4">Resend configuration</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.resend_api_key.label }}</label>
+                        {{ notification_form.resend_api_key }}
+                        <p class="mt-1.5 text-xs text-faint">Leave blank to keep current API key</p>
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.resend_from_email.label }}</label>
+                        {{ notification_form.resend_from_email }}
+                        {% if notification_form.resend_from_email.errors %}<p class="mt-1.5 text-xs text-fail">{{ notification_form.resend_from_email.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-4">Default notification email</h3>
+                <div>
+                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ notification_form.default_notification_email.label }}</label>
+                    {{ notification_form.default_notification_email }}
+                    <p class="mt-1.5 text-xs text-faint">{{ notification_form.default_notification_email.help_text }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
+                <button type="button" onclick="sendTestEmail()" id="test-email-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Send test email</button>
+            </div>
+
+            <div id="test-email-result" class="hidden p-4 rounded-lg"></div>
+        </form>
+
+        <!-- Side column: status & guidance -->
+        <div class="lg:col-span-4 space-y-5">
+            {% if settings.email_backend == 'disabled' %}
+            <div class="bg-fail/10 border border-fail/30 rounded-2xl p-6">
+                <div class="flex items-start gap-3">
+                    <svg class="w-6 h-6 text-fail mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    <div>
+                        <h3 class="text-fail font-semibold mb-2">Email is disabled — security risk</h3>
+                        <ul class="text-sm text-muted space-y-1 list-disc list-inside">
+                            <li>Sign-in links are displayed on-screen instead of sent via email</li>
+                            <li>Script failure/success notifications won't be sent</li>
+                            <li>User invites must be shared manually</li>
+                        </ul>
+                        <p class="text-sm text-fail mt-3">Choose SMTP or Resend to enable secure email delivery.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-3">Choosing a backend</h3>
+                <div class="space-y-3 text-sm text-muted">
+                    <p><span class="text-text font-medium">SMTP</span> — works with any provider (Gmail, Mailgun, your own server). Needs host, port, and credentials.</p>
+                    <p><span class="text-text font-medium">Resend</span> — Resend's SMTP gateway (smtp.resend.com, port 587). Needs only an API key and a verified sender address.</p>
+                    <p class="text-xs text-faint pt-1">After saving, use <span class="text-text">Send test email</span> to confirm delivery to your default address.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Retention Tab -->
+<div id="panel-retention" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- Primary column: policy -->
+        <form method="post" action="{% url 'cpanel:retention_settings' %}" class="lg:col-span-7">
+            {% csrf_token %}
+            <div class="bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-1">Retention policy</h3>
+                <p class="text-sm text-muted mb-5">Control how long run logs are kept. A run is kept while it is newer than the age limit <em>or</em> among its script's last N runs; only runs outside both are deleted. 0 turns a rule off (both 0 keeps everything).</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ retention_form.retention_days.label }}</label>
+                        {{ retention_form.retention_days }}
+                        <p class="mt-1.5 text-xs text-faint">{{ retention_form.retention_days.help_text }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ retention_form.retention_count.label }}</label>
+                        {{ retention_form.retention_count }}
+                        <p class="mt-1.5 text-xs text-faint">{{ retention_form.retention_count.help_text }}</p>
+                    </div>
+                    <div class="flex items-center p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                        {{ retention_form.auto_cleanup_enabled }}
+                        <div class="ml-3">
+                            <label class="text-sm font-medium text-text">{{ retention_form.auto_cleanup_enabled.label }}</label>
+                            <p class="text-xs text-faint">{{ retention_form.auto_cleanup_enabled.help_text }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
+        </form>
+
+        <!-- Side column: manual cleanup -->
+        <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
+            <h3 class="text-base font-semibold text-text mb-1">Manual cleanup</h3>
+            <p class="text-sm text-muted mb-4">Run the policy now instead of waiting for the scheduled sweep.{% if settings.last_cleanup_at %} Last cleanup {{ settings.last_cleanup_at|timesince }} ago.{% endif %}</p>
+            <div id="cleanup-preview" class="mb-4 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                <p class="text-sm text-muted">Click "Preview" to see what would be deleted based on current settings.</p>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <button type="button" onclick="loadCleanupPreview()" id="preview-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Preview</button>
+                <form method="post" action="{% url 'cpanel:manual_cleanup' %}" id="cleanup-form" class="inline">
+                    {% csrf_token %}
+                    <button type="button" onclick="confirmCleanup()" id="cleanup-btn" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-fail text-ink hover:opacity-90 transition">Run cleanup now</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Worker Settings Tab -->
+<div id="panel-workers" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- Primary column: queue configuration -->
+        <form method="post" action="{% url 'cpanel:worker_settings' %}" class="lg:col-span-7">
+            {% csrf_token %}
+            <div class="bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-1">Task queue configuration</h3>
+                <p class="text-sm text-muted mb-5">Tune the Django-Q2 workers. Changes require a worker restart to take effect.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ worker_form.q_workers.label }}</label>
+                        {{ worker_form.q_workers }}
+                        <p class="mt-1.5 text-xs text-faint">{{ worker_form.q_workers.help_text }}</p>
+                        {% if worker_form.q_workers.errors %}<p class="mt-1.5 text-xs text-fail">{{ worker_form.q_workers.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ worker_form.q_timeout.label }}</label>
+                        {{ worker_form.q_timeout }}
+                        <p class="mt-1.5 text-xs text-faint">{{ worker_form.q_timeout.help_text }}</p>
+                        {% if worker_form.q_timeout.errors %}<p class="mt-1.5 text-xs text-fail">{{ worker_form.q_timeout.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ worker_form.q_retry.label }}</label>
+                        {{ worker_form.q_retry }}
+                        <p class="mt-1.5 text-xs text-faint">{{ worker_form.q_retry.help_text }}</p>
+                        {% if effective_retry %}<p class="mt-1.5 text-xs text-info">Effective now: {{ effective_retry }} s (raised at worker start above the longest script or package timeout).</p>{% endif %}
+                        {% if worker_form.q_retry.errors %}<p class="mt-1.5 text-xs text-fail">{{ worker_form.q_retry.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ worker_form.q_queue_limit.label }}</label>
+                        {{ worker_form.q_queue_limit }}
+                        <p class="mt-1.5 text-xs text-faint">{{ worker_form.q_queue_limit.help_text }}</p>
+                        {% if worker_form.q_queue_limit.errors %}<p class="mt-1.5 text-xs text-fail">{{ worker_form.q_queue_limit.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 flex items-center gap-4">
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
+                <p class="text-xs text-faint">Remember to restart workers after saving.</p>
+            </div>
+        </form>
+
+        <!-- Side column: restart status & control -->
+        <div class="lg:col-span-5 space-y-5">
+            {% if settings.worker_restart_required %}
+            <div class="bg-warn/10 border border-warn/30 rounded-2xl p-6">
+                <div class="flex items-start gap-3">
+                    <svg class="w-6 h-6 text-warn mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <div>
+                        <h3 class="text-warn font-semibold mb-2">Worker restart required</h3>
+                        <p class="text-sm text-muted">Settings were updated {{ settings.worker_settings_updated_at|timesince }} ago. Restart the workers for changes to take effect.</p>
+                        <p class="text-xs text-faint mt-2">Run: <code class="bg-ink border border-line-soft px-2 py-1 rounded font-mono text-info">python manage.py qcluster</code></p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-4">Worker control</h3>
+                <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                    <p class="text-text font-medium">Restart workers</p>
+                    <p class="text-sm text-muted mb-4">Gracefully restart task workers. Running tasks finish before the restart.</p>
+                    <button type="button" onclick="restartWorkers()" id="restart-workers-btn" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Restart
+                    </button>
+                </div>
+                <div id="restart-result" class="hidden mt-4 p-4 rounded-lg"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Execution / Isolation Tab -->
+<div id="panel-isolation" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- Primary column: isolation configuration -->
+        <form method="post" action="{% url 'cpanel:execution_isolation_settings' %}" class="lg:col-span-7">
+            {% csrf_token %}
+            <div class="bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-1">Execution &amp; isolation</h3>
+                <p class="text-sm text-muted mb-5">Contain what one script run can do to this instance. Resource limits apply immediately to every run. Scripts whose isolation policy asks for the sandbox run in the filesystem/network sandbox (bubblewrap or nsjail) when this host supports it — use Test now below to check. All limits are POSIX-only and have no effect on Windows.</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ isolation_form.sandbox_default.label }}</label>
+                        {{ isolation_form.sandbox_default }}
+                        <p class="mt-1.5 text-xs text-faint">{{ isolation_form.sandbox_default.help_text }}</p>
+                        {% if isolation_form.sandbox_default.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_default.errors.0 }}</p>{% endif %}
+                    </div>
+
+                    <label class="flex items-center justify-between p-4 bg-panel-hi/40 border border-line-soft rounded-lg cursor-pointer">
+                        <div class="pr-4">
+                            <p class="text-text font-medium">{{ isolation_form.sandbox_fail_closed.label }}</p>
+                            <p class="text-sm text-muted">{{ isolation_form.sandbox_fail_closed.help_text }}</p>
+                        </div>
+                        {{ isolation_form.sandbox_fail_closed }}
+                    </label>
+                </div>
+
+                <h4 class="text-sm font-semibold text-text mt-6 mb-1">Resource limits</h4>
+                <p class="text-sm text-muted mb-4">Caps applied to each run via <code class="bg-ink border border-line-soft px-1.5 py-0.5 rounded font-mono text-info">setrlimit</code>. Use 0 to leave a limit unset.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ isolation_form.sandbox_rlimit_memory_mb.label }}</label>
+                        {{ isolation_form.sandbox_rlimit_memory_mb }}
+                        <p class="mt-1.5 text-xs text-faint">{{ isolation_form.sandbox_rlimit_memory_mb.help_text }}</p>
+                        {% if isolation_form.sandbox_rlimit_memory_mb.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_rlimit_memory_mb.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ isolation_form.sandbox_rlimit_cpu_seconds.label }}</label>
+                        {{ isolation_form.sandbox_rlimit_cpu_seconds }}
+                        <p class="mt-1.5 text-xs text-faint">{{ isolation_form.sandbox_rlimit_cpu_seconds.help_text }}</p>
+                        {% if isolation_form.sandbox_rlimit_cpu_seconds.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_rlimit_cpu_seconds.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ isolation_form.sandbox_rlimit_nproc.label }}</label>
+                        {{ isolation_form.sandbox_rlimit_nproc }}
+                        <p class="mt-1.5 text-xs text-faint">{{ isolation_form.sandbox_rlimit_nproc.help_text }}</p>
+                        {% if nproc_not_enforced %}<p class="mt-1.5 text-xs text-warn">Not enforced while scripts run as root, which they do in this container: the kernel exempts root from this cap. Set a container PID limit instead (Docker <code class="font-mono">--pids-limit</code> or compose <code class="font-mono">pids_limit</code>).</p>{% endif %}
+                        {% if isolation_form.sandbox_rlimit_nproc.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_rlimit_nproc.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ isolation_form.sandbox_rlimit_fsize_mb.label }}</label>
+                        {{ isolation_form.sandbox_rlimit_fsize_mb }}
+                        <p class="mt-1.5 text-xs text-faint">{{ isolation_form.sandbox_rlimit_fsize_mb.help_text }}</p>
+                        {% if isolation_form.sandbox_rlimit_fsize_mb.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_rlimit_fsize_mb.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
+        </form>
+
+        <!-- Side column: active-tier status -->
+        <div class="lg:col-span-5 space-y-5">
+            <div class="bg-panel border border-line rounded-2xl p-6">
+                <h3 class="text-base font-semibold text-text mb-4">Active protection</h3>
+                <div class="space-y-3">
+                    <div class="flex items-start gap-3 p-3 bg-panel-hi/40 border border-line-soft rounded-lg">
+                        {% if settings.sandbox_rlimits_configured %}
+                            <span class="mt-0.5 w-2 h-2 rounded-full bg-ok flex-shrink-0"></span>
+                            <div>
+                                <p class="text-text font-medium text-sm">Resource limits active</p>
+                                <p class="text-xs text-muted">{% if nproc_not_enforced %}Per-run memory / CPU / file-size caps are enforced (POSIX hosts); the process cap is not enforced while scripts run as root.{% else %}Per-run memory / CPU / process / file-size caps are enforced (POSIX hosts).{% endif %}</p>
+                            </div>
+                        {% else %}
+                            <span class="mt-0.5 w-2 h-2 rounded-full bg-faint flex-shrink-0"></span>
+                            <div>
+                                <p class="text-text font-medium text-sm">No resource limits set</p>
+                                <p class="text-xs text-muted">Runs are uncapped — set limits to contain runaway scripts.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-start gap-3 p-3 bg-panel-hi/40 border border-line-soft rounded-lg">
+                        {% if settings.sandbox_capability == 'full' %}
+                            <span class="mt-0.5 w-2 h-2 rounded-full bg-ok flex-shrink-0"></span>
+                        {% elif settings.sandbox_capability == 'none' %}
+                            <span class="mt-0.5 w-2 h-2 rounded-full bg-fail flex-shrink-0"></span>
+                        {% else %}
+                            <span class="mt-0.5 w-2 h-2 rounded-full bg-faint flex-shrink-0"></span>
+                        {% endif %}
+                        <div>
+                            <p class="text-text font-medium text-sm">Filesystem / network sandbox</p>
+                            <p id="sandbox-capability-text" class="text-xs text-muted">
+                                Host capability: <span class="font-medium text-text">{{ settings.get_sandbox_capability_display }}</span>{% if settings.sandbox_checked_at %} — checked {{ settings.sandbox_checked_at|timesince }} ago{% else %} — not yet tested{% endif %}.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+                    <p class="text-text font-medium text-sm">Test sandbox on this host</p>
+                    <p class="text-xs text-muted mb-3">Probe whether this host can create the filesystem/network sandbox (needs unprivileged user namespaces). Re-run after a redeploy — capability can change.</p>
+                    <button type="button" onclick="testSandbox()" id="sandbox-test-btn" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Test now
+                    </button>
+                    <div id="sandbox-test-result" class="hidden mt-3 text-xs"></div>
+                </div>
+                <p class="mt-4 text-xs text-faint">The isolation default decides which runs use the sandbox; with fail closed on, a run that needs the sandbox fails instead of running with resource limits only when the host can't provide it. Resource limits apply on every POSIX host regardless of the sandbox tier.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Info Tab -->
+<div id="panel-system" class="tab-panel hidden">
+    <div class="bg-panel border border-line rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h3 class="text-base font-semibold text-text">System information</h3>
+                <p class="text-sm text-muted mt-1">A live snapshot of this instance and its task queue.</p>
+            </div>
+            <button type="button" onclick="loadSystemInfo()" id="refresh-system-btn" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors shrink-0">Refresh</button>
+        </div>
+        <div id="system-info-content" class="space-y-4">
+            <p class="text-sm text-muted">Loading system information...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Backup & Restore Tab -->
+<div id="panel-backup" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+    <!-- Create Backup -->
+    <div class="bg-panel border border-line rounded-2xl p-6">
+        <h3 class="text-base font-semibold text-text mb-4">📦 Create backup</h3>
+        <p class="text-sm text-muted mb-2">Export a backup of your PyRun instance: scripts, secrets, settings, libraries, data stores, brains and execution history.</p>
+        <p class="text-xs text-faint mb-4">Not included: AI providers, channels, object-storage connections, API tokens, installed plugin files and script working folders — recreate them after restoring on a new server.</p>
+        <form method="post" action="{% url 'cpanel:backup_create' %}" id="backup-create-form">
+            {% csrf_token %}
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-[13px] font-medium text-text mb-2">{{ backup_create_form.backup_format.label }}</label>
+                    <div class="space-y-2">
+                        {% for radio in backup_create_form.backup_format %}
+                        <label class="flex items-center gap-3">{{ radio.tag }}<span class="text-sm text-muted">{{ radio.choice_label }}</span></label>
+                        {% endfor %}
+                    </div>
+                    <p class="mt-1.5 text-xs text-faint">{{ backup_create_form.backup_format.help_text }}</p>
+                </div>
+                <div class="flex items-center gap-3">{{ backup_create_form.include_datastores }}<label for="id_include_datastores" class="text-sm text-muted">{{ backup_create_form.include_datastores.label }}</label></div>
+                <div class="flex items-center gap-3">{{ backup_create_form.include_runs }}<label for="id_include_runs" class="text-sm text-muted">{{ backup_create_form.include_runs.label }}</label></div>
+                <div class="ml-8">
+                    <label for="id_max_runs" class="block text-[13px] font-medium text-text mb-1.5">{{ backup_create_form.max_runs.label }}</label>
+                    {{ backup_create_form.max_runs }}
+                    <p class="mt-1.5 text-xs text-faint">{{ backup_create_form.max_runs.help_text }}</p>
+                </div>
+                <div class="flex items-center gap-3">{{ backup_create_form.include_package_operations }}<label for="id_include_package_operations" class="text-sm text-muted">{{ backup_create_form.include_package_operations.label }}</label></div>
+            </div>
+            <div class="p-4 bg-warn/10 border border-warn/30 rounded-lg mb-4">
+                <p class="text-sm text-warn">⚠ <strong>Important:</strong> Backup contains encrypted secrets. Keep your ENCRYPTION_KEY secure! The backup can only be restored with the same encryption key.</p>
+            </div>
+            <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Download backup</button>
+        </form>
+    </div>
+
+    <!-- Restore Backup -->
+    <div class="bg-panel border border-line rounded-2xl p-6">
+        <h3 class="text-base font-semibold text-text mb-4">📥 Restore backup</h3>
+        <p class="text-sm text-muted mb-4">Upload a backup file to restore your PyRun instance.</p>
+        <form id="backup-restore-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label for="id_backup_file" class="block text-[13px] font-medium text-text mb-1.5">{{ backup_restore_form.backup_file.label }}</label>
+                    <input type="file" id="id_backup_file" name="backup_file" accept=".json,.json.gz,.gz"
+                           class="block w-full text-sm text-muted file:mr-3 file:py-2 file:px-3.5 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-ok file:text-ink hover:file:opacity-90 cursor-pointer"
+                           onchange="handleBackupUpload(event)">
+                    <p class="mt-1.5 text-xs text-faint">{{ backup_restore_form.backup_file.help_text }}</p>
+                </div>
+            </div>
+            <div class="p-4 bg-fail/10 border border-fail/30 rounded-lg mb-4">
+                <p class="text-sm text-fail mb-2"><strong>⚠ WARNING:</strong> This will delete all existing data and replace it with the backup!</p>
+                <ul class="text-xs text-fail/80 ml-4 space-y-1">
+                    <li>• ENCRYPTION_KEY must match the backup</li>
+                    <li>• Current data will be backed up automatically first</li>
+                    <li>• Environments are rebuilt in the background after a restore (missing venvs recreated, saved packages reinstalled)</li>
+                </ul>
+            </div>
+            <div id="upload-status" class="hidden mb-4"></div>
+        </form>
+    </div>
+    </div>
+
+    <!-- Scheduled S3 Backups -->
+    <div class="bg-panel border border-line rounded-2xl p-6 mt-5">
+        <h3 class="text-base font-semibold text-text mb-4">☁️ Scheduled S3 backups</h3>
+        <p class="text-sm text-muted mb-4">Automatically backup your PyRun instance to S3-compatible storage on a schedule.</p>
+        {% if backup_schedule_status.s3_configured and not backup_schedule_status.s3_enabled %}
+        <div class="p-4 bg-warn/10 border border-warn/30 rounded-lg mb-4">
+            <p class="text-sm text-warn">⚠ <strong>Backup storage switched off:</strong> the connection “{{ backup_schedule_status.connection_name }}” is turned off — turn it on in <a href="{% url 'cpanel:services' %}" class="underline hover:text-text">Services</a> to run backups.</p>
+        </div>
+        {% elif not backup_schedule_status.s3_configured %}
+        <div class="p-4 bg-warn/10 border border-warn/30 rounded-lg mb-4">
+            <p class="text-sm text-warn">⚠ <strong>S3 not configured:</strong> You must first configure and enable S3 storage in the <a href="{% url 'cpanel:services' %}" class="underline hover:text-text">Services</a> page.</p>
+        </div>
+        {% endif %}
+        <form method="post" action="{% url 'cpanel:backup_schedule_settings' %}" id="backup-schedule-form">
+            {% csrf_token %}
+            <div class="mb-6">
+                <div class="flex items-center gap-3 mb-4">{{ backup_schedule_form.s3_backup_enabled }}<label for="id_s3_backup_enabled" class="text-sm text-muted">{{ backup_schedule_form.s3_backup_enabled.label }}</label></div>
+                <div class="grid sm:grid-cols-2 gap-x-5 gap-y-4">
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_schedule.label }}</label>
+                        {{ backup_schedule_form.s3_backup_schedule }}
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_time.label }}</label>
+                        {{ backup_schedule_form.s3_backup_time }}
+                        <p class="mt-1.5 text-xs text-faint">{{ backup_schedule_form.s3_backup_time.help_text }}</p>
+                    </div>
+                    <div id="weekly-day-container">
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_day.label }}</label>
+                        {{ backup_schedule_form.s3_backup_day }}
+                        <p class="mt-1.5 text-xs text-faint">{{ backup_schedule_form.s3_backup_day.help_text }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_prefix.label }}</label>
+                        {{ backup_schedule_form.s3_backup_prefix }}
+                        <p class="mt-1.5 text-xs text-faint">{{ backup_schedule_form.s3_backup_prefix.help_text }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_retention_count.label }}</label>
+                        {{ backup_schedule_form.s3_backup_retention_count }}
+                        <p class="mt-1.5 text-xs text-faint">{{ backup_schedule_form.s3_backup_retention_count.help_text }}</p>
+                    </div>
+                </div>
+                <div class="pt-4 mt-4 border-t border-line-soft">
+                    <p class="text-[13px] font-medium text-text mb-3">Backup contents</p>
+                    <div class="flex items-center gap-3 mb-2">{{ backup_schedule_form.s3_backup_include_datastores }}<label for="id_s3_backup_include_datastores" class="text-sm text-muted">{{ backup_schedule_form.s3_backup_include_datastores.label }}</label></div>
+                    <div class="flex items-center gap-3 mb-2">{{ backup_schedule_form.s3_backup_include_runs }}<label for="id_s3_backup_include_runs" class="text-sm text-muted">{{ backup_schedule_form.s3_backup_include_runs.label }}</label></div>
+                    <div class="ml-8">
+                        <label class="block text-[13px] font-medium text-text mb-1.5">{{ backup_schedule_form.s3_backup_max_runs.label }}</label>
+                        {{ backup_schedule_form.s3_backup_max_runs }}
+                        <p class="mt-1.5 text-xs text-faint">{{ backup_schedule_form.s3_backup_max_runs.help_text }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed" {% if not backup_schedule_status.s3_configured %}disabled{% endif %}>Save schedule</button>
+                <button type="button" id="backup-run-now-btn" onclick="runBackupNow()" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-ok/40 bg-ok/10 text-ok hover:bg-ok/20 transition disabled:opacity-40 disabled:cursor-not-allowed" {% if not backup_schedule_status.s3_configured or not backup_schedule_status.s3_enabled %}disabled{% endif %}>Run backup now</button>
+            </div>
+            <p id="backup-run-now-result" class="hidden mt-3 text-sm" role="status"></p>
+        </form>
+
+        {% if backup_schedule_status.last_run %}
+        <div class="mt-6 pt-4 border-t border-line-soft">
+            <h4 class="text-sm font-medium text-text mb-3">Last backup status</h4>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div><span class="text-muted">Last run:</span><span class="text-text ml-2">{{ backup_schedule_status.last_run|date:"Y-m-d H:i T" }}</span></div>
+                <div>
+                    <span class="text-muted">Status:</span>
+                    {% if backup_schedule_status.last_status == "success" %}
+                    <span class="ml-2 px-2 py-0.5 bg-ok/10 text-ok rounded-md text-xs">Success</span>
+                    {% elif backup_schedule_status.last_status == "failed" %}
+                    <span class="ml-2 px-2 py-0.5 bg-fail/10 text-fail rounded-md text-xs">Failed</span>
+                    {% else %}<span class="ml-2 text-muted">-</span>{% endif %}
+                </div>
+                {% if backup_schedule_status.last_size %}<div><span class="text-muted">Size:</span><span class="text-text ml-2">{{ backup_schedule_status.last_size|filesizeformat }}</span></div>{% endif %}
+                {% if backup_schedule_status.next_run %}<div><span class="text-muted">Next run:</span><span class="text-text ml-2">{{ backup_schedule_status.next_run|date:"Y-m-d H:i T" }}</span></div>{% endif %}
+                {% if backup_schedule_status.bucket %}<div class="col-span-2"><span class="text-muted">Stored in:</span><span class="text-text ml-2 font-mono text-xs break-all">{{ backup_schedule_status.bucket }}/{{ backup_schedule_status.prefix|default:"" }}</span> <span class="text-faint text-xs">({{ backup_schedule_status.connection_name }}, newest {{ backup_schedule_status.retention_count }} kept)</span></div>{% endif %}
+            </div>
+            {% if backup_schedule_status.last_status == "failed" and backup_schedule_status.last_error %}
+            <div class="mt-3 p-3 bg-fail/10 border border-fail/30 rounded-lg"><p class="text-sm text-fail">{{ backup_schedule_status.last_error }}</p></div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- API Tab -->
+<div id="panel-api" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- Primary column: access & tokens -->
+        <div class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
+            <h3 class="text-base font-semibold text-text mb-1">API access</h3>
+            <p class="text-sm text-muted mb-3">PyRun exposes a read-only REST API for your datastores. Create a token to let external applications fetch entries.</p>
+            <p class="text-sm text-muted mb-5">Brains are available over the Unified API (REST) and MCP — see <a href="{% url 'cpanel:connect' %}" class="text-info hover:underline">Connect</a> for the MCP URL, ready-made client snippets and the token catalog.</p>
+            <a href="{% url 'cpanel:api_token_list' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                Manage API tokens
+            </a>
+            <div class="mt-5 pt-5 border-t border-line-soft">
+                <p class="text-sm text-muted mb-2">Each datastore has API documentation with curl examples on its detail page.</p>
+                <a href="{% url 'cpanel:datastore_list' %}" class="text-sm text-info hover:underline inline-flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+                    View datastores
+                </a>
+            </div>
+        </div>
+
+        <!-- Side column: endpoint reference -->
+        <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
+            <h3 class="text-base font-semibold text-text mb-3">Endpoints</h3>
+            <div class="p-4 bg-ink border border-line-soft rounded-lg space-y-2 text-[13px] font-mono text-muted">
+                <p><span class="text-ok">GET</span> /api/v1/datastores/</p>
+                <p><span class="text-ok">GET</span> /api/v1/datastores/{name}/</p>
+                <p><span class="text-ok">GET</span> /api/v1/datastores/{name}/entries/</p>
+                <p><span class="text-ok">GET</span> /api/v1/datastores/{name}/entries/{key}/</p>
+            </div>
+            <h3 class="text-base font-semibold text-text mt-5 mb-3">Unified API and MCP</h3>
+            <div class="p-4 bg-ink border border-line-soft rounded-lg space-y-2 text-[13px] font-mono text-muted">
+                <p><span class="text-ok">GET</span> /api/v1/_catalog</p>
+                <p><span class="text-ok">GET</span> /api/v1/_openapi.json</p>
+                <p>/api/v1/brain.* <span class="text-faint">(methods in _catalog)</span></p>
+                <p><span class="text-info">POST</span> /mcp</p>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Restore Preview Modal -->
 <div id="restore-preview-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" style="display: none;">
     <div class="bg-panel border border-line rounded-2xl p-6 max-w-2xl w-full mx-4">

@@ -1,217 +1,202 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 {% load humanize %}
 
 {% block title %}AI Usage - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block breadcrumbs %}
+<a href="{% url 'cpanel:services' %}">Services</a>
+<span>AI usage</span>
+{% endblock %}
+{% block heading %}AI usage{% endblock %}
+{% block subtitle %}Token usage across script runs, Py AI, and connection tests &middot; {{ period_label }}{% endblock %}
+{% block actions %}
+<!-- Period selector -->
+<div class="inline-flex items-center gap-1 p-1 rounded-lg border border-line bg-panel">
+    {% for value, text in period_options %}
+    <a href="?period={{ value }}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if period == value %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text{% endif %}">{{ text }}</a>
+    {% endfor %}
+</div>
+{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
+{% block page %}
+{% if not has_data %}
+<!-- Empty state -->
+<section class="rounded-2xl border border-dashed border-line bg-panel/50 px-6 py-16 text-center">
+    <div class="w-14 h-14 rounded-full bg-accent/10 grid place-items-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+    </div>
+    <h3 class="text-base font-semibold mb-1">No usage yet for this period</h3>
+    <p class="text-sm text-muted max-w-md mx-auto">Usage is recorded automatically each time a script calls AI through <span class="font-mono text-text">pyrunner_ai</span>, when Py AI answers, or when you run a connection test.</p>
+</section>
+{% else %}
 
-            <!-- Header -->
-            <div class="flex items-start justify-between flex-wrap gap-4">
-                <div>
-                    <nav class="flex items-center gap-1.5 eyebrow text-faint mb-3">
-                        <a href="{% url 'cpanel:services' %}" class="hover:text-text transition-colors">Services</a>
-                        <span>/</span>
-                        <span class="text-muted">AI usage</span>
-                    </nav>
-                    <h1 class="text-[22px] font-semibold tracking-tight">AI usage</h1>
-                    <p class="text-sm text-muted mt-1">Token usage across script runs, Py AI, and connection tests &middot; {{ period_label }}</p>
-                </div>
-
-                <!-- Period selector -->
-                <div class="inline-flex items-center gap-1 p-1 rounded-lg border border-line bg-panel">
-                    {% for value, text in period_options %}
-                    <a href="?period={{ value }}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if period == value %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text{% endif %}">{{ text }}</a>
-                    {% endfor %}
-                </div>
-            </div>
-
-            {% if not has_data %}
-            <!-- Empty state -->
-            <section class="rounded-2xl border border-dashed border-line bg-panel/50 px-6 py-16 text-center">
-                <div class="w-14 h-14 rounded-full bg-accent/10 grid place-items-center mx-auto mb-4">
-                    <svg class="w-7 h-7 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                </div>
-                <h3 class="text-base font-semibold mb-1">No usage yet for this period</h3>
-                <p class="text-sm text-muted max-w-md mx-auto">Usage is recorded automatically each time a script calls AI through <span class="font-mono text-text">pyrunner_ai</span>, when Py AI answers, or when you run a connection test.</p>
-            </section>
-            {% else %}
-
-            <!-- Summary cards -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="rounded-2xl border border-line bg-panel p-5">
-                    <p class="eyebrow text-faint mb-1">Requests</p>
-                    <p class="text-2xl font-semibold font-mono tnum text-text">{{ summary.requests|intcomma }}</p>
-                </div>
-                <div class="rounded-2xl border border-line bg-panel p-5">
-                    <p class="eyebrow text-faint mb-1">Input tokens</p>
-                    <p class="text-2xl font-semibold font-mono tnum text-text">{{ summary.input|intcomma }}</p>
-                </div>
-                <div class="rounded-2xl border border-line bg-panel p-5">
-                    <p class="eyebrow text-faint mb-1">Output tokens</p>
-                    <p class="text-2xl font-semibold font-mono tnum text-text">{{ summary.output|intcomma }}</p>
-                </div>
-                <div class="rounded-2xl border border-line bg-panel p-5">
-                    <p class="eyebrow text-faint mb-1">Cache tokens</p>
-                    <p class="text-2xl font-semibold font-mono tnum text-text">{{ summary.cache|intcomma }}</p>
-                    <p class="text-xs text-faint mt-1">agent context{% if summary.cache %} &middot; {{ summary.cache_write|intcomma }} write / {{ summary.cache_read|intcomma }} read{% endif %}</p>
-                </div>
-            </div>
-
-            <!-- Chart -->
-            <div class="rounded-2xl border border-line bg-panel p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-text">Tokens per day</h2>
-                    <div class="inline-flex items-center text-xs gap-3">
-                        <span class="flex items-center text-muted"><span class="w-2.5 h-2.5 rounded-sm bg-info mr-1.5"></span>Input</span>
-                        <span class="flex items-center text-muted"><span class="w-2.5 h-2.5 rounded-sm bg-accent mr-1.5"></span>Output</span>
-                    </div>
-                </div>
-                <div class="h-72">
-                    <canvas id="usageChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Breakdowns -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <!-- By model -->
-                <div class="rounded-2xl border border-line bg-panel overflow-hidden">
-                    <div class="px-6 py-4 border-b border-line-soft">
-                        <h2 class="text-sm font-semibold text-text">By model</h2>
-                    </div>
-                    <div class="overflow-x-auto">
-                    <table class="w-full text-sm min-w-[420px]">
-                        <thead>
-                            <tr class="text-left">
-                                <th class="eyebrow text-faint font-normal px-6 py-2">Model</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Reqs</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right" title="Input + output tokens (cache tokens are not counted here)">Input + output</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for m in by_model %}
-                            <tr class="border-t border-line-soft">
-                                <td class="px-6 py-2.5 text-text font-mono text-xs">{{ m.model }}{% if m.provider and m.provider != 'anthropic' %} <span class="ml-1 px-1.5 py-0.5 rounded bg-panel-hi text-faint">{{ m.provider }}</span>{% endif %}</td>
-                                <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ m.requests|intcomma }}</td>
-                                <td class="px-6 py-2.5 text-right font-mono tnum text-text">{{ m.total|intcomma }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
-
-                <!-- Top scripts -->
-                <div class="rounded-2xl border border-line bg-panel overflow-hidden">
-                    <div class="px-6 py-4 border-b border-line-soft">
-                        <h2 class="text-sm font-semibold text-text">Top scripts</h2>
-                    </div>
-                    {% if by_script %}
-                    <div class="overflow-x-auto">
-                    <table class="w-full text-sm min-w-[420px]">
-                        <thead>
-                            <tr class="text-left">
-                                <th class="eyebrow text-faint font-normal px-6 py-2">Script</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Reqs</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right" title="Input + output tokens (cache tokens are not counted here)">Input + output</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for s in by_script %}
-                            <tr class="border-t border-line-soft">
-                                <td class="px-6 py-2.5">{% if s.exists %}<a href="{% url 'cpanel:script_detail' pk=s.script_id %}" class="text-info hover:underline transition">{{ s.script_name }}</a>{% else %}<span class="text-muted">{{ s.script_name }}</span> <span class="text-xs text-faint">(deleted)</span>{% endif %}</td>
-                                <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ s.requests|intcomma }}</td>
-                                <td class="px-6 py-2.5 text-right font-mono tnum text-text">{{ s.total|intcomma }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    </div>
-                    {% else %}
-                    <p class="px-6 py-8 text-sm text-muted text-center">No script-attributed usage yet.</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Recent rows -->
-            <div class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="px-6 py-4 border-b border-line-soft">
-                    <h2 class="text-sm font-semibold text-text">Recent calls</h2>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm min-w-[840px]">
-                        <thead>
-                            <tr class="text-left">
-                                <th class="eyebrow text-faint font-normal px-6 py-2">Time</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2">Source</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2">Provider</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2">Model</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Input</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Output</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Cache</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Turns</th>
-                                <th class="eyebrow text-faint font-normal px-6 py-2 text-right" title="Input + output + cache tokens">Total incl. cache</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in page_obj %}
-                            <tr class="border-t border-line-soft">
-                                <td class="px-6 py-2.5 text-muted whitespace-nowrap">{{ row.created_at|date:"M d, H:i" }}</td>
-                                <td class="px-6 py-2.5">
-                                    {% if row.source == 'test' %}
-                                    <span class="px-2 py-0.5 rounded-md text-xs bg-warn/10 text-warn">test</span>
-                                    {% elif row.source == 'brain' %}
-                                    <span class="text-muted" title="{{ row.brain_id }}">Brain</span>
-                                    {% elif row.script_name and row.script_exists %}
-                                    <a href="{% url 'cpanel:script_detail' pk=row.script_id %}" class="text-info hover:underline transition">{{ row.script_name }}</a>
-                                    {% elif row.script_name %}
-                                    <span class="text-muted">{{ row.script_name }}</span> <span class="text-xs text-faint">(deleted)</span>
-                                    {% else %}
-                                    <span class="text-muted">script</span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-6 py-2.5 text-muted text-xs">{{ row.provider|default:"—" }}</td>
-                                <td class="px-6 py-2.5 text-text font-mono text-xs">{{ row.model|default:"—" }}</td>
-                                <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ row.input_tokens|intcomma }}</td>
-                                <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ row.output_tokens|intcomma }}</td>
-                                <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ row.cache_read_tokens|add:row.cache_creation_tokens|intcomma }}</td>
-                                <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ row.num_turns }}</td>
-                                <td class="px-6 py-2.5 text-right font-mono tnum text-text font-medium">{{ row.total_tokens|intcomma }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                {% if page_obj.paginator.num_pages > 1 %}
-                <div class="flex items-center justify-between gap-4 px-6 py-4 border-t border-line-soft">
-                    <p class="text-xs text-faint">Showing {{ page_obj.start_index }}&ndash;{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</p>
-                    <div class="inline-flex items-center gap-1">
-                        {% if page_obj.has_previous %}
-                        <a href="?period={{ period }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-md border border-line text-sm text-muted hover:text-text hover:border-faint transition-colors">Prev</a>
-                        {% else %}
-                        <span class="px-3 py-1.5 rounded-md border border-line-soft text-sm text-faint/50 cursor-not-allowed">Prev</span>
-                        {% endif %}
-                        <span class="px-3 py-1.5 text-sm text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                        {% if page_obj.has_next %}
-                        <a href="?period={{ period }}&page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-md border border-line text-sm text-muted hover:text-text hover:border-faint transition-colors">Next</a>
-                        {% else %}
-                        <span class="px-3 py-1.5 rounded-md border border-line-soft text-sm text-faint/50 cursor-not-allowed">Next</span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-
-        </div>
+<!-- Summary cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="rounded-2xl border border-line bg-panel p-5">
+        <p class="eyebrow text-faint mb-1">Requests</p>
+        <p class="text-2xl font-semibold font-mono tnum text-text">{{ summary.requests|intcomma }}</p>
+    </div>
+    <div class="rounded-2xl border border-line bg-panel p-5">
+        <p class="eyebrow text-faint mb-1">Input tokens</p>
+        <p class="text-2xl font-semibold font-mono tnum text-text">{{ summary.input|intcomma }}</p>
+    </div>
+    <div class="rounded-2xl border border-line bg-panel p-5">
+        <p class="eyebrow text-faint mb-1">Output tokens</p>
+        <p class="text-2xl font-semibold font-mono tnum text-text">{{ summary.output|intcomma }}</p>
+    </div>
+    <div class="rounded-2xl border border-line bg-panel p-5">
+        <p class="eyebrow text-faint mb-1">Cache tokens</p>
+        <p class="text-2xl font-semibold font-mono tnum text-text">{{ summary.cache|intcomma }}</p>
+        <p class="text-xs text-faint mt-1">agent context{% if summary.cache %} &middot; {{ summary.cache_write|intcomma }} write / {{ summary.cache_read|intcomma }} read{% endif %}</p>
     </div>
 </div>
+
+<!-- Chart -->
+<div class="rounded-2xl border border-line bg-panel p-6">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-text">Tokens per day</h2>
+        <div class="inline-flex items-center text-xs gap-3">
+            <span class="flex items-center text-muted"><span class="w-2.5 h-2.5 rounded-sm bg-info mr-1.5"></span>Input</span>
+            <span class="flex items-center text-muted"><span class="w-2.5 h-2.5 rounded-sm bg-accent mr-1.5"></span>Output</span>
+        </div>
+    </div>
+    <div class="h-72">
+        <canvas id="usageChart"></canvas>
+    </div>
+</div>
+
+<!-- Breakdowns -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <!-- By model -->
+    <div class="rounded-2xl border border-line bg-panel overflow-hidden">
+        <div class="px-6 py-4 border-b border-line-soft">
+            <h2 class="text-sm font-semibold text-text">By model</h2>
+        </div>
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[420px]">
+            <thead>
+                <tr class="text-left">
+                    <th class="eyebrow text-faint font-normal px-6 py-2">Model</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Reqs</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2 text-right" title="Input + output tokens (cache tokens are not counted here)">Input + output</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in by_model %}
+                <tr class="border-t border-line-soft">
+                    <td class="px-6 py-2.5 text-text font-mono text-xs">{{ m.model }}{% if m.provider and m.provider != 'anthropic' %} <span class="ml-1 px-1.5 py-0.5 rounded bg-panel-hi text-faint">{{ m.provider }}</span>{% endif %}</td>
+                    <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ m.requests|intcomma }}</td>
+                    <td class="px-6 py-2.5 text-right font-mono tnum text-text">{{ m.total|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <!-- Top scripts -->
+    <div class="rounded-2xl border border-line bg-panel overflow-hidden">
+        <div class="px-6 py-4 border-b border-line-soft">
+            <h2 class="text-sm font-semibold text-text">Top scripts</h2>
+        </div>
+        {% if by_script %}
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[420px]">
+            <thead>
+                <tr class="text-left">
+                    <th class="eyebrow text-faint font-normal px-6 py-2">Script</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Reqs</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2 text-right" title="Input + output tokens (cache tokens are not counted here)">Input + output</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in by_script %}
+                <tr class="border-t border-line-soft">
+                    <td class="px-6 py-2.5">{% if s.exists %}<a href="{% url 'cpanel:script_detail' pk=s.script_id %}" class="text-info hover:underline transition">{{ s.script_name }}</a>{% else %}<span class="text-muted">{{ s.script_name }}</span> <span class="text-xs text-faint">(deleted)</span>{% endif %}</td>
+                    <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ s.requests|intcomma }}</td>
+                    <td class="px-6 py-2.5 text-right font-mono tnum text-text">{{ s.total|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="px-6 py-8 text-sm text-muted text-center">No script-attributed usage yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent rows -->
+<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="px-6 py-4 border-b border-line-soft">
+        <h2 class="text-sm font-semibold text-text">Recent calls</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[840px]">
+            <thead>
+                <tr class="text-left">
+                    <th class="eyebrow text-faint font-normal px-6 py-2">Time</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2">Source</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2">Provider</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2">Model</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Input</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Output</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Cache</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2 text-right">Turns</th>
+                    <th class="eyebrow text-faint font-normal px-6 py-2 text-right" title="Input + output + cache tokens">Total incl. cache</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in page_obj %}
+                <tr class="border-t border-line-soft">
+                    <td class="px-6 py-2.5 text-muted whitespace-nowrap">{{ row.created_at|date:"M d, H:i" }}</td>
+                    <td class="px-6 py-2.5">
+                        {% if row.source == 'test' %}
+                        <span class="px-2 py-0.5 rounded-md text-xs bg-warn/10 text-warn">test</span>
+                        {% elif row.source == 'brain' %}
+                        <span class="text-muted" title="{{ row.brain_id }}">Brain</span>
+                        {% elif row.script_name and row.script_exists %}
+                        <a href="{% url 'cpanel:script_detail' pk=row.script_id %}" class="text-info hover:underline transition">{{ row.script_name }}</a>
+                        {% elif row.script_name %}
+                        <span class="text-muted">{{ row.script_name }}</span> <span class="text-xs text-faint">(deleted)</span>
+                        {% else %}
+                        <span class="text-muted">script</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-2.5 text-muted text-xs">{{ row.provider|default:"—" }}</td>
+                    <td class="px-6 py-2.5 text-text font-mono text-xs">{{ row.model|default:"—" }}</td>
+                    <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ row.input_tokens|intcomma }}</td>
+                    <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ row.output_tokens|intcomma }}</td>
+                    <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ row.cache_read_tokens|add:row.cache_creation_tokens|intcomma }}</td>
+                    <td class="px-6 py-2.5 text-right font-mono tnum text-muted">{{ row.num_turns }}</td>
+                    <td class="px-6 py-2.5 text-right font-mono tnum text-text font-medium">{{ row.total_tokens|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="flex items-center justify-between gap-4 px-6 py-4 border-t border-line-soft">
+        <p class="text-xs text-faint">Showing {{ page_obj.start_index }}&ndash;{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</p>
+        <div class="inline-flex items-center gap-1">
+            {% if page_obj.has_previous %}
+            <a href="?period={{ period }}&page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-md border border-line text-sm text-muted hover:text-text hover:border-faint transition-colors">Prev</a>
+            {% else %}
+            <span class="px-3 py-1.5 rounded-md border border-line-soft text-sm text-faint/50 cursor-not-allowed">Prev</span>
+            {% endif %}
+            <span class="px-3 py-1.5 text-sm text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?period={{ period }}&page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-md border border-line text-sm text-muted hover:text-text hover:border-faint transition-colors">Next</a>
+            {% else %}
+            <span class="px-3 py-1.5 rounded-md border border-line-soft text-sm text-faint/50 cursor-not-allowed">Next</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}

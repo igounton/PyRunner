@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% comment %}
+Console shell — every signed-in console page extends this.
+
+It owns the sidebar, the content column and the page wrapper, so the width and
+the header never move between a list, its detail page and its forms. Pages fill:
+
+  breadcrumbs     links / spans for the eyebrow trail ("/" separators are drawn by CSS)
+  heading         the h1 text;  heading_class adds classes to it (e.g. font-mono)
+  heading_badges  pills shown next to the h1
+  subtitle        one muted line under the h1 (keep it on one line in the child, so
+                  an empty block leaves the <p> empty and hidden)
+  header_extra    anything else under the subtitle (e.g. a tag row)
+  actions         buttons on the right; on phones they get their own row
+  page            the content
+
+Width is decided inside ``page``: wide by default (lists, detail pages, settings);
+forms use ``grid lg:grid-cols-3`` with the form in ``lg:col-span-2`` and any help
+box in the third column; long prose sits in a ``max-w-[72ch]`` column. Full-height
+pages (the editors, Py AI) override ``shell`` and keep the sidebar.
+{% endcomment %}
+
+{% block skip_link %}<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:px-3.5 focus:py-2 focus:rounded-lg focus:bg-ok focus:text-ink focus:text-sm focus:font-medium">Skip to content</a>{% endblock %}
+
+{% block content %}
+<div class="flex">
+    {% include "cpanel/_sidebar.html" %}
+
+    <div id="main" tabindex="-1" class="flex-1 min-w-0 focus:outline-none">
+        {% block shell %}
+        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto w-full space-y-5">
+            {% block page_header %}
+            <header class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                <div class="min-w-0">
+                    <nav aria-label="Breadcrumb" class="crumbs mb-3 [&:not(:has(*))]:hidden">{% block breadcrumbs %}{% endblock %}</nav>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 min-w-0">
+                        <h1 class="text-[22px] font-semibold tracking-tight break-words min-w-0 {% block heading_class %}{% endblock %}">{% block heading %}{% endblock %}</h1>
+                        {% block heading_badges %}{% endblock %}
+                    </div>
+                    <p class="text-sm text-muted mt-1 break-words empty:hidden">{% block subtitle %}{% endblock %}</p>
+                    {% block header_extra %}{% endblock %}
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5 sm:flex-shrink-0 sm:justify-end [&:not(:has(*))]:hidden">{% block actions %}{% endblock %}</div>
+            </header>
+            {% endblock %}
+
+            {% block page %}{% endblock %}
+        </div>
+        {% endblock %}
+    </div>
+</div>
+{% endblock %}

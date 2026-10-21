@@ -1,149 +1,133 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Plugins - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block heading %}Plugins{% endblock %}
+{% block subtitle %}Extend PyRun with self-contained apps. Installed ≠ active — activating runs an isolated preflight first.{% endblock %}
+{% block actions %}
+<a href="{% url 'cpanel:plugin_upload' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+    Upload plugin
+</a>
+{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-[1440px] mx-auto space-y-5">
-
-            <!-- Header -->
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <div class="flex items-center gap-2.5">
-                        <h1 class="text-[22px] font-semibold tracking-tight">Plugins</h1>
-                    </div>
-                    <p class="text-sm text-muted mt-1">Extend PyRun with self-contained apps. Installed ≠ active — activating runs an isolated preflight first.</p>
-                </div>
-                <a href="{% url 'cpanel:plugin_upload' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    Upload plugin
-                </a>
-            </div>
-
-            <!-- Restart-required banner -->
-            {% if pending_restart %}
-            <div class="rounded-xl border border-warn/30 bg-warn/10 p-4 flex items-center justify-between gap-4">
-                <div class="flex items-start gap-3">
-                    <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0L3.16 16.25A2 2 0 005 19z"/></svg>
-                    <div class="text-sm">
-                        <p class="font-medium text-text">Restart required</p>
-                        <p class="text-muted mt-0.5">Plugin changes won't take effect until PyRun restarts (PyRun is unavailable for up to a minute).</p>
-                    </div>
-                </div>
-                <form method="post" action="{% url 'cpanel:plugin_restart' %}" onsubmit="return confirm('Restart PyRun now? It will be unavailable for up to a minute.');">
-                    {% csrf_token %}
-                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-warn text-ink hover:opacity-90 transition whitespace-nowrap">Restart now</button>
-                </form>
-            </div>
-            {% endif %}
-
-            <!-- Boot loader errors (rare; preflight normally quarantines first) -->
-            {% if load_errors %}
-            <div class="rounded-xl border border-fail/30 bg-fail/10 p-4 text-sm">
-                <p class="font-medium text-fail">Some plugins were skipped at boot:</p>
-                <ul class="mt-1.5 space-y-1 text-muted">
-                    {% for slug, err in load_errors.items %}
-                    <li><span class="font-mono text-text">{{ slug }}</span> — {{ err }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-
-            {% if plugins %}
-            <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-                <div class="overflow-x-auto">
-                <table class="w-full min-w-[820px]">
-                    <thead>
-                        <tr class="border-b border-line-soft text-left">
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Plugin</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Version</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Source</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                            <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-soft">
-                        {% for plugin in plugins %}
-                        <tr class="hover:bg-panel-hi/50 transition-colors align-top">
-                            <td class="px-6 py-3.5 max-w-md">
-                                <div class="flex items-start gap-3">
-                                    {% if plugin.icon_url %}
-                                    <img src="{{ plugin.icon_url }}" alt="" class="w-9 h-9 rounded-lg object-cover border border-line-soft bg-panel-hi flex-shrink-0 mt-0.5" onerror="this.style.display='none';this.nextElementSibling.style.display='grid';">
-                                    <div class="w-9 h-9 rounded-lg bg-panel-hi border border-line-soft place-items-center text-lg flex-shrink-0 mt-0.5" style="display:none">{{ plugin.icon_fallback|default:"🧩" }}</div>
-                                    {% else %}
-                                    <div class="w-9 h-9 rounded-lg bg-panel-hi border border-line-soft grid place-items-center text-lg flex-shrink-0 mt-0.5">{{ plugin.icon_fallback|default:"🧩" }}</div>
-                                    {% endif %}
-                                    <div class="min-w-0">
-                                        <a href="{% url 'cpanel:plugin_detail' slug=plugin.slug %}" class="text-[13.5px] font-medium text-text hover:text-info transition-colors">{{ plugin.name }}</a>
-                                        <div class="text-xs font-mono text-faint mt-0.5">{{ plugin.slug }}</div>
-                                        {% if plugin.summary %}
-                                        <p class="text-xs text-muted mt-1 line-clamp-2">{{ plugin.summary }}</p>
-                                        {% endif %}
-                                        {% if plugin.error_message %}
-                                        <details class="mt-1.5">
-                                            <summary class="text-xs text-fail cursor-pointer">Error details</summary>
-                                            <pre class="mt-1 text-[11px] text-muted bg-ink border border-line-soft rounded-lg p-2.5 overflow-x-auto whitespace-pre-wrap">{{ plugin.error_message }}</pre>
-                                        </details>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-3.5"><span class="font-mono text-sm text-muted">{{ plugin.version }}</span></td>
-                            <td class="px-6 py-3.5"><span class="text-sm text-muted">{{ plugin.get_source_display }}</span></td>
-                            <td class="px-6 py-3.5">
-                                {% if plugin.status == 'active' %}
-                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Active</span>
-                                {% elif plugin.status == 'errored' %}
-                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-fail/10 text-fail"><span class="w-1.5 h-1.5 rounded-full bg-fail"></span>Errored</span>
-                                {% elif plugin.status == 'disabled' %}
-                                <span class="px-2 py-0.5 text-xs rounded-md bg-panel-hi text-muted">Disabled</span>
-                                {% else %}
-                                <span class="px-2 py-0.5 text-xs rounded-md bg-info/10 text-info">Installed</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-3.5">
-                                <div class="flex items-center justify-end gap-2">
-                                    {% if plugin.status == 'active' %}
-                                    <form method="post" action="{% url 'cpanel:plugin_deactivate' pk=plugin.pk %}" class="inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Deactivate</button>
-                                    </form>
-                                    {% else %}
-                                    <form method="post" action="{% url 'cpanel:plugin_activate' pk=plugin.pk %}" class="inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="text-[13px] font-medium px-3 py-1.5 rounded-lg bg-ok text-ink hover:opacity-90 transition">{% if plugin.status == 'errored' %}Retry{% else %}Activate{% endif %}</button>
-                                    </form>
-                                    {% endif %}
-                                    <button type="button" data-url="{% url 'cpanel:plugin_delete' pk=plugin.pk %}" data-name="{{ plugin.name }}" data-owned="{{ plugin.owned_summary }}" onclick="openDeleteModal(this)" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                </div>
-            </section>
-            {% else %}
-            <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
-                <div class="w-14 h-14 rounded-full bg-ok/10 grid place-items-center mx-auto mb-4">
-                    <svg class="w-7 h-7 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5a2 2 0 00-2 2v6a2 2 0 002 2h14a2 2 0 002-2v-6a2 2 0 00-2-2zm-2 0V7a5 5 0 00-10 0v4"/></svg>
-                </div>
-                <h3 class="text-base font-semibold mb-1">No plugins installed</h3>
-                <p class="text-sm text-muted mb-6">Upload a plugin .zip to extend PyRun.</p>
-                <a href="{% url 'cpanel:plugin_upload' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    Upload plugin
-                </a>
-            </section>
-            {% endif %}
-
+{% block page %}
+<!-- Restart-required banner -->
+{% if pending_restart %}
+<div class="rounded-xl border border-warn/30 bg-warn/10 p-4 flex items-center justify-between gap-4">
+    <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0L3.16 16.25A2 2 0 005 19z"/></svg>
+        <div class="text-sm">
+            <p class="font-medium text-text">Restart required</p>
+            <p class="text-muted mt-0.5">Plugin changes won't take effect until PyRun restarts (PyRun is unavailable for up to a minute).</p>
         </div>
     </div>
+    <form method="post" action="{% url 'cpanel:plugin_restart' %}" onsubmit="return confirm('Restart PyRun now? It will be unavailable for up to a minute.');">
+        {% csrf_token %}
+        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-warn text-ink hover:opacity-90 transition whitespace-nowrap">Restart now</button>
+    </form>
 </div>
+{% endif %}
 
+<!-- Boot loader errors (rare; preflight normally quarantines first) -->
+{% if load_errors %}
+<div class="rounded-xl border border-fail/30 bg-fail/10 p-4 text-sm">
+    <p class="font-medium text-fail">Some plugins were skipped at boot:</p>
+    <ul class="mt-1.5 space-y-1 text-muted">
+        {% for slug, err in load_errors.items %}
+        <li><span class="font-mono text-text">{{ slug }}</span> — {{ err }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if plugins %}
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[820px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Plugin</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Version</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Source</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
+                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for plugin in plugins %}
+            <tr class="hover:bg-panel-hi/50 transition-colors align-top">
+                <td class="px-6 py-3.5 max-w-md">
+                    <div class="flex items-start gap-3">
+                        {% if plugin.icon_url %}
+                        <img src="{{ plugin.icon_url }}" alt="" class="w-9 h-9 rounded-lg object-cover border border-line-soft bg-panel-hi flex-shrink-0 mt-0.5" onerror="this.style.display='none';this.nextElementSibling.style.display='grid';">
+                        <div class="w-9 h-9 rounded-lg bg-panel-hi border border-line-soft place-items-center text-lg flex-shrink-0 mt-0.5" style="display:none">{{ plugin.icon_fallback|default:"🧩" }}</div>
+                        {% else %}
+                        <div class="w-9 h-9 rounded-lg bg-panel-hi border border-line-soft grid place-items-center text-lg flex-shrink-0 mt-0.5">{{ plugin.icon_fallback|default:"🧩" }}</div>
+                        {% endif %}
+                        <div class="min-w-0">
+                            <a href="{% url 'cpanel:plugin_detail' slug=plugin.slug %}" class="text-[13.5px] font-medium text-text hover:text-info transition-colors">{{ plugin.name }}</a>
+                            <div class="text-xs font-mono text-faint mt-0.5">{{ plugin.slug }}</div>
+                            {% if plugin.summary %}
+                            <p class="text-xs text-muted mt-1 line-clamp-2">{{ plugin.summary }}</p>
+                            {% endif %}
+                            {% if plugin.error_message %}
+                            <details class="mt-1.5">
+                                <summary class="text-xs text-fail cursor-pointer">Error details</summary>
+                                <pre class="mt-1 text-[11px] text-muted bg-ink border border-line-soft rounded-lg p-2.5 overflow-x-auto whitespace-pre-wrap">{{ plugin.error_message }}</pre>
+                            </details>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-3.5"><span class="font-mono text-sm text-muted">{{ plugin.version }}</span></td>
+                <td class="px-6 py-3.5"><span class="text-sm text-muted">{{ plugin.get_source_display }}</span></td>
+                <td class="px-6 py-3.5">
+                    {% if plugin.status == 'active' %}
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Active</span>
+                    {% elif plugin.status == 'errored' %}
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-fail/10 text-fail"><span class="w-1.5 h-1.5 rounded-full bg-fail"></span>Errored</span>
+                    {% elif plugin.status == 'disabled' %}
+                    <span class="px-2 py-0.5 text-xs rounded-md bg-panel-hi text-muted">Disabled</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 text-xs rounded-md bg-info/10 text-info">Installed</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-3.5">
+                    <div class="flex items-center justify-end gap-2">
+                        {% if plugin.status == 'active' %}
+                        <form method="post" action="{% url 'cpanel:plugin_deactivate' pk=plugin.pk %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Deactivate</button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'cpanel:plugin_activate' pk=plugin.pk %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-[13px] font-medium px-3 py-1.5 rounded-lg bg-ok text-ink hover:opacity-90 transition">{% if plugin.status == 'errored' %}Retry{% else %}Activate{% endif %}</button>
+                        </form>
+                        {% endif %}
+                        <button type="button" data-url="{% url 'cpanel:plugin_delete' pk=plugin.pk %}" data-name="{{ plugin.name }}" data-owned="{{ plugin.owned_summary }}" onclick="openDeleteModal(this)" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% else %}
+<section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
+    <div class="w-14 h-14 rounded-full bg-ok/10 grid place-items-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5a2 2 0 00-2 2v6a2 2 0 002 2h14a2 2 0 002-2v-6a2 2 0 00-2-2zm-2 0V7a5 5 0 00-10 0v4"/></svg>
+    </div>
+    <h3 class="text-base font-semibold mb-1">No plugins installed</h3>
+    <p class="text-sm text-muted mb-6">Upload a plugin .zip to extend PyRun.</p>
+    <a href="{% url 'cpanel:plugin_upload' %}" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        Upload plugin
+    </a>
+</section>
+{% endif %}
 <!-- Delete confirmation modal (shared; populated per-row via data attributes) -->
 <div id="delete-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[60] p-4">
     <div class="bg-panel border border-line rounded-2xl p-6 max-w-md w-full">

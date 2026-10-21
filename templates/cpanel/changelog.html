@@ -1,83 +1,69 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}What's new - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block heading %}What's new{% endblock %}
+{% block subtitle %}You're running <span class="font-mono text-ok">v{{ pyrunner_version }}</span>.{% endblock %}
+{% block actions %}
+<a href="https://github.com/hassancs91/PyRun/tags" target="_blank" rel="noopener noreferrer"
+   class="flex-shrink-0 text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors inline-flex items-center gap-2">
+    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.68.8.56A10.52 10.52 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5z"/></svg>
+    Releases on GitHub
+</a>
+{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-8 max-w-[840px] mx-auto">
+{% block page %}
+<!-- Release timeline (reading column) -->
+<div class="relative max-w-[72ch]">
+    <!-- vertical rail -->
+    <div class="absolute left-[7px] top-2 bottom-2 w-px bg-line" aria-hidden="true"></div>
 
-            <!-- Header -->
-            <div class="flex flex-wrap items-end justify-between gap-4 mb-9">
-                <div>
-                    <div class="eyebrow text-faint mb-2">Changelog</div>
-                    <h1 class="text-[26px] font-semibold tracking-tight leading-none">What's new</h1>
-                    <p class="text-sm text-muted mt-2.5">You're running <span class="font-mono text-ok">v{{ pyrunner_version }}</span>.</p>
-                </div>
-                <a href="https://github.com/hassancs91/PyRun/tags" target="_blank" rel="noopener noreferrer"
-                   class="flex-shrink-0 text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors inline-flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.68.8.56A10.52 10.52 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5z"/></svg>
-                    Releases on GitHub
-                </a>
-            </div>
+    <div class="space-y-10">
+        {% for release in releases %}
+        <article class="relative pl-8">
+            <!-- timeline node -->
+            <span class="absolute left-0 top-[5px] w-[15px] h-[15px] rounded-full ring-4 ring-ink z-10 {% if forloop.first %}bg-ok{% else %}bg-panel border border-faint{% endif %}" aria-hidden="true"></span>
 
-            <!-- Release timeline -->
-            <div class="relative">
-                <!-- vertical rail -->
-                <div class="absolute left-[7px] top-2 bottom-2 w-px bg-line" aria-hidden="true"></div>
+            <!-- release header -->
+            <header class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <h2 class="font-mono text-[17px] font-semibold tracking-tight text-text">v{{ release.version }}</h2>
+                {% if forloop.first %}
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded-full bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok animate-pulse"></span>Latest</span>
+                {% endif %}
+                <span class="ml-auto text-xs text-faint">{{ release.date }}</span>
+            </header>
 
-                <div class="space-y-10">
-                    {% for release in releases %}
-                    <article class="relative pl-8">
-                        <!-- timeline node -->
-                        <span class="absolute left-0 top-[5px] w-[15px] h-[15px] rounded-full ring-4 ring-ink z-10 {% if forloop.first %}bg-ok{% else %}bg-panel border border-faint{% endif %}" aria-hidden="true"></span>
+            {% if release.headline %}
+            <p class="text-[15px] text-muted leading-relaxed mt-3 max-w-[62ch]">{{ release.headline }}</p>
+            {% endif %}
 
-                        <!-- release header -->
-                        <header class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <h2 class="font-mono text-[17px] font-semibold tracking-tight text-text">v{{ release.version }}</h2>
-                            {% if forloop.first %}
-                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded-full bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok animate-pulse"></span>Latest</span>
-                            {% endif %}
-                            <span class="ml-auto text-xs text-faint">{{ release.date }}</span>
-                        </header>
-
-                        {% if release.headline %}
-                        <p class="text-[15px] text-muted leading-relaxed mt-3 max-w-[62ch]">{{ release.headline }}</p>
-                        {% endif %}
-
-                        <!-- changes -->
-                        <ul class="mt-4 rounded-2xl border border-line bg-panel divide-y divide-line-soft overflow-hidden">
-                            {% for change in release.changes %}
-                            <li class="px-5 py-4 flex items-start gap-4 hover:bg-panel-hi/30 transition-colors">
-                                <span class="mt-1 flex-shrink-0 w-[76px] inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider
-                                    {% if change.tag == 'Added' %}text-ok
-                                    {% elif change.tag == 'Improved' or change.tag == 'Changed' %}text-info
-                                    {% elif change.tag == 'Fixed' %}text-warn
-                                    {% elif change.tag == 'Security' %}text-fail
-                                    {% else %}text-muted{% endif %}">
-                                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0
-                                        {% if change.tag == 'Added' %}bg-ok
-                                        {% elif change.tag == 'Improved' or change.tag == 'Changed' %}bg-info
-                                        {% elif change.tag == 'Fixed' %}bg-warn
-                                        {% elif change.tag == 'Security' %}bg-fail
-                                        {% else %}bg-faint{% endif %}"></span>
-                                    {{ change.tag }}
-                                </span>
-                                <div class="min-w-0">
-                                    <p class="text-sm font-medium text-text">{{ change.title }}</p>
-                                    {% if change.body %}<p class="text-[13px] text-muted leading-relaxed mt-1">{{ change.body }}</p>{% endif %}
-                                </div>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </article>
-                    {% endfor %}
-                </div>
-            </div>
-
-        </div>
+            <!-- changes -->
+            <ul class="mt-4 rounded-2xl border border-line bg-panel divide-y divide-line-soft overflow-hidden">
+                {% for change in release.changes %}
+                <li class="px-5 py-4 flex items-start gap-4 hover:bg-panel-hi/30 transition-colors">
+                    <span class="mt-1 flex-shrink-0 w-[76px] inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider
+                        {% if change.tag == 'Added' %}text-ok
+                        {% elif change.tag == 'Improved' or change.tag == 'Changed' %}text-info
+                        {% elif change.tag == 'Fixed' %}text-warn
+                        {% elif change.tag == 'Security' %}text-fail
+                        {% else %}text-muted{% endif %}">
+                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0
+                            {% if change.tag == 'Added' %}bg-ok
+                            {% elif change.tag == 'Improved' or change.tag == 'Changed' %}bg-info
+                            {% elif change.tag == 'Fixed' %}bg-warn
+                            {% elif change.tag == 'Security' %}bg-fail
+                            {% else %}bg-faint{% endif %}"></span>
+                        {{ change.tag }}
+                    </span>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-text">{{ change.title }}</p>
+                        {% if change.body %}<p class="text-[13px] text-muted leading-relaxed mt-1">{{ change.body }}</p>{% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </article>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

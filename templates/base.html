@@ -46,6 +46,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-ink text-text font-sans antialiased min-h-screen flex flex-col">
+    {% block skip_link %}{% endblock %}
     {% block header %}
     <header class="border-b border-line bg-ink/80 backdrop-blur sticky top-0 z-50">
         <div class="px-4 sm:px-6 lg:px-8">

@@ -1,69 +1,54 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 
 {% block title %}Edit Tag - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block breadcrumbs %}
+<a href="{% url 'cpanel:tag_list' %}">Tags</a>
+<span class="text-muted truncate max-w-[12rem]">{{ tag.name }}</span>
+{% endblock %}
+{% block heading %}Edit tag{% endblock %}
+{% block subtitle %}Update the tag name or color{% endblock %}
 
-    <div class="flex-1 min-w-0">
-        <div class="px-5 lg:px-8 py-7 max-w-2xl mx-auto space-y-5">
+{% block page %}
+<form method="post" class="rounded-2xl border border-line bg-panel p-6 space-y-5">
+    {% csrf_token %}
 
-            <!-- Header -->
-            <div>
-                <nav class="flex items-center gap-1.5 eyebrow text-faint mb-3">
-                    <a href="{% url 'cpanel:tag_list' %}" class="hover:text-text transition-colors">Tags</a>
-                    <span>/</span>
-                    <span class="text-muted truncate max-w-[12rem]">{{ tag.name }}</span>
-                </nav>
-                <h1 class="text-[22px] font-semibold tracking-tight">Edit tag</h1>
-                <p class="text-sm text-muted mt-1">Update the tag name or color</p>
-            </div>
+    <div>
+        <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
+        {{ form.name }}
+        {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
+    </div>
 
-            <form method="post" class="rounded-2xl border border-line bg-panel p-6 space-y-5">
-                {% csrf_token %}
-
-                <div>
-                    <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
-                    {{ form.name }}
-                    {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
-                </div>
-
-                <div>
-                    <label class="block text-[13px] font-medium text-text mb-2">{{ form.color.label }}</label>
-                    <input type="hidden" name="color" id="id_color" value="{{ tag.color }}">
-                    <div class="flex items-center flex-wrap gap-3">
-                        <button type="button" data-color="gray" aria-label="Gray" title="Gray" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'gray' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(107, 114, 128);"></button>
-                        <button type="button" data-color="red" aria-label="Red" title="Red" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'red' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(239, 68, 68);"></button>
-                        <button type="button" data-color="orange" aria-label="Orange" title="Orange" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'orange' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(249, 115, 22);"></button>
-                        <button type="button" data-color="yellow" aria-label="Yellow" title="Yellow" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'yellow' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(234, 179, 8);"></button>
-                        <button type="button" data-color="green" aria-label="Green" title="Green" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'green' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(34, 197, 94);"></button>
-                        <button type="button" data-color="blue" aria-label="Blue" title="Blue" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'blue' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(59, 130, 246);"></button>
-                        <button type="button" data-color="purple" aria-label="Purple" title="Purple" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'purple' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(168, 85, 247);"></button>
-                        <button type="button" data-color="pink" aria-label="Pink" title="Pink" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'pink' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(236, 72, 153);"></button>
-                    </div>
-                    <div class="mt-4 flex items-center gap-2">
-                        <span class="eyebrow text-faint">Preview</span>
-                        <span id="tag-preview" class="inline-flex items-center px-3 py-1 text-sm rounded-full tag-{{ tag.color }}">{{ tag.name }}</span>
-                    </div>
-                </div>
-
-                {% if tag.script_count > 0 %}
-                <div class="rounded-lg border border-line-soft bg-panel-hi/40 p-4">
-                    <p class="text-sm text-muted">This tag is used by <strong class="text-text">{{ tag.script_count }} script{{ tag.script_count|pluralize }}</strong>. Changes will be reflected immediately.</p>
-                </div>
-                {% endif %}
-
-                <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">
-                    <a href="{% url 'cpanel:tag_list' %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>
-                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Update tag</button>
-                </div>
-            </form>
-
+    <div>
+        <label class="block text-[13px] font-medium text-text mb-2">{{ form.color.label }}</label>
+        <input type="hidden" name="color" id="id_color" value="{{ tag.color }}">
+        <div class="flex items-center flex-wrap gap-3">
+            <button type="button" data-color="gray" aria-label="Gray" title="Gray" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'gray' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(107, 114, 128);"></button>
+            <button type="button" data-color="red" aria-label="Red" title="Red" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'red' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(239, 68, 68);"></button>
+            <button type="button" data-color="orange" aria-label="Orange" title="Orange" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'orange' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(249, 115, 22);"></button>
+            <button type="button" data-color="yellow" aria-label="Yellow" title="Yellow" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'yellow' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(234, 179, 8);"></button>
+            <button type="button" data-color="green" aria-label="Green" title="Green" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'green' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(34, 197, 94);"></button>
+            <button type="button" data-color="blue" aria-label="Blue" title="Blue" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'blue' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(59, 130, 246);"></button>
+            <button type="button" data-color="purple" aria-label="Purple" title="Purple" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'purple' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(168, 85, 247);"></button>
+            <button type="button" data-color="pink" aria-label="Pink" title="Pink" aria-pressed="false" class="color-circle w-8 h-8 rounded-full ring-2 {% if tag.color == 'pink' %}ring-text{% else %}ring-transparent{% endif %} ring-offset-2 ring-offset-panel transition-all hover:scale-110" style="background-color: rgb(236, 72, 153);"></button>
+        </div>
+        <div class="mt-4 flex items-center gap-2">
+            <span class="eyebrow text-faint">Preview</span>
+            <span id="tag-preview" class="inline-flex items-center px-3 py-1 text-sm rounded-full tag-{{ tag.color }}">{{ tag.name }}</span>
         </div>
     </div>
-</div>
 
+    {% if tag.script_count > 0 %}
+    <div class="rounded-lg border border-line-soft bg-panel-hi/40 p-4">
+        <p class="text-sm text-muted">This tag is used by <strong class="text-text">{{ tag.script_count }} script{{ tag.script_count|pluralize }}</strong>. Changes will be reflected immediately.</p>
+    </div>
+    {% endif %}
+
+    <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">
+        <a href="{% url 'cpanel:tag_list' %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>
+        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Update tag</button>
+    </div>
+</form>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const colorInput = document.getElementById('id_color');

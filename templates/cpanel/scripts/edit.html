@@ -1,69 +1,64 @@
-{% extends "base.html" %}
+{% extends "cpanel/layout.html" %}
 {% load static %}
 
 {% block title %}Edit {{ script.name }} - {{ instance_name }}{% endblock %}
 
-{% block content %}
-<div class="flex">
-    {% include "cpanel/_sidebar.html" %}
+{% block shell %}
+<form method="post">
+    {% csrf_token %}
 
-    <div class="flex-1 min-w-0">
-        <form method="post">
-            {% csrf_token %}
-
-            <!-- Sticky action header -->
-            <div class="sticky top-16 z-20 bg-ink/85 backdrop-blur border-b border-line">
-                <div class="px-5 lg:px-8 py-3.5 max-w-[1440px] mx-auto flex items-center justify-between gap-4">
-                    <div class="min-w-0">
-                        <nav class="flex items-center gap-1.5 eyebrow text-faint mb-1 min-w-0">
-                            <a href="{% url 'cpanel:script_list' %}" class="hover:text-text transition-colors">Scripts</a>
-                            <span class="hidden sm:inline">/</span>
-                            <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="hidden sm:inline hover:text-text transition-colors truncate min-w-0 shrink max-w-[12rem]">{{ script.name }}</a>
-                            <span>/</span>
-                            <span class="text-muted">Edit</span>
-                        </nav>
-                        <h1 class="text-lg font-semibold tracking-tight truncate"><span class="sr-only">Edit </span>{{ script.name }}</h1>
-                    </div>
-                    <div class="flex items-center gap-2.5 flex-shrink-0">
-                        <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>
-                        <button type="submit" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                            Save changes
-                        </button>
-                    </div>
-                </div>
+    <!-- Sticky action header -->
+    <div class="sticky top-16 z-20 bg-ink/85 backdrop-blur border-b border-line">
+        <div class="px-5 lg:px-8 py-3.5 max-w-[1440px] mx-auto flex items-center justify-between gap-4">
+            <div class="min-w-0">
+                <nav class="flex items-center gap-1.5 eyebrow text-faint mb-1 min-w-0">
+                    <a href="{% url 'cpanel:script_list' %}" class="hover:text-text transition-colors">Scripts</a>
+                    <span class="hidden sm:inline">/</span>
+                    <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="hidden sm:inline hover:text-text transition-colors truncate min-w-0 shrink max-w-[12rem]">{{ script.name }}</a>
+                    <span>/</span>
+                    <span class="text-muted">Edit</span>
+                </nav>
+                <h1 class="text-lg font-semibold tracking-tight truncate"><span class="sr-only">Edit </span>{{ script.name }}</h1>
             </div>
-
-            <!-- Body -->
-            <div class="px-5 lg:px-8 py-6 max-w-[1440px] mx-auto">
-                {% if form.errors or schedule_form.errors %}
-                <div id="form-error-summary" role="alert" tabindex="-1" class="mb-5 p-4 rounded-xl border border-fail/30 bg-fail/10 text-sm">
-                    <p class="font-medium text-fail">Not saved — fix the highlighted fields.</p>
-                    {% for error in form.non_field_errors %}<p class="text-fail mt-1">{{ error }}</p>{% endfor %}
-                    {% for error in schedule_form.non_field_errors %}<p class="text-fail mt-1">Schedule: {{ error }}</p>{% endfor %}
-                </div>
-                <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        var first = document.querySelector('.text-fail.text-xs, .errorlist');
-                        var target = first ? (first.closest('div') || first) : document.getElementById('form-error-summary');
-                        if (target && target.scrollIntoView) target.scrollIntoView({block: 'center'});
-                        var field = target && target.querySelector('input, select, textarea');
-                        if (field) field.focus({preventScroll: true});
-                    });
-                </script>
-                {% endif %}
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <div class="lg:col-span-2">
-                        {% include "cpanel/scripts/_form_main.html" %}
-                    </div>
-                    <div class="lg:col-span-1">
-                        {% include "cpanel/scripts/_form_sidebar.html" %}
-                    </div>
-                </div>
+            <div class="flex items-center gap-2.5 flex-shrink-0">
+                <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>
+                <button type="submit" class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    Save changes
+                </button>
             </div>
-        </form>
+        </div>
     </div>
-</div>
+
+    <!-- Body -->
+    <div class="px-5 lg:px-8 py-6 max-w-[1440px] mx-auto">
+        {% if form.errors or schedule_form.errors %}
+        <div id="form-error-summary" role="alert" tabindex="-1" class="mb-5 p-4 rounded-xl border border-fail/30 bg-fail/10 text-sm">
+            <p class="font-medium text-fail">Not saved — fix the highlighted fields.</p>
+            {% for error in form.non_field_errors %}<p class="text-fail mt-1">{{ error }}</p>{% endfor %}
+            {% for error in schedule_form.non_field_errors %}<p class="text-fail mt-1">Schedule: {{ error }}</p>{% endfor %}
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var first = document.querySelector('.text-fail.text-xs, .errorlist');
+                var target = first ? (first.closest('div') || first) : document.getElementById('form-error-summary');
+                if (target && target.scrollIntoView) target.scrollIntoView({block: 'center'});
+                var field = target && target.querySelector('input, select, textarea');
+                if (field) field.focus({preventScroll: true});
+            });
+        </script>
+        {% endif %}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div class="lg:col-span-2">
+                {% include "cpanel/scripts/_form_main.html" %}
+            </div>
+            <div class="lg:col-span-1">
+                {% include "cpanel/scripts/_form_sidebar.html" %}
+            </div>
+        </div>
+    </div>
+</form>
+    
 {% endblock %}
 
 {% block extra_scripts %}

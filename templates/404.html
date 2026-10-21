@@ -1,25 +1,8 @@
-{% extends "base.html" %}
+{% extends user.is_authenticated|yesno:"cpanel/error_shell.html,error_base.html" %}
 
 {% block title %}Page Not Found - {{ instance_name }}{% endblock %}
-
-{% block content %}
-<div class="min-h-[calc(100vh-12rem)] flex items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md text-center">
-        <div class="w-20 h-20 bg-info/10 rounded-2xl grid place-items-center mx-auto mb-8 glow-accent">
-            <svg class="w-10 h-10 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-        </div>
-
-        <h1 class="text-8xl font-bold gradient-text mb-4">404</h1>
-        <h2 class="text-2xl font-semibold text-text mb-4">Page Not Found</h2>
-        <p class="text-muted mb-8">
-            The page you're looking for doesn't exist or has been moved.
-        </p>
-
-        <a href="/" class="inline-block py-3 px-6 bg-ok text-ink font-semibold rounded-lg hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ok/40 focus:ring-offset-2 focus:ring-offset-ink">
-            Back to Home
-        </a>
-    </div>
-</div>
-{% endblock %}
+{% block error_code %}404{% endblock %}
+{% block error_title %}Page not found{% endblock %}
+{% block error_icon %}<svg class="w-6 h-6 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>{% endblock %}
+{# No 404 detail on purpose: it can name the object that wasn't found. #}
+{% block error_message %}The page you're looking for doesn't exist or has been moved.{% endblock %}

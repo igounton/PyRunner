@@ -25,7 +25,7 @@ class TagPermissionTests(TestCase):
         self.client.post(reverse("cpanel:tag_create"), {"name": "mine-too", "color": "red"})
         self.assertTrue(Tag.objects.filter(name="mine-too").exists())
         response = self.client.post(reverse("cpanel:tag_edit", args=[self.tag.pk]), {"name": "x", "color": "red"})
-        self.assertTrue(response["Location"].startswith(reverse("auth:login")))
+        self.assertEqual(response.status_code, 403)  # UX6: in-console "no access" page, not a login bounce
         self.client.post(reverse("cpanel:tag_delete", args=[self.tag.pk]))
         self.tag.refresh_from_db()
         self.assertEqual(self.tag.name, "shared")

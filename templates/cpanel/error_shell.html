@@ -1,0 +1,20 @@
+{% extends "cpanel/layout.html" %}
+{% comment %}
+Signed-in error page (403 / 404): rendered inside the console shell so the
+sidebar stays and the user can carry on. Same blocks as error_base.html.
+{% endcomment %}
+
+{% block heading %}{% block error_title %}{% endblock %}{% endblock %}
+{% block subtitle %}Error {% block error_code %}{% endblock %}{% endblock %}
+
+{% block page %}
+<div class="rounded-2xl border border-line bg-panel p-6 max-w-3xl flex items-start gap-4">
+    <div class="w-12 h-12 {% block error_tint %}bg-info/10{% endblock %} rounded-xl grid place-items-center flex-shrink-0">
+        {% block error_icon %}{% endblock %}
+    </div>
+    <div class="min-w-0">
+        <p class="text-sm text-text">{% block error_message %}{% endblock %}</p>
+        <a href="{% url 'cpanel:dashboard' %}" class="inline-flex mt-4 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Back to dashboard</a>
+    </div>
+</div>
+{% endblock %}

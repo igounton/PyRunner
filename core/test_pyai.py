@@ -244,7 +244,8 @@ class PyAIViewTests(TestCase):
         WorkspaceMembership.objects.create(user=member, workspace=self.ws, role=WorkspaceMembership.ROLE_MEMBER)
         self._login(member)
         resp = self.client.get(reverse("cpanel:pyai"))
-        self.assertEqual(resp.status_code, 302)  # redirected to dashboard
+        # UX6: the in-console 403 page says why, instead of bouncing to the dashboard
+        self.assertContains(resp, "Py AI is available to workspace owners and admins.", status_code=403)
 
     def test_send_blocked_when_unavailable(self):
         self._login(self.admin)

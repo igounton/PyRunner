@@ -166,3 +166,58 @@ class BrainSectionTests(ShellBase):
         self.assertIn('data-field="archive"', html)
         self.assertIn('data-field="github_url"', html)
         self.assertIn("source.value !== 'zip'", html)
+
+
+class NoAccessPageTests(ShellBase):
+    """UX6: one in-console "no access" page instead of silent dashboard bounces."""
+
+    ADMIN_PAGES = ["settings", "services", "logs", "user_list", "plugin_list", "plugin_upload", "environment_create"]
+
+    def test_member_on_an_admin_page_gets_the_403_inside_the_shell(self):
+        self.client.force_login(self.member)
+        for name in self.ADMIN_PAGES:
+            with self.subTest(page=name):
+                resp = self.client.get(reverse(f"cpanel:{name}"))
+                self.assertContains(resp, "Only instance admins can open this page.", status_code=403)
+                self.assertContains(resp, 'id="app-sidebar"', status_code=403)
+                self.assertTemplateUsed(resp, "cpanel/error_shell.html")
+
+    def test_signed_out_visitor_still_goes_to_login(self):
+        resp = self.client.get(reverse("cpanel:settings"))
+        self.assertRedirects(resp, reverse("auth:login") + "?next=" + reverse("cpanel:settings"),
+                             fetch_redirect_response=False)
+
+    def test_member_denied_py_ai_sees_why(self):
+        self.client.force_login(self.member)
+        resp = self.client.get(reverse("cpanel:pyai"))
+        self.assertContains(resp, "Py AI is available to workspace owners and admins.", status_code=403)
+        self.assertContains(resp, 'id="app-sidebar"', status_code=403)
+
+    def test_404_keeps_the_sidebar_when_signed_in_only(self):
+        self.client.force_login(self.member)
+        resp = self.client.get("/cpanel/does-not-exist/")
+        self.assertEqual(resp.status_code, 404)
+        self.assertTemplateUsed(resp, "cpanel/error_shell.html")
+        self.assertContains(resp, 'id="app-sidebar"', status_code=404)
+        self.client.logout()
+        resp = self.client.get("/cpanel/does-not-exist/")
+        if resp.status_code == 404:  # (cpanel may send anonymous visitors to login first)
+            self.assertTemplateUsed(resp, "error_base.html")
+            self.assertNotContains(resp, 'id="app-sidebar"', status_code=404)
+
+
+class ServicesLandingTests(ShellBase):
+    """UX5: a fresh Services page opens at the top with only one card expanded."""
+
+    def test_fresh_instance_opens_one_card_and_focuses_nothing(self):
+        self.client.force_login(self.admin)
+        html = self.client.get(reverse("cpanel:services")).content.decode()
+        init = html[html.index("document.addEventListener('DOMContentLoaded'"):]
+        self.assertIn("toggleS3Config();", init)  # storage is the first unconfigured card
+        self.assertNotIn("toggleClaudeConfig();", init)
+        self.assertNotIn("toggleEmbeddingConfig();", init)
+        self.assertIn("if (focus) aiFormField('name').focus();", html)
+        self.assertIn('aria-label="Services on this page"', html)
+        for anchor in ("storage", "ai", "secret-providers", "embeddings", "vector-stores"):
+            self.assertIn(f'href="#{anchor}"', html)
+            self.assertIn(f'id="{anchor}"', html)

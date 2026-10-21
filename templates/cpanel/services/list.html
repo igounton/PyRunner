@@ -7,8 +7,19 @@
 {% block subtitle %}Configure external service integrations{% endblock %}
 
 {% block page %}
+<!-- Section index (UX5): the page is long, so jump straight to a service -->
+<nav aria-label="Services on this page" class="sticky top-16 z-10 -mx-1 px-1 py-2 bg-ink/85 backdrop-blur">
+    <div class="inline-flex flex-wrap max-w-full gap-1 p-1 rounded-lg border border-line bg-panel">
+        <a href="#storage" class="px-3 py-1.5 text-sm rounded-md text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Storage</a>
+        <a href="#ai" class="px-3 py-1.5 text-sm rounded-md text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">AI</a>
+        <a href="#secret-providers" class="px-3 py-1.5 text-sm rounded-md text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Secret providers</a>
+        <a href="#embeddings" class="px-3 py-1.5 text-sm rounded-md text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Embeddings</a>
+        <a href="#vector-stores" class="px-3 py-1.5 text-sm rounded-md text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Vector stores</a>
+    </div>
+</nav>
+
 <!-- Object Storage Service Card -->
-<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+<div id="storage" class="scroll-mt-32 rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="p-6 border-b border-line-soft">
         <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div class="flex items-center gap-4 min-w-0">
@@ -251,7 +262,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
 {{ storage_presets_json|json_script:"storage-presets-data" }}
 
 <!-- AI Provider Service Card -->
-<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+<div id="ai" class="scroll-mt-32 rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="p-6 border-b border-line-soft">
         <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div class="flex items-center gap-4 min-w-0">
@@ -461,7 +472,7 @@ print(answer)</code></pre>
 {{ ai_presets_json|json_script:"ai-presets-data" }}
 
 <!-- Secret Providers Service Card -->
-<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+<div id="secret-providers" class="scroll-mt-32 rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="p-6 border-b border-line-soft">
         <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div class="flex items-center gap-4 min-w-0">
@@ -603,7 +614,7 @@ print(answer)</code></pre>
 {{ secret_backends_json|json_script:"secret-backends-data" }}
 
 <!-- Embedding Providers Service Card -->
-<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+<div id="embeddings" class="scroll-mt-32 rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="p-6 border-b border-line-soft">
         <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div class="flex items-center gap-4 min-w-0">
@@ -748,7 +759,7 @@ print(answer)</code></pre>
 {{ embedding_presets_json|json_script:"embedding-presets-data" }}
 
 <!-- Vector Stores Service Card -->
-<div class="rounded-2xl border border-line bg-panel overflow-hidden">
+<div id="vector-stores" class="scroll-mt-32 rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="p-6 border-b border-line-soft">
         <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div class="flex items-center gap-4 min-w-0">
@@ -1156,7 +1167,7 @@ function aiCancelProviderForm() {
     document.getElementById('ai-provider-form-wrap').classList.add('hidden');
 }
 
-function aiNewProvider() {
+function aiNewProvider(focus = true) {
     document.getElementById('ai-provider-form-title').textContent = 'Add provider';
     document.getElementById('ai-provider-id').value = '';
     aiFormField('name').value = '';
@@ -1166,7 +1177,7 @@ function aiNewProvider() {
     setKeyPlaceholder(aiFormField('credential'), false);
     aiApplyTypeHints(true);
     aiShowProviderForm();
-    aiFormField('name').focus();
+    if (focus) aiFormField('name').focus();
 }
 
 function aiEditProvider(id) {
@@ -1344,7 +1355,7 @@ function spRenderFields(configValues, hasCredentials) {
 function spShowProviderForm() { document.getElementById('sp-provider-form-wrap').classList.remove('hidden'); }
 function spCancelProviderForm() { document.getElementById('sp-provider-form-wrap').classList.add('hidden'); }
 
-function spNewProvider() {
+function spNewProvider(focus = true) {
     document.getElementById('sp-provider-form-title').textContent = 'Add provider';
     document.getElementById('sp-provider-id').value = '';
     spFormField('name').value = '';
@@ -1352,7 +1363,7 @@ function spNewProvider() {
     spFormField('on_error').value = 'fail';
     spRenderFields(null, false);
     spShowProviderForm();
-    spFormField('name').focus();
+    if (focus) spFormField('name').focus();
 }
 
 function spEditProvider(id) {
@@ -1603,10 +1614,6 @@ function vecEditConnection(id) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    {% if not s3_status.configured or storage_form_open %}
-    toggleS3Config();
-    {% endif %}
-
     const storageType = storageFormField('provider_type');
     if (storageType) {
         storageType.addEventListener('change', function () {
@@ -1615,6 +1622,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     {% if storage_form_open %}
     // A refused save (U47): the form comes back open with what was typed.
+    toggleS3Config();
     storageApplyPreset(storageFormField('provider_type').value, {prefillEndpoint: false});
     {% if storage_form.instance %}
     const refused = STORAGE_CONNECTIONS.find(x => x.id === '{{ storage_form.instance.pk }}');
@@ -1625,9 +1633,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     {% endif %}
     document.getElementById('storage-form-wrap').scrollIntoView({block: 'start'});
-    {% elif not storage_connections %}
-    // First run: open the add-connection form (the card is already open above).
-    storageNewConnection();
     {% endif %}
 
     const aiType = aiFormField('provider_type');
@@ -1637,21 +1642,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const aiForm = document.getElementById('ai-provider-form');
     aiForm.addEventListener('input', aiResetFormTestFeedback);
     aiForm.addEventListener('change', aiResetFormTestFeedback);
-    {% if not ai_providers %}
-    // First run: open the card and the add-provider form.
-    toggleClaudeConfig();
-    aiNewProvider();
-    {% endif %}
 
     const embType = embFormField('provider_type');
     if (embType) {
         embType.addEventListener('change', function () { embApplyTypeHints(true); });
     }
-    {% if not embedding_providers %}
-    // First run: open the card and the add-provider form.
-    toggleEmbeddingConfig();
-    embNewProvider();
-    {% endif %}
 
     const vecType = vecFormField('provider_type');
     if (vecType) {
@@ -1663,6 +1658,22 @@ document.addEventListener('DOMContentLoaded', function() {
         spType.addEventListener('change', function () { spRenderFields(null, false); });
         spRenderFields(null, false);  // initial render for the default type
     }
+
+    {% if not storage_form_open %}
+    // First run: open only the first service that isn't set up (UX5) — the
+    // others stay collapsed behind their "Not configured" pill, and nothing
+    // takes focus, so the page opens at the top.
+    {% if not s3_status.configured %}
+    toggleS3Config();
+    {% if not storage_connections %}storageNewConnection();{% endif %}
+    {% elif not ai_providers %}
+    toggleClaudeConfig();
+    aiNewProvider(false);
+    {% elif not embedding_providers %}
+    toggleEmbeddingConfig();
+    embNewProvider();
+    {% endif %}
+    {% endif %}
 });
 </script>
 {% endblock %}

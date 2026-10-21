@@ -332,11 +332,7 @@ class MCPTests(TestCase):
         self.assertTrue(GlobalSettings.get_settings().mcp_url_tokens_enabled)
         owner.is_superuser = False
         owner.save()
-        self.assertRedirects(
-            self.client.post("/cpanel/connect/url-tokens/", {}),
-            "/auth/login/?next=/cpanel/connect/url-tokens/",
-            fetch_redirect_response=False,
-        )
+        self.assertEqual(self.client.post("/cpanel/connect/url-tokens/", {}).status_code, 403)
         self.assertTrue(GlobalSettings.get_settings().mcp_url_tokens_enabled)
 
     def test_unexpected_handler_error_is_generic(self):

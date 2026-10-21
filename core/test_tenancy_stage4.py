@@ -333,7 +333,7 @@ class CreateAndListTests(_Fixture):
         resp = self.client.post(
             reverse("cpanel:workspace_create"), {"name": "Sneaky"}
         )
-        self.assertEqual(resp.status_code, 302)  # user_passes_test → login redirect
+        self.assertEqual(resp.status_code, 403)  # superuser_required → console 403 page
         self.assertEqual(Workspace.objects.count(), before)
 
     def test_superuser_can_create(self):

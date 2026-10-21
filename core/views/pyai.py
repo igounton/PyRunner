@@ -11,6 +11,7 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
@@ -40,8 +41,7 @@ def _allowed(request) -> bool:
 @login_required
 def pyai_view(request: HttpRequest) -> HttpResponse:
     if not _allowed(request):
-        messages.error(request, "Py AI is available to workspace owners/admins.")
-        return redirect("cpanel:dashboard")
+        raise PermissionDenied("Py AI is available to workspace owners and admins.")
 
     settings = GlobalSettings.get_settings()
     return render(

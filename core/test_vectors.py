@@ -861,11 +861,11 @@ class ServicesPageTests(TestCase):
         self.assertIn("vector-connections-data", content)
         self.assertNotIn("sk-test-key", content)
 
-    def test_non_superuser_redirected(self):
+    def test_non_superuser_denied(self):
         user = User.objects.create(email="u@example.com")
         self.client.force_login(user)
         resp = self.client.get(reverse("cpanel:services"))
-        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 403)  # UX6: console 403 page, not a redirect
 
     def test_embedding_provider_save_edit_and_test(self):
         resp = self.client.post(

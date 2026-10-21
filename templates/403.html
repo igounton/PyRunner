@@ -1,25 +1,9 @@
-{% extends "base.html" %}
+{% extends user.is_authenticated|yesno:"cpanel/error_shell.html,error_base.html" %}
 
-{% block title %}Access Denied - {{ instance_name }}{% endblock %}
-
-{% block content %}
-<div class="min-h-[calc(100vh-12rem)] flex items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md text-center">
-        <div class="w-20 h-20 bg-fail/10 rounded-2xl grid place-items-center mx-auto mb-8">
-            <svg class="w-10 h-10 text-fail" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-        </div>
-
-        <h1 class="text-8xl font-bold gradient-text mb-4">403</h1>
-        <h2 class="text-2xl font-semibold text-text mb-4">Access Denied</h2>
-        <p class="text-muted mb-8">
-            Your role in this workspace doesn't allow this action. Ask a workspace owner or admin if you need access.
-        </p>
-
-        <a href="/" class="inline-block py-3 px-6 bg-ok text-ink font-semibold rounded-lg hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ok/40 focus:ring-offset-2 focus:ring-offset-ink">
-            Back to Home
-        </a>
-    </div>
-</div>
-{% endblock %}
+{% block title %}No access - {{ instance_name }}{% endblock %}
+{% block error_code %}403{% endblock %}
+{% block error_title %}No access{% endblock %}
+{% block error_tint %}bg-fail/10{% endblock %}
+{% block error_icon %}<svg class="w-6 h-6 text-fail" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>{% endblock %}
+{# The reason comes from the PermissionDenied message the view raised (written for users). #}
+{% block error_message %}{{ exception|default:"Your role in this workspace doesn't allow this. Ask a workspace owner or admin if you need access." }}{% endblock %}

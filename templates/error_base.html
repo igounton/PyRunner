@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% comment %}
+Signed-out error page (403 / 404): a centred card without the console sidebar.
+Signed-in users get cpanel/error_shell.html instead; both fill the same blocks.
+{% endcomment %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-12rem)] flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md text-center">
+        <div class="w-20 h-20 {% block error_tint %}bg-info/10{% endblock %} rounded-2xl grid place-items-center mx-auto mb-8 [&>svg]:w-10 [&>svg]:h-10">
+            {% block error_icon %}{% endblock %}
+        </div>
+
+        <h1 class="text-8xl font-bold gradient-text mb-4">{% block error_code %}{% endblock %}</h1>
+        <h2 class="text-2xl font-semibold text-text mb-4">{% block error_title %}{% endblock %}</h2>
+        <p class="text-muted mb-8">{% block error_message %}{% endblock %}</p>
+
+        <a href="/" class="inline-block py-3 px-6 bg-ok text-ink font-semibold rounded-lg hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ok/40 focus:ring-offset-2 focus:ring-offset-ink">
+            Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}

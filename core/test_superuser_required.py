@@ -4,11 +4,13 @@ Shared ``superuser_required`` decorator — regression for review 5.2.
 Six view modules each defined an identical ``superuser_required`` decorator and
 users.py / workspaces.py hand-rolled ``@user_passes_test(is_admin/is_superuser)``
 equivalents. They are now one shared ``core.views.decorators.superuser_required``.
-These tests lock the gate's behavior (redirect non-superusers, allow superusers)
+These tests lock the gate's behavior (signed-out users go to login, signed-in
+non-superusers get the console 403 page, superusers pass)
 and prove the previously-divergent surfaces (user management) still gate.
 """
 
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
@@ -20,7 +22,7 @@ from core.models import (
     Workspace,
     WorkspaceMembership,
 )
-from core.views.decorators import superuser_required
+from core.views.decorators import ADMIN_ONLY_MESSAGE, superuser_required
 
 
 @superuser_required
@@ -39,19 +41,21 @@ class SuperuserRequiredUnitTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, b"ok")
 
-    def test_plain_member_redirected_to_login(self):
+    def test_plain_member_is_denied_not_redirected(self):
+        # UX6: a signed-in non-admin gets the console 403 page (PermissionDenied),
+        # not a silent bounce through the login page to the dashboard.
         request = self.factory.get("/x/")
         request.user = User.objects.create(email="member@example.com", is_superuser=False)
-        resp = _protected(request)
-        self.assertEqual(resp.status_code, 302)
-        self.assertIn(reverse("auth:login"), resp.url)
+        with self.assertRaises(PermissionDenied) as ctx:
+            _protected(request)
+        self.assertEqual(str(ctx.exception), ADMIN_ONLY_MESSAGE)
 
     def test_anonymous_redirected_to_login(self):
         request = self.factory.get("/x/")
         request.user = AnonymousUser()
         resp = _protected(request)
         self.assertEqual(resp.status_code, 302)
-        self.assertIn(reverse("auth:login"), resp.url)
+        self.assertEqual(resp.url, reverse("auth:login") + "?next=/x/")
 
 
 class UserManagementGateTests(TestCase):
@@ -81,8 +85,7 @@ class UserManagementGateTests(TestCase):
     def test_member_cannot_reach_user_list(self):
         self._login(superuser=False)
         resp = self.client.get(reverse("cpanel:user_list"))
-        self.assertEqual(resp.status_code, 302)
-        self.assertIn(reverse("auth:login"), resp.url)
+        self.assertContains(resp, ADMIN_ONLY_MESSAGE, status_code=403)
 
     def test_superuser_reaches_user_list(self):
         self._login(superuser=True)

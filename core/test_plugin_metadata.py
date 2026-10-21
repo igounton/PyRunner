@@ -292,13 +292,13 @@ class IconViewTests(_SuperuserMixin):
             resp = self.client.get(reverse("cpanel:plugin_icon", args=["demo"]))
         self.assertEqual(resp.status_code, 404)
 
-    def test_non_superuser_redirected(self):
+    def test_non_superuser_denied(self):
         self._make_plugin(icon="assets/icon.svg")
         member = User.objects.create(email="member@example.com")
         self.client.force_login(member)
         with override_settings(PLUGINS_DIR=self.plugins_dir):
             resp = self.client.get(reverse("cpanel:plugin_icon", args=["demo"]))
-        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 403)
 
 
 class DetailViewTests(_SuperuserMixin):
@@ -326,9 +326,9 @@ class DetailViewTests(_SuperuserMixin):
         resp = self.client.get(reverse("cpanel:plugin_detail", args=["nope"]))
         self.assertEqual(resp.status_code, 404)
 
-    def test_detail_non_superuser_redirected(self):
+    def test_detail_non_superuser_denied(self):
         Plugin.objects.create(slug="demo", name="Demo", manifest={"slug": "demo"})
         member = User.objects.create(email="member@example.com")
         self.client.force_login(member)
         resp = self.client.get(reverse("cpanel:plugin_detail", args=["demo"]))
-        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 403)

@@ -471,8 +471,7 @@ class ProviderCrudViewTests(TestCase):
             reverse("cpanel:ai_provider_activate", kwargs={"provider_id": pid}),
         ):
             resp = self.client.post(url, {})
-            self.assertEqual(resp.status_code, 302)
-            self.assertIn(reverse("auth:login"), resp["Location"])
+            self.assertEqual(resp.status_code, 403)
         self.assertEqual(AIProvider.objects.count(), 0)
 
     def test_services_page_renders_with_providers(self):

@@ -5,8 +5,9 @@ and the bulk-requirements pip source-injection fix (Vuln 6).
 
 For the authz fixes, a plain authenticated **member** (non-superuser) must not be
 able to reach instance-global admin surfaces. The shared ``@superuser_required``
-decorator sends non-superusers to the login page (302 redirect), so a denied
-request is a redirect to ``auth:login`` that performs no mutation.
+decorator answers a signed-in non-superuser with the console's 403 page (UI
+audit UX6; it used to be a 302 to ``auth:login``), so a denied request is a 403
+that performs no mutation.
 """
 import uuid
 from unittest import mock
@@ -48,18 +49,13 @@ class SettingsAuthzTests(TestCase):
         _mock_setup(self)
         self.member = User.objects.create(email="member@example.com")  # non-superuser
         self.superuser = User.objects.create(email="root@example.com", is_superuser=True)
-        self.login_path = reverse("auth:login")
 
     def test_member_denied_on_every_gated_endpoint(self):
         self.client.force_login(self.member)
         for name in self.GATED_ENDPOINTS:
             with self.subTest(endpoint=name):
                 resp = self.client.post(reverse(name), {})
-                self.assertEqual(resp.status_code, 302)
-                self.assertTrue(
-                    resp["Location"].startswith(self.login_path),
-                    f"{name} did not redirect a member to login: {resp['Location']}",
-                )
+                self.assertEqual(resp.status_code, 403, f"{name} did not deny a member")
 
     def test_member_cannot_hijack_email_backend(self):
         """Concrete escalation from the audit: a member repoints outbound mail to
@@ -74,8 +70,7 @@ class SettingsAuthzTests(TestCase):
                 "default_notification_email": "attacker@evil.example",
             },
         )
-        self.assertEqual(resp.status_code, 302)
-        self.assertTrue(resp["Location"].startswith(self.login_path))
+        self.assertEqual(resp.status_code, 403)
         gs = GlobalSettings.get_settings()
         self.assertEqual(gs.email_backend, GlobalSettings.EmailBackend.DISABLED)
         self.assertNotEqual(gs.smtp_host, "attacker.example")
@@ -121,9 +116,8 @@ class EnvironmentAuthzTests(TestCase):
         _mock_setup(self)
         self.member = User.objects.create(email="member@example.com")  # non-superuser
         self.superuser = User.objects.create(email="root@example.com", is_superuser=True)
-        self.login_path = reverse("auth:login")
         # A well-formed but non-existent pk: the superuser gate fires before the
-        # object lookup, so a denied member gets 302→login, never a 404.
+        # object lookup, so a denied member gets a 403, never a 404.
         self._pk = uuid.uuid4()
 
     def _gated_urls(self):
@@ -143,18 +137,13 @@ class EnvironmentAuthzTests(TestCase):
         for url in self._gated_urls():
             with self.subTest(url=url):
                 resp = self.client.post(url, {})
-                self.assertEqual(resp.status_code, 302)
-                self.assertTrue(
-                    resp["Location"].startswith(self.login_path),
-                    f"{url} did not redirect a member to login: {resp['Location']}",
-                )
+                self.assertEqual(resp.status_code, 403, f"{url} did not deny a member")
 
     def test_member_cannot_reach_create_form(self):
         """Even the create page (GET) is admin-only."""
         self.client.force_login(self.member)
         resp = self.client.get(reverse("cpanel:environment_create"))
-        self.assertEqual(resp.status_code, 302)
-        self.assertTrue(resp["Location"].startswith(self.login_path))
+        self.assertEqual(resp.status_code, 403)
 
     def test_superuser_reaches_create_form(self):
         """The gate doesn't break admins: a superuser reaches the create form."""
@@ -177,7 +166,10 @@ class AccessDeniedPageTests(TestCase):
         response = self.client.get(reverse("cpanel:database_list"))
         self.assertEqual(response.status_code, 403)
         self.assertTemplateUsed(response, "403.html")
-        self.assertContains(response, "Access Denied", status_code=403)
+        # UX6: rendered inside the console shell (sidebar) with the view's reason
+        self.assertTemplateUsed(response, "cpanel/error_shell.html")
+        self.assertContains(response, 'id="app-sidebar"', status_code=403)
+        self.assertContains(response, "Only a workspace owner or admin can manage databases.", status_code=403)
 
 
 class LogsAuthzTests(TestCase):
@@ -191,13 +183,11 @@ class LogsAuthzTests(TestCase):
         _mock_setup(self)
         self.member = User.objects.create(email="member@example.com")  # non-superuser
         self.superuser = User.objects.create(email="root@example.com", is_superuser=True)
-        self.login_path = reverse("auth:login")
 
     def test_member_denied_on_logs_page(self):
         self.client.force_login(self.member)
         resp = self.client.get(reverse("cpanel:logs"))
-        self.assertEqual(resp.status_code, 302)
-        self.assertTrue(resp["Location"].startswith(self.login_path))
+        self.assertEqual(resp.status_code, 403)
 
     def test_member_denied_on_logs_api(self):
         self.client.force_login(self.member)

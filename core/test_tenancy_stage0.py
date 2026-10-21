@@ -371,7 +371,7 @@ class WorkspaceManagementViewTests(TestCase):
     def test_non_superuser_blocked(self):
         self.client.force_login(self.member)
         resp = self.client.post(reverse("cpanel:workspace_create"), {"name": "Nope"})
-        self.assertEqual(resp.status_code, 302)  # user_passes_test → login redirect
+        self.assertEqual(resp.status_code, 403)  # superuser_required → console 403 page
         self.assertFalse(Workspace.objects.filter(name="Nope").exists())
 
     def test_members_page_lists_roles(self):

@@ -17,15 +17,15 @@
 {% if environments %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full sm:min-w-[760px]">
+    <table class="table-cards w-full sm:min-w-[760px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Name</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Python</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Scripts</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Python</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Scripts</th>
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-line-soft">
@@ -35,9 +35,9 @@
                     <a href="{% url 'cpanel:environment_detail' pk=env.pk %}" class="text-[13.5px] font-medium text-text hover:text-ok transition-colors">{{ env.name }}</a>
                     {% if env.description %}<p class="text-xs text-faint truncate mt-0.5">{{ env.description }}</p>{% endif %}
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 font-mono text-sm text-muted whitespace-nowrap">{{ env.python_version }}</td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-text">{{ env.script_count }}</td>
-                <td class="px-3 sm:px-6 py-3.5">
+                <td data-label="Python" class="px-3 sm:px-6 py-3.5 font-mono text-sm text-muted whitespace-nowrap">{{ env.python_version }}</td>
+                <td data-label="Scripts" class="px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-text">{{ env.script_count }}</td>
+                <td data-label="Status" class="px-3 sm:px-6 py-3.5">
                     <div class="flex flex-wrap items-center gap-1.5">
                         {% if env.is_default %}<span class="px-2 py-0.5 text-xs rounded-md bg-info/10 text-info whitespace-nowrap">Default</span>{% endif %}
                         {% if env.is_active %}
@@ -47,8 +47,8 @@
                         {% endif %}
                     </div>
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ env.created_at|date:"M d, Y" }}</td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5">
+                <td data-label="Created" class="px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ env.created_at|date:"M d, Y" }}</td>
+                <td class="tc-actions px-3 sm:px-6 py-3.5">
                     <div class="flex items-center justify-end gap-2">
                         <a href="{% url 'cpanel:environment_packages' pk=env.pk %}" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Packages</a>
                         {% if user.is_superuser %}<a href="{% url 'cpanel:environment_edit' pk=env.pk %}" class="text-xs px-2.5 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</a>{% endif %}

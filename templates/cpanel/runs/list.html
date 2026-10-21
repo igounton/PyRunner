@@ -53,14 +53,14 @@
 {% if runs %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full sm:min-w-[720px]">
+    <table class="table-cards w-full sm:min-w-[720px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Script</th>
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Duration</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Triggered by</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Started</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Duration</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Triggered by</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Started</th>
                 <th class="px-3 sm:px-6 py-3 w-10"></th>
             </tr>
         </thead>
@@ -71,7 +71,7 @@
                 <td class="px-3 sm:px-6 py-3.5">
                     <span class="text-[13.5px] font-medium text-text group-hover:text-ok transition-colors">{{ run.script.name }}</span>
                 </td>
-                <td class="px-3 sm:px-6 py-3.5">
+                <td data-label="Status" class="px-3 sm:px-6 py-3.5">
                     <div class="flex items-center gap-1.5">
                         {% include "cpanel/runs/_status_badge.html" %}
                         {% if run.stderr %}
@@ -83,10 +83,10 @@
                         {% endif %}
                     </div>
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if run.duration_display %}{{ run.duration_display }}{% else %}—{% endif %}</td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-sm text-muted truncate max-w-[12rem]">{% if run.triggered_by %}{{ run.triggered_by.email }}{% else %}<span class="text-faint">System</span>{% endif %}</td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if run.started_at %}{{ run.started_at|date:"M d, H:i" }}{% else %}{{ run.created_at|date:"M d, H:i" }}{% endif %}</td>
-                <td class="px-3 sm:px-6 py-3.5 text-right">
+                <td data-label="Duration" class="px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if run.duration_display %}{{ run.duration_display }}{% else %}—{% endif %}</td>
+                <td data-label="Triggered by" class="px-3 sm:px-6 py-3.5 text-sm text-muted truncate max-w-[12rem]">{% if run.triggered_by %}{{ run.triggered_by.email }}{% else %}<span class="text-faint">System</span>{% endif %}</td>
+                <td data-label="Started" class="px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if run.started_at %}{{ run.started_at|date:"M d, H:i" }}{% else %}{{ run.created_at|date:"M d, H:i" }}{% endif %}</td>
+                <td class="tc-hide px-3 sm:px-6 py-3.5 text-right">
                     <span class="inline-grid place-items-center w-7 h-7 rounded-md text-faint group-hover:text-text transition-colors" aria-hidden="true">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                     </span>

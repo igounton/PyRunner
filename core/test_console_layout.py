@@ -238,12 +238,12 @@ class ListAndDetailPolishTests(ShellBase):
         self.assertIn('id="script-name-filter"', html)
         self.assertIn('data-script-name="nightly sync"', html)
         self.assertIn("bg-panel-hi text-muted whitespace-nowrap", html)  # env chip stays on one line
-        self.assertIn('<table class="w-full sm:min-w-[820px]">', html)
-        self.assertIn("hidden sm:table-cell", html)
+        self.assertIn('<table class="table-cards w-full sm:min-w-[820px]">', html)
+        self.assertIn('data-label="Environment"', html)
 
     def test_environments_list_is_a_table(self):
         html = self.client.get(reverse("cpanel:environment_list")).content.decode()
-        self.assertIn('<table class="w-full sm:min-w-[760px]">', html)
+        self.assertIn('<table class="table-cards w-full sm:min-w-[760px]">', html)
         self.assertIn(">Packages</a>", html)
 
     def test_users_page_is_a_filterable_table(self):
@@ -279,3 +279,71 @@ class ListAndDetailPolishTests(ShellBase):
     def test_member_role_select_is_labelled(self):
         html = self.client.get(reverse("cpanel:workspace_members", kwargs={"pk": self.ws.pk})).content.decode()
         self.assertIn('aria-label="Role for m@example.com"', html)
+
+
+class PhoneCardRowsTests(ShellBase):
+    """UX10 / U104 / U84 / U86: list tables become card rows below sm; Logs too."""
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.admin)
+
+    def _seed(self):
+        from core.models import DataStore, Run, Script, Secret, Tag
+
+        env = Environment.objects.get(name="default")
+        script = Script.objects.create(name="Nightly sync", workspace=self.ws, environment=env)
+        Run.objects.create(script=script, workspace=self.ws, status="failed", stderr="boom", code_snapshot="")
+        Tag.objects.create(name="etl", color="blue", created_by=self.admin)
+        secret = Secret(key="API_KEY", workspace=self.ws, created_by=self.admin)
+        secret.set_value("local-dummy")
+        secret.save()
+        DataStore.objects.create(name="orders", workspace=self.ws, created_by=self.admin)
+
+    def test_list_tables_render_as_cards_on_phones(self):
+        self._seed()
+        cases = {
+            "script_list": ['data-label="Status"', 'data-label="Updated"'],
+            "run_list": ['data-label="Status"', 'data-label="Started"', 'class="tc-hide'],
+            "secret_list": ['data-label="Value"', 'class="tc-actions'],
+            "tag_list": ['data-label="Scripts"', 'class="tc-actions'],
+            "datastore_list": ['data-label="Entries"', 'class="tc-actions'],
+            "environment_list": ['data-label="Python"', 'class="tc-actions'],
+            "user_list": ['data-label="Joined"', 'class="tc-full'],
+            "tasks": [],
+            "library_list": [],
+            "channel_list": [],
+            "plugin_list": [],
+        }
+        for name, needles in cases.items():
+            with self.subTest(page=name):
+                html = self.client.get(reverse(f"cpanel:{name}")).content.decode()
+                for needle in needles:
+                    self.assertIn(needle, html)
+                if needles:
+                    self.assertIn('<table class="table-cards ', html)
+                    # every column is in the card; none is just hidden on phones
+                    self.assertNotIn("hidden sm:table-cell", html)
+
+    def test_logs_rows_are_cards_and_open_once(self):
+        html = self.client.get(reverse("cpanel:logs")).content.decode()
+        # the server template and the auto-refresh JS build the same row
+        self.assertNotIn("min-w-[760px]\">", html.replace("sm:min-w-[760px]", ""))
+        self.assertGreaterEqual(html.count('data-label="Logger"'), 1)
+        self.assertIn('class="log-preview block truncate', html)
+        self.assertIn('<span class="log-hide text-xs text-faint">Hide</span>', html)
+
+    def test_card_css_is_compiled(self):
+        from pathlib import Path
+
+        from django.conf import settings
+
+        css = (Path(settings.BASE_DIR) / "theme" / "static" / "css" / "dist" / "styles.css").read_text(encoding="utf-8")
+        self.assertIn("table.table-cards>tbody>tr:not([hidden])", css)
+        self.assertIn("details.log-entry[open] .log-preview{", css)
+
+    def test_member_rows_stack_on_phones(self):
+        """U83: the role select and Remove go under the email below sm."""
+        html = self.client.get(reverse("cpanel:workspace_members", kwargs={"pk": self.ws.pk})).content.decode()
+        self.assertIn("flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4", html)
+        self.assertIn("break-all sm:truncate", html)

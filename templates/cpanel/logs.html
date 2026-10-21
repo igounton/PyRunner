@@ -61,7 +61,7 @@
 {% if entries %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="max-h-[600px] overflow-auto" id="log-container">
-        <table class="w-full min-w-[760px]">
+        <table class="table-cards w-full sm:min-w-[760px]">
             <thead class="bg-panel border-b border-line-soft sticky top-0">
                 <tr class="text-left">
                     <th class="px-4 py-3 eyebrow text-faint font-normal w-40">Time</th>
@@ -81,10 +81,10 @@
                             {% elif entry.level == 'INFO' %}bg-info/10 text-info
                             {% else %}bg-panel-hi text-muted{% endif %}">{{ entry.level }}</span>
                     </td>
-                    <td class="px-4 py-2 text-muted truncate max-w-[160px]" title="{{ entry.logger }}">{{ entry.logger }}</td>
-                    <td class="px-4 py-2 text-text">
+                    <td data-label="Logger" class="px-4 py-2 text-muted truncate max-w-[160px]" title="{{ entry.logger }}">{{ entry.logger }}</td>
+                    <td class="tc-full px-4 py-2 text-text">
                         <details class="log-entry">
-                            <summary class="cursor-pointer list-none"><span class="block truncate max-w-[500px]">{{ entry.message }}</span>{% if entry.exception %}<span class="text-fail text-xs">Has exception</span>{% endif %}</summary>
+                            <summary class="cursor-pointer list-none"><span class="log-preview block truncate max-w-[500px]">{{ entry.message }}</span><span class="log-hide text-xs text-faint">Hide</span>{% if entry.exception %}<span class="log-preview text-fail text-xs">Has exception</span>{% endif %}</summary>
                             <div class="mt-2 space-y-2">
                                 <pre class="p-2 bg-ink border border-line-soft rounded text-xs text-text whitespace-pre-wrap break-words">{{ entry.message }}</pre>
                                 <p class="text-xs text-faint break-all">Logger: {{ entry.logger }}</p>
@@ -198,9 +198,9 @@ function rowHtml(entry) {
     return '<tr class="hover:bg-panel-hi/50 transition-colors">' +
         '<td class="px-4 py-2 text-faint whitespace-nowrap">' + escapeHtml(formatTime(entry.timestamp)) + '</td>' +
         '<td class="px-4 py-2"><span class="px-2 py-0.5 text-xs rounded ' + levelClass(entry.level) + '">' + escapeHtml(entry.level) + '</span></td>' +
-        '<td class="px-4 py-2 text-muted truncate max-w-[160px]" title="' + escapeHtml(entry.logger) + '">' + escapeHtml(entry.logger) + '</td>' +
-        '<td class="px-4 py-2 text-text"><details class="log-entry"><summary class="cursor-pointer list-none"><span class="block truncate max-w-[500px]">' + escapeHtml(entry.message) + '</span>' +
-        (entry.exception ? '<span class="text-fail text-xs">Has exception</span>' : '') + '</summary><div class="mt-2 space-y-2">' +
+        '<td data-label="Logger" class="px-4 py-2 text-muted truncate max-w-[160px]" title="' + escapeHtml(entry.logger) + '">' + escapeHtml(entry.logger) + '</td>' +
+        '<td class="tc-full px-4 py-2 text-text"><details class="log-entry"><summary class="cursor-pointer list-none"><span class="log-preview block truncate max-w-[500px]">' + escapeHtml(entry.message) + '</span><span class="log-hide text-xs text-faint">Hide</span>' +
+        (entry.exception ? '<span class="log-preview text-fail text-xs">Has exception</span>' : '') + '</summary><div class="mt-2 space-y-2">' +
         '<pre class="p-2 bg-ink border border-line-soft rounded text-xs text-text whitespace-pre-wrap break-words">' + escapeHtml(entry.message) + '</pre>' +
         '<p class="text-xs text-faint break-all">Logger: ' + escapeHtml(entry.logger) + '</p>' + exc + '</div></details></td></tr>';
 }

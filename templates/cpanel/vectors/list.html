@@ -32,17 +32,17 @@
 {% if collections %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full sm:min-w-[900px]">
+    <table class="table-cards w-full sm:min-w-[900px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Name</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Store</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Embeddings</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Store</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Embeddings</th>
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Points</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Dim</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Size</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Backup</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Points</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Dim</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Size</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Backup</th>
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
             </tr>
         </thead>
@@ -54,8 +54,8 @@
                     {% include "cpanel/_owner_pill.html" with obj=col %}
                     {% if col.description %}<p class="text-xs text-muted mt-0.5 max-w-xs truncate">{{ col.description }}</p>{% endif %}
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-sm text-muted whitespace-nowrap">{{ col.connection.name }}</td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-sm whitespace-nowrap">
+                <td data-label="Store" class="px-3 sm:px-6 py-3.5 text-sm text-muted whitespace-nowrap">{{ col.connection.name }}</td>
+                <td data-label="Embeddings" class="px-3 sm:px-6 py-3.5 text-sm whitespace-nowrap">
                     {% if col.embedding_provider %}
                     <span class="text-text">{{ col.embedding_provider.name }}</span>
                     <span class="block text-xs font-mono text-faint">{{ col.embedding_model }}</span>
@@ -63,7 +63,7 @@
                     <span class="text-faint">Vectors only</span>
                     {% endif %}
                 </td>
-                <td class="px-3 sm:px-6 py-3.5">
+                <td data-label="Status" class="px-3 sm:px-6 py-3.5">
                     {% if col.status == "ready" %}
                     <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Ready</span>
                     {% else %}
@@ -73,13 +73,13 @@
                     <span class="ml-1 inline-flex items-center px-2 py-0.5 text-[11px] rounded-md bg-warn/10 text-warn align-middle" title="Above {{ soft_limit }} points the Local store slows down; consider a Qdrant connection.">Large</span>
                     {% endif %}
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ col.points_count }}</td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ col.dimension }}</td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ col.size_display }}</td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-sm whitespace-nowrap">
+                <td data-label="Points" class="px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ col.points_count }}</td>
+                <td data-label="Dim" class="px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ col.dimension }}</td>
+                <td data-label="Size" class="px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ col.size_display }}</td>
+                <td data-label="Backup" class="px-3 sm:px-6 py-3.5 text-sm whitespace-nowrap">
                     {% if not col.is_local %}<span class="text-faint">Settings only</span>{% elif col.include_in_backup %}<span class="text-ok">Included</span>{% else %}<span class="text-faint">Excluded</span>{% endif %}
                 </td>
-                <td class="px-3 sm:px-6 py-3.5">
+                <td class="tc-actions px-3 sm:px-6 py-3.5">
                     <div class="flex items-center justify-end gap-2">
                         <a href="{% url 'cpanel:vector_detail' pk=col.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">View</a>
                     </div>

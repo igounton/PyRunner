@@ -85,16 +85,16 @@ function filterByTag(tagId) {
 {% if scripts %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full sm:min-w-[820px]">
+    <table class="table-cards w-full sm:min-w-[820px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Name</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Environment</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Tags</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Environment</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Tags</th>
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Runs</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Success</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Updated</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Runs</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Success</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Updated</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-line-soft">
@@ -107,10 +107,10 @@ function filterByTag(tagId) {
                     <p class="text-xs text-faint truncate mt-0.5">{{ script.description|truncatechars:60 }}</p>
                     {% endif %}
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5">
+                <td data-label="Environment" class="px-3 sm:px-6 py-3.5">
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-panel-hi text-muted whitespace-nowrap">{{ script.environment.name }}</span>
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5">
+                <td data-label="Tags" class="px-3 sm:px-6 py-3.5">
                     <div class="flex flex-wrap gap-1">
                         {% for tag in script.tags.all %}
                         <a href="{% url 'cpanel:script_list' %}?tag={{ tag.pk }}{% if status_filter %}&status={{ status_filter }}{% endif %}"
@@ -120,7 +120,7 @@ function filterByTag(tagId) {
                         {% endfor %}
                     </div>
                 </td>
-                <td class="px-3 sm:px-6 py-3.5">
+                <td data-label="Status" class="px-3 sm:px-6 py-3.5">
                     {% if script.is_archived %}
                     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-fail/10 text-fail"><span class="w-1.5 h-1.5 rounded-full bg-fail"></span>Archived</span>
                     {% elif script.is_enabled %}
@@ -129,15 +129,15 @@ function filterByTag(tagId) {
                     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-warn/10 text-warn"><span class="w-1.5 h-1.5 rounded-full bg-warn"></span>Disabled</span>
                     {% endif %}
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-text">{{ script.run_count }}</td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right">
+                <td data-label="Runs" class="px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-text">{{ script.run_count }}</td>
+                <td data-label="Success" class="px-3 sm:px-6 py-3.5 text-right">
                     {% if script.run_count > 0 %}
                     <span class="font-mono tnum text-sm {% if script.success_rate >= 80 %}text-ok{% elif script.success_rate >= 50 %}text-warn{% else %}text-fail{% endif %}">{{ script.success_rate|floatformat:0 }}%</span>
                     {% else %}
                     <span class="text-faint">—</span>
                     {% endif %}
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ script.updated_at|timesince }} ago</td>
+                <td data-label="Updated" class="px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ script.updated_at|timesince }} ago</td>
             </tr>
             {% endfor %}
         </tbody>

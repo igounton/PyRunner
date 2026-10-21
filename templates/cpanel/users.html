@@ -79,13 +79,13 @@
         </div>
     </div>
     <div class="overflow-x-auto">
-    <table class="w-full sm:min-w-[760px]">
+    <table class="table-cards w-full sm:min-w-[760px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">User</th>
                 <th class="hidden md:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Workspaces</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Joined</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Last login</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Joined</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Last login</th>
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right"><span class="sr-only">Actions</span></th>
             </tr>
         </thead>
@@ -103,16 +103,16 @@
                         {% endif %}
                     </div>
                 </td>
-                <td class="hidden md:table-cell px-3 sm:px-6 py-3.5">
+                <td data-label="Workspaces" class="tc-full hidden md:table-cell px-3 sm:px-6 py-3.5">
                     {% if user.memberships_sorted %}
                     <p class="text-xs text-muted">{% for m in user.memberships_sorted %}<span class="whitespace-nowrap">{{ m.workspace.name }} ({{ m.get_role_display }})</span>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
                     {% else %}
                     <p class="text-xs text-faint">No workspaces</p>
                     {% endif %}
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ user.date_joined|timesince }} ago</td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if user.last_login %}{{ user.last_login|timesince }} ago{% else %}—{% endif %}</td>
-                <td class="px-3 sm:px-6 py-3.5 text-right">
+                <td data-label="Joined" class="px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ user.date_joined|timesince }} ago</td>
+                <td data-label="Last login" class="px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if user.last_login %}{{ user.last_login|timesince }} ago{% else %}—{% endif %}</td>
+                <td class="tc-actions px-3 sm:px-6 py-3.5 text-right">
                     {% if user.pk != request.user.pk %}
                     <form method="post" action="{% url 'cpanel:delete_user' pk=user.pk %}" class="inline">
                     {% csrf_token %}

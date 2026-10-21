@@ -16,12 +16,12 @@
 {% if tags %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full sm:min-w-[560px]">
+    <table class="table-cards w-full sm:min-w-[560px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
                 <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Tag</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Scripts</th>
-                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Scripts</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
                 {% if user.is_superuser %}<th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>{% endif %}
             </tr>
         </thead>
@@ -31,12 +31,12 @@
                 <td class="px-3 sm:px-6 py-3.5">
                     <span class="inline-flex items-center px-3 py-1 text-sm rounded-full whitespace-nowrap tag-{{ tag.color }}">{{ tag.name }}</span>
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5">
+                <td data-label="Scripts" class="px-3 sm:px-6 py-3.5">
                     <a href="{% url 'cpanel:script_list' %}?tag={{ tag.pk }}" class="text-sm text-info hover:underline">{{ tag.workspace_script_count }} script{{ tag.workspace_script_count|pluralize }}</a>
                 </td>
-                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ tag.created_at|timesince }} ago</td>
+                <td data-label="Created" class="px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ tag.created_at|timesince }} ago</td>
                 {% if user.is_superuser %}
-                <td class="px-3 sm:px-6 py-3.5">
+                <td class="tc-actions px-3 sm:px-6 py-3.5">
                     <div class="flex items-center justify-end gap-2">
                         <a href="{% url 'cpanel:tag_edit' pk=tag.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</a>
                         <form method="post" action="{% url 'cpanel:tag_delete' pk=tag.pk %}" onsubmit="return confirm('Are you sure you want to delete the tag &quot;{{ tag.name|escapejs }}&quot;? It will be removed from all scripts.');" class="inline">

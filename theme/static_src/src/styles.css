@@ -119,6 +119,54 @@ select:not([multiple]):not([size]) {
     padding-right: 2rem;
 }
 
+/* List tables on phones (UX10 / U104 / U84): below `sm` a `.table-cards` table
+   turns every row into a card — the first cell is the title, each other cell
+   shows its `data-label` above the value in a two-column grid, `.tc-full`
+   (and any colspan row) spans the card, `.tc-actions` sits on its own line
+   and `.tc-hide` drops a cell that only makes sense in a table (a chevron).
+   From `sm` up the table is untouched. Lives outside @layer so it is never
+   purged and out-ranks the cells' px-* / text-right / hidden utilities. */
+@media (max-width: 639.98px) {
+    table.table-cards { display: block; width: 100%; min-width: 0; }
+    table.table-cards > thead { display: none; }
+    table.table-cards > tbody { display: block; }
+    table.table-cards > tbody > tr:not([hidden]) {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.625rem 1rem;
+        padding: 0.875rem 1rem;
+    }
+    table.table-cards > tbody > tr > td {
+        display: block;
+        min-width: 0;
+        max-width: none;
+        padding: 0;
+        text-align: left;
+    }
+    table.table-cards > tbody > tr > td:first-child,
+    table.table-cards > tbody > tr > td.tc-full,
+    table.table-cards > tbody > tr > td.tc-actions,
+    table.table-cards > tbody > tr > td[colspan] { grid-column: 1 / -1; }
+    table.table-cards > tbody > tr > td.tc-hide,
+    table.table-cards > tbody > tr > td:empty { display: none; }
+    table.table-cards > tbody > tr > td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 0.125rem;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgb(var(--faint));
+    }
+    table.table-cards > tbody > tr > td.tc-actions > div { justify-content: flex-start; flex-wrap: wrap; }
+}
+
+/* Logs (U86): an opened entry shows the full message once — the one-line
+   preview gives way to a "Hide" label. */
+details.log-entry[open] .log-preview { display: none; }
+details.log-entry:not([open]) .log-hide { display: none; }
+
 @layer components {
     /* Monospace caps label used for eyebrows / section headers */
     .eyebrow {

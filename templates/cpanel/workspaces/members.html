@@ -28,14 +28,14 @@
     <h3 class="text-base font-semibold text-text mb-4">Members</h3>
     <div class="space-y-3">
         {% for m in memberships %}
-        <div class="flex items-center justify-between gap-3 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
             <div class="flex items-center gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-full bg-info/10 grid place-items-center flex-shrink-0">
                     <span class="text-info font-semibold">{{ m.user.email|first|upper }}</span>
                 </div>
-                <p class="text-text font-medium truncate">{{ m.user.email }}{% if m.user_id == request.user.id %} <span class="text-xs font-normal text-faint">(you)</span>{% endif %}</p>
+                <p class="text-text font-medium break-all sm:truncate">{{ m.user.email }}{% if m.user_id == request.user.id %} <span class="text-xs font-normal text-faint">(you)</span>{% endif %}</p>
             </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="flex items-center gap-2 flex-shrink-0 pl-[52px] sm:pl-0">
                 {% if m.role == 'owner' and owner_count == 1 %}
                 <span class="px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok">Owner</span>
                 <span class="text-xs text-faint">last owner</span>

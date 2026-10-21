@@ -44,7 +44,7 @@
 {% if plugins %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full min-w-[820px]">
+    <table class="table-cards w-full sm:min-w-[820px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
                 <th class="px-6 py-3 eyebrow text-faint font-normal">Plugin</th>
@@ -80,9 +80,9 @@
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-3.5"><span class="font-mono text-sm text-muted">{{ plugin.version }}</span></td>
-                <td class="px-6 py-3.5"><span class="text-sm text-muted">{{ plugin.get_source_display }}</span></td>
-                <td class="px-6 py-3.5">
+                <td data-label="Version" class="px-6 py-3.5"><span class="font-mono text-sm text-muted">{{ plugin.version }}</span></td>
+                <td data-label="Source" class="px-6 py-3.5"><span class="text-sm text-muted">{{ plugin.get_source_display }}</span></td>
+                <td data-label="Status" class="px-6 py-3.5">
                     {% if plugin.status == 'active' %}
                     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Active</span>
                     {% elif plugin.status == 'errored' %}
@@ -93,7 +93,7 @@
                     <span class="px-2 py-0.5 text-xs rounded-md bg-info/10 text-info">Installed</span>
                     {% endif %}
                 </td>
-                <td class="px-6 py-3.5">
+                <td class="tc-actions px-6 py-3.5">
                     <div class="flex items-center justify-end gap-2">
                         {% if plugin.status == 'active' %}
                         <form method="post" action="{% url 'cpanel:plugin_deactivate' pk=plugin.pk %}" class="inline">

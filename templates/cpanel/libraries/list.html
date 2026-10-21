@@ -22,37 +22,37 @@
 <!-- Libraries table -->
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full min-w-[700px]">
+    <table class="w-full sm:min-w-[700px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Import name</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Name</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Modules</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Version</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Scripts</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Updated</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Import name</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Name</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Modules</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Version</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Scripts</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Updated</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-line-soft">
             {% for lib in libraries %}
             <tr class="group hover:bg-panel-hi/50 transition-colors">
-                <td class="px-6 py-3.5">
+                <td class="px-3 sm:px-6 py-3.5">
                     <a href="{% url 'cpanel:library_detail' pk=lib.pk %}" class="font-mono text-sm text-info hover:underline">{{ lib.key }}</a>
                     {% include "cpanel/_owner_pill.html" with obj=lib %}
                 </td>
-                <td class="px-6 py-3.5 text-sm text-muted max-w-xs truncate">{{ lib.name|default:"—" }}</td>
-                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ lib.module_count }}</td>
-                <td class="px-6 py-3.5 text-right">
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-sm text-muted max-w-xs truncate">{{ lib.name|default:"—" }}</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ lib.module_count }}</td>
+                <td class="px-3 sm:px-6 py-3.5 text-right">
                     {% if lib.current_version %}
                     <span class="font-mono tnum text-xs px-2 py-0.5 rounded-full bg-info/10 text-info border border-info/20">v{{ lib.current_version }}</span>
                     {% else %}
                     <span class="font-mono text-xs px-2 py-0.5 rounded-full bg-warn/10 text-warn border border-warn/20">empty</span>
                     {% endif %}
                 </td>
-                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ lib.attached_count }}</td>
-                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ lib.updated_at|timesince }} ago</td>
-                <td class="px-6 py-3.5">
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ lib.attached_count }}</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ lib.updated_at|timesince }} ago</td>
+                <td class="px-3 sm:px-6 py-3.5">
                     <div class="flex items-center justify-end gap-2">
                         <a href="{% url 'cpanel:library_edit' pk=lib.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Edit</a>
                         <a href="{% url 'cpanel:library_detail' pk=lib.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">View</a>

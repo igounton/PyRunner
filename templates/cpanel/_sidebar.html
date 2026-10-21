@@ -36,7 +36,7 @@
 
         <!-- Dashboard -->
         <a href="{% url 'cpanel:dashboard' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if request.resolver_match.url_name == 'dashboard' %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if request.resolver_match.url_name == 'dashboard' %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if request.resolver_match.url_name == 'dashboard' %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2 7-7 7 7 2 2M5 10v10a1 1 0 001 1h12a1 1 0 001-1V10"/></svg>
             <span>Dashboard</span>
@@ -44,7 +44,7 @@
 
         <!-- Scripts -->
         <a href="{% url 'cpanel:script_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'script' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'script' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'script' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
             <span>Scripts</span>
@@ -52,20 +52,20 @@
 
         <!-- Libraries (shared code attached to scripts; lives next to Scripts) -->
         <a href="{% url 'cpanel:library_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'library' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'library' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'library' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
             <span>Libraries</span>
         </a>
 
-        <a href="{% ws_url 'cpanel:brain_list' %}" class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'brain' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+        <a href="{% ws_url 'cpanel:brain_list' %}" class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'brain' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4H5a2 2 0 00-2 2v14l9-4 9 4V6a2 2 0 00-2-2h-4M9 4v7l3-2 3 2V4M9 4h6"/></svg>
             <span>Brains</span>
         </a>
 
         <!-- Runs -->
         <a href="{% url 'cpanel:run_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'run' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'run' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'run' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             <span>Runs</span>
@@ -74,7 +74,7 @@
         <!-- Py AI (owners/admins of the workspace; members are refused by the view) -->
         {% if user_can_manage_workspace %}
         <a href="{% url 'cpanel:pyai' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'pyai' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'pyai' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'pyai' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.847-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/></svg>
             <span>Py AI</span>
@@ -83,22 +83,22 @@
 
         <!-- Tasks -->
         <a href="{% url 'cpanel:tasks' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'task' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'task' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'task' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
             <span>Tasks</span>
         </a>
 
-        <div class="eyebrow text-faint px-3 pb-2 pt-5">Configure</div>
+        <div class="eyebrow text-faint px-3 pb-1.5 pt-4">Configure</div>
 
-        <a href="{% url 'cpanel:connect' %}" class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if request.resolver_match.url_name == 'connect' %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+        <a href="{% url 'cpanel:connect' %}" class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if request.resolver_match.url_name == 'connect' %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-2 2m3 6a5 5 0 00-7 0l-3 3a5 5 0 007 7l2-2"/></svg>
             <span>Connect</span>
         </a>
 
         <!-- Environments -->
         <a href="{% url 'cpanel:environment_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'environment' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'environment' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'environment' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5a2 2 0 00-2 2v6a2 2 0 002 2h14a2 2 0 002-2v-6a2 2 0 00-2-2zm-2 0V7a5 5 0 00-10 0v4"/></svg>
             <span>Environments</span>
@@ -106,7 +106,7 @@
 
         <!-- Secrets -->
         <a href="{% url 'cpanel:secret_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'secret' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'secret' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'secret' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
             <span>Secrets</span>
@@ -114,7 +114,7 @@
 
         <!-- Tags -->
         <a href="{% url 'cpanel:tag_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'tag' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'tag' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'tag' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
             <span>Tags</span>
@@ -122,7 +122,7 @@
 
         <!-- Data Stores -->
         <a href="{% url 'cpanel:datastore_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'datastore' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'datastore' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'datastore' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7c0 1.66 3.582 3 8 3s8-1.34 8-3-3.582-3-8-3-8 1.34-8 3zm0 0v10c0 1.66 3.582 3 8 3s8-1.34 8-3V7"/></svg>
             <span>Data Stores</span>
@@ -131,7 +131,7 @@
         {% if user_can_manage_workspace %}
         <!-- Databases (managed Postgres; Owner/Admin only) -->
         <a href="{% url 'cpanel:database_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'database' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'database' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'database' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6v6c0 1.66 3.582 3 8 3s8-1.34 8-3V6M4 6c0 1.66 3.582 3 8 3s8-1.34 8-3-3.582-3-8-3-8 1.34-8 3zm16 6v6c0 1.66-3.582 3-8 3s-8-1.34-8-3v-6"/></svg>
             <span>Databases</span>
@@ -139,7 +139,7 @@
 
         <!-- Vectors (vector collections; Owner/Admin only) -->
         <a href="{% url 'cpanel:vector_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'vector' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'vector' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'vector' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20l5-5m0 0l4 4 7-7m-11 3V9a2 2 0 012-2h3m6 0h.01M6 4h.01M18 4h.01M12 12h.01"/></svg>
             <span>Vectors</span>
@@ -148,7 +148,7 @@
 
         <!-- Channels -->
         <a href="{% url 'cpanel:channel_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'channel' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'channel' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'channel' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.84L3 20l1.16-3.48A7.93 7.93 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
             <span>Channels</span>
@@ -158,7 +158,7 @@
         <!-- Services, Settings and Logs are instance-wide (superuser only) -->
         <!-- Services -->
         <a href="{% url 'cpanel:services' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'service' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'service' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'service' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
             <span>Services</span>
@@ -166,7 +166,7 @@
 
         <!-- Settings -->
         <a href="{% url 'cpanel:settings' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'settings' in request.resolver_match.url_name and 'brain' not in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'settings' in request.resolver_match.url_name and 'brain' not in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'settings' in request.resolver_match.url_name and 'brain' not in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>Settings</span>
@@ -174,7 +174,7 @@
 
         <!-- Logs -->
         <a href="{% url 'cpanel:logs' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'logs' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'logs' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'logs' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span>Logs</span>
@@ -182,7 +182,7 @@
         {% elif user_can_manage_workspace %}
         <!-- Owners/Admins manage members here; superusers find it under Admin -->
         <a href="{% url 'cpanel:workspace_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'workspace' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'workspace' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'workspace' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2"/></svg>
             <span>Workspaces</span>
@@ -190,10 +190,10 @@
         {% endif %}
 
         {% if plugin_nav %}
-        <div class="eyebrow text-faint px-3 pb-2 pt-5">Plugins</div>
+        <div class="eyebrow text-faint px-3 pb-1.5 pt-4">Plugins</div>
         {% for item in plugin_nav %}
         <a href="{% url item.url_name %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if request.resolver_match.view_name == item.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if request.resolver_match.view_name == item.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if request.resolver_match.view_name == item.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             {# item.icon_svg is plugin-supplied SVG rendered raw. Acceptable trust boundary: plugins are superuser-installed, in-process code that could do worse server-side. #}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">{% if item.icon_svg %}{{ item.icon_svg|safe }}{% else %}<path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/>{% endif %}</svg>
@@ -203,11 +203,11 @@
         {% endif %}
 
         {% if request.user.is_superuser %}
-        <div class="eyebrow text-faint px-3 pb-2 pt-5">Admin</div>
+        <div class="eyebrow text-faint px-3 pb-1.5 pt-4">Admin</div>
 
         <!-- Workspaces (Admin only) -->
         <a href="{% url 'cpanel:workspace_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'workspace' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'workspace' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'workspace' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2"/></svg>
             <span>Workspaces</span>
@@ -215,7 +215,7 @@
 
         <!-- Users (Admin only) -->
         <a href="{% url 'cpanel:user_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'user' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'user' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'user' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
             <span>Users</span>
@@ -223,7 +223,7 @@
 
         <!-- Plugins (Admin only) -->
         <a href="{% url 'cpanel:plugin_list' %}"
-           class="relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors {% if 'plugin' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
+           class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'plugin' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'plugin' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>
             <span>Plugins</span>
@@ -231,25 +231,17 @@
         {% endif %}
     </nav>
 
-    <!-- Footer (Fixed at bottom) -->
-    <div class="flex-shrink-0 border-t border-line p-3 space-y-2">
+    <!-- Footer (fixed at bottom; nothing to show from xl up) -->
+    <div class="xl:hidden flex-shrink-0 border-t border-line p-3 space-y-2">
         {# Phones: the header hides What's new and the version label (F20). #}
         <a href="{% url 'cpanel:changelog' %}" class="sm:hidden block text-xs text-muted hover:text-text transition-colors">What's new · v{{ pyrunner_version }}</a>
-        <!-- Developer Links -->
-        <div class="flex items-center gap-2 text-xs">
-            <span class="text-faint">Developer:</span>
-            <a href="https://x.com/hasan_ab_hasan" target="_blank" title="X" aria-label="X"
-               class="text-muted hover:text-text transition-colors">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </a>
-            <a href="https://www.youtube.com/@hasanaboulhasan" target="_blank" title="YouTube" aria-label="YouTube"
-               class="text-muted hover:text-text transition-colors">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12z"/></svg>
-            </a>
-            <a href="https://learnwithhasan.com" target="_blank" title="Website" aria-label="Website"
-               class="text-muted hover:text-text transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9z"/></svg>
-            </a>
+        <!-- Docs / GitHub / Discord: the header shows them from xl up, so the
+             sidebar carries them below that (the developer links live in
+             Settings -> System). -->
+        <div class="flex items-center gap-3 text-xs">
+            <a href="https://github.com/hassancs91/PyRun#readme" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors">Docs</a>
+            <a href="https://github.com/hassancs91/PyRun" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors">GitHub</a>
+            <a href="https://discord.gg/BjkmTn7XSd" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors">Discord</a>
         </div>
     </div>
 </aside>

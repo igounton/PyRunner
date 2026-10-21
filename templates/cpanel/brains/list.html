@@ -2,15 +2,14 @@
 {% load workspace_tags %}
 {% block brain_actions %}{% if can_manage %}<a class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition" href="{% ws_url 'cpanel:brain_create' %}">Create or import</a>{% endif %}{% endblock %}
 {% block brain_content %}
-<p class="text-sm text-muted">Curated notes with revision history and access grants. Console members can read all workspace notes.</p>
-<div class="space-y-3">
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
 {% for item in page %}
-    <a class="block rounded-2xl border border-line bg-panel p-5" href="{% ws_url 'cpanel:brain_detail' item.pk %}">
+    <a class="block rounded-2xl border border-line bg-panel p-5 hover:border-faint transition-colors min-w-0" href="{% ws_url 'cpanel:brain_detail' item.pk %}">
         <h2 class="font-semibold break-words">{{ item.name }}</h2>
         <p class="text-sm text-muted mt-1 break-words">{{ item.description|default:item.slug }}</p>
         <p class="text-xs text-faint mt-3">Revision {{ item.head_revision.number|default:"0" }} · Contract {{ item.contract_version|default:"unknown" }}{% if item.owner_plugin %} · {{ item.owner_plugin }}{% endif %}</p>
     </a>
-{% empty %}<div class="rounded-2xl border border-line bg-panel p-6 text-sm text-muted">No brains yet. Create one from the template or import an existing BrainOutside archive.</div>{% endfor %}
+{% empty %}<div class="sm:col-span-2 xl:col-span-3 rounded-2xl border border-line bg-panel p-6 text-sm text-muted">No brains yet. Create one from the template or import an existing BrainOutside archive.</div>{% endfor %}
 </div>
 {% include "cpanel/brains/pagination.html" %}
 {% endblock %}

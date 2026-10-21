@@ -221,3 +221,61 @@ class ServicesLandingTests(ShellBase):
         for anchor in ("storage", "ai", "secret-providers", "embeddings", "vector-stores"):
             self.assertIn(f'href="#{anchor}"', html)
             self.assertIn(f'id="{anchor}"', html)
+
+
+class ListAndDetailPolishTests(ShellBase):
+    """UX10 / UX11 / UX13 / UX17-UX20."""
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.admin)
+
+    def test_scripts_list_has_a_name_filter_and_phone_columns(self):
+        from core.models import Script
+
+        Script.objects.create(name="Nightly sync", workspace=self.ws, environment=Environment.objects.get(name="default"))
+        html = self.client.get(reverse("cpanel:script_list")).content.decode()
+        self.assertIn('id="script-name-filter"', html)
+        self.assertIn('data-script-name="nightly sync"', html)
+        self.assertIn("bg-panel-hi text-muted whitespace-nowrap", html)  # env chip stays on one line
+        self.assertIn('<table class="w-full sm:min-w-[820px]">', html)
+        self.assertIn("hidden sm:table-cell", html)
+
+    def test_environments_list_is_a_table(self):
+        html = self.client.get(reverse("cpanel:environment_list")).content.decode()
+        self.assertIn('<table class="w-full sm:min-w-[760px]">', html)
+        self.assertIn(">Packages</a>", html)
+
+    def test_users_page_is_a_filterable_table(self):
+        html = self.client.get(reverse("cpanel:user_list")).content.decode()
+        self.assertIn('id="user-filter"', html)
+        self.assertIn('data-user-email="m@example.com"', html)
+        self.assertIn(">Workspaces</th>", html)
+
+    def test_changelog_stacks_the_change_type_on_phones(self):
+        html = self.client.get(reverse("cpanel:changelog")).content.decode()
+        self.assertIn("flex flex-col sm:flex-row items-start", html)
+        self.assertIn('<div class="relative max-w-[72ch]">', html)
+
+    def test_data_store_detail_is_compact(self):
+        from core.models import DataStore
+
+        store = DataStore.objects.create(name="orders", workspace=self.ws, created_by=self.admin)
+        html = self.client.get(reverse("cpanel:datastore_detail", kwargs={"pk": store.pk})).content.decode()
+        self.assertIn("grid grid-cols-3 divide-x", html)
+        self.assertIn("How to use this data store in scripts", html)
+        self.assertRegex(html, r'<details class="rounded-2xl border border-line bg-panel p-5 group">')
+
+    def test_sidebar_footer_moves_developer_links_to_settings(self):
+        html = self.client.get(reverse("cpanel:dashboard")).content.decode()
+        sidebar = html[html.index('id="app-sidebar"'):html.index("</aside>")]
+        self.assertNotIn("Developer:", sidebar)
+        self.assertIn("xl:hidden flex-shrink-0 border-t", sidebar)
+        self.assertIn(">Discord</a>", sidebar)
+        settings_html = self.client.get(reverse("cpanel:settings")).content.decode()
+        self.assertIn("About PyRun", settings_html)
+        self.assertIn("https://x.com/hasan_ab_hasan", settings_html)
+
+    def test_member_role_select_is_labelled(self):
+        html = self.client.get(reverse("cpanel:workspace_members", kwargs={"pk": self.ws.pk})).content.decode()
+        self.assertIn('aria-label="Role for m@example.com"', html)

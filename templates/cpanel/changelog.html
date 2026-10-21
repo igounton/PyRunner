@@ -40,8 +40,8 @@
             <!-- changes -->
             <ul class="mt-4 rounded-2xl border border-line bg-panel divide-y divide-line-soft overflow-hidden">
                 {% for change in release.changes %}
-                <li class="px-5 py-4 flex items-start gap-4 hover:bg-panel-hi/30 transition-colors">
-                    <span class="mt-1 flex-shrink-0 w-[76px] inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider
+                <li class="px-5 py-4 flex flex-col sm:flex-row items-start gap-1.5 sm:gap-4 hover:bg-panel-hi/30 transition-colors">
+                    <span class="sm:mt-1 flex-shrink-0 sm:w-[76px] inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider
                         {% if change.tag == 'Added' %}text-ok
                         {% elif change.tag == 'Improved' or change.tag == 'Changed' %}text-info
                         {% elif change.tag == 'Fixed' %}text-warn

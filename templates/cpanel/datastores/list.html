@@ -36,29 +36,29 @@
 <!-- Data stores table -->
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full min-w-[600px]">
+    <table class="w-full sm:min-w-[600px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Name</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Description</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Entries</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Size</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Updated</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Name</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Description</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Entries</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Size</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Updated</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-line-soft">
             {% for store in datastores %}
             <tr class="group hover:bg-panel-hi/50 transition-colors">
-                <td class="px-6 py-3.5">
+                <td class="px-3 sm:px-6 py-3.5">
                     <a href="{% url 'cpanel:datastore_detail' pk=store.pk %}" class="font-mono text-sm text-info hover:underline">{{ store.name }}</a>
                     {% include "cpanel/_owner_pill.html" with obj=store %}
                 </td>
-                <td class="px-6 py-3.5 text-sm text-muted max-w-xs truncate">{{ store.description|default:"—" }}</td>
-                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ store.entry_count }}</td>
-                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ store.size_display }}</td>
-                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ store.updated_at|timesince }} ago</td>
-                <td class="px-6 py-3.5">
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-sm text-muted max-w-xs truncate">{{ store.description|default:"—" }}</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ store.entry_count }}</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ store.size_display }}</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ store.updated_at|timesince }} ago</td>
+                <td class="px-3 sm:px-6 py-3.5">
                     <div class="flex items-center justify-end gap-2">
                         <a href="{% url 'cpanel:datastore_detail' pk=store.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">View</a>
                         {% if store.owner_plugin %}

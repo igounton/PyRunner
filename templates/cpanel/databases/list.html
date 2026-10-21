@@ -48,29 +48,29 @@
 <!-- Databases table -->
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full min-w-[860px]">
+    <table class="w-full sm:min-w-[860px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Name</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Description</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Tables</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Size</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Conns</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Scripts</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Name</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Description</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Status</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Tables</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Size</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Conns</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Scripts</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Created</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Actions</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-line-soft">
             {% for db in databases %}
             <tr class="group hover:bg-panel-hi/50 transition-colors">
-                <td class="px-6 py-3.5">
+                <td class="px-3 sm:px-6 py-3.5">
                     <a href="{% url 'cpanel:database_detail' pk=db.pk %}" class="font-mono text-sm text-info hover:underline">{{ db.name }}</a>
                     {% include "cpanel/_owner_pill.html" with obj=db %}
                 </td>
-                <td class="px-6 py-3.5 text-sm text-muted max-w-xs truncate">{{ db.description|default:"—" }}</td>
-                <td class="px-6 py-3.5">
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-sm text-muted max-w-xs truncate">{{ db.description|default:"—" }}</td>
+                <td class="px-3 sm:px-6 py-3.5">
                     {% if db.status == "ready" %}
                     <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-ok/10 text-ok"><span class="w-1.5 h-1.5 rounded-full bg-ok"></span>Ready</span>
                     {% elif db.status == "error" %}
@@ -79,12 +79,12 @@
                     <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-info/10 text-info"><span class="w-1.5 h-1.5 rounded-full bg-info"></span>Provisioning</span>
                     {% endif %}
                 </td>
-                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.table_count }}{% else %}—{% endif %}</td>
-                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.size_display }}{% else %}—{% endif %}</td>
-                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.connections }}{% else %}—{% endif %}</td>
-                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ db.granted_count }}</td>
-                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ db.created_at|timesince }} ago</td>
-                <td class="px-6 py-3.5">
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.table_count }}{% else %}—{% endif %}</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.size_display }}{% else %}—{% endif %}</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{% if db.stats %}{{ db.stats.connections }}{% else %}—{% endif %}</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-muted">{{ db.granted_count }}</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ db.created_at|timesince }} ago</td>
+                <td class="px-3 sm:px-6 py-3.5">
                     <div class="flex items-center justify-end gap-2">
                         <a href="{% url 'cpanel:database_detail' pk=db.pk %}" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">View</a>
                     </div>

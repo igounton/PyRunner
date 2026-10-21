@@ -26,6 +26,15 @@
            class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'archived' %}bg-fail/10 text-fail font-medium{% else %}text-muted hover:text-text{% endif %}">Archived</a>
     </div>
 
+    {% if scripts %}
+    <!-- Name filter (client-side: the list is not paginated) -->
+    <div class="relative w-full sm:w-56">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-faint pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/></svg>
+        <input type="search" id="script-name-filter" placeholder="Filter by name" aria-label="Filter scripts by name" autocomplete="off"
+               class="w-full pl-8 pr-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text placeholder-faint/60 focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
+    </div>
+    {% endif %}
+
     {% if all_tags %}
     <div class="flex items-center gap-2">
         <span class="eyebrow text-faint">Tag</span>
@@ -47,6 +56,23 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const box = document.getElementById('script-name-filter');
+    if (!box) return;
+    const rows = document.querySelectorAll('tr[data-script-name]');
+    const empty = document.getElementById('script-name-filter-empty');
+    box.addEventListener('input', function () {
+        const q = box.value.trim().toLowerCase();
+        let shown = 0;
+        rows.forEach(function (row) {
+            const hit = !q || row.dataset.scriptName.includes(q);
+            row.classList.toggle('hidden', !hit);
+            if (hit) shown++;
+        });
+        empty.classList.toggle('hidden', shown > 0);
+    });
+});
+
 function filterByTag(tagId) {
     const url = new URL(window.location.href);
     if (tagId) { url.searchParams.set('tag', tagId); }
@@ -59,32 +85,32 @@ function filterByTag(tagId) {
 {% if scripts %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full min-w-[820px]">
+    <table class="w-full sm:min-w-[820px]">
         <thead>
             <tr class="border-b border-line-soft text-left">
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Name</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Environment</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Tags</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal">Status</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Runs</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Success</th>
-                <th class="px-6 py-3 eyebrow text-faint font-normal text-right">Updated</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Name</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Environment</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Tags</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Status</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Runs</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Success</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Updated</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-line-soft">
             {% for script in scripts %}
-            <tr class="hover:bg-panel-hi/50 transition-colors">
-                <td class="px-6 py-3.5 max-w-xs">
+            <tr class="hover:bg-panel-hi/50 transition-colors" data-script-name="{{ script.name|lower }}">
+                <td class="px-3 sm:px-6 py-3.5 max-w-xs">
                     <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="text-[13.5px] font-medium text-text hover:text-ok transition-colors">{{ script.name }}</a>
                     {% include "cpanel/_owner_pill.html" with obj=script %}
                     {% if script.description %}
                     <p class="text-xs text-faint truncate mt-0.5">{{ script.description|truncatechars:60 }}</p>
                     {% endif %}
                 </td>
-                <td class="px-6 py-3.5">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-panel-hi text-muted">{{ script.environment.name }}</span>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-panel-hi text-muted whitespace-nowrap">{{ script.environment.name }}</span>
                 </td>
-                <td class="px-6 py-3.5">
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5">
                     <div class="flex flex-wrap gap-1">
                         {% for tag in script.tags.all %}
                         <a href="{% url 'cpanel:script_list' %}?tag={{ tag.pk }}{% if status_filter %}&status={{ status_filter }}{% endif %}"
@@ -94,7 +120,7 @@ function filterByTag(tagId) {
                         {% endfor %}
                     </div>
                 </td>
-                <td class="px-6 py-3.5">
+                <td class="px-3 sm:px-6 py-3.5">
                     {% if script.is_archived %}
                     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-fail/10 text-fail"><span class="w-1.5 h-1.5 rounded-full bg-fail"></span>Archived</span>
                     {% elif script.is_enabled %}
@@ -103,20 +129,21 @@ function filterByTag(tagId) {
                     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs rounded-md bg-warn/10 text-warn"><span class="w-1.5 h-1.5 rounded-full bg-warn"></span>Disabled</span>
                     {% endif %}
                 </td>
-                <td class="px-6 py-3.5 text-right font-mono tnum text-sm text-text">{{ script.run_count }}</td>
-                <td class="px-6 py-3.5 text-right">
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right font-mono tnum text-sm text-text">{{ script.run_count }}</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right">
                     {% if script.run_count > 0 %}
                     <span class="font-mono tnum text-sm {% if script.success_rate >= 80 %}text-ok{% elif script.success_rate >= 50 %}text-warn{% else %}text-fail{% endif %}">{{ script.success_rate|floatformat:0 }}%</span>
                     {% else %}
                     <span class="text-faint">—</span>
                     {% endif %}
                 </td>
-                <td class="px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ script.updated_at|timesince }} ago</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ script.updated_at|timesince }} ago</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     </div>
+    <p id="script-name-filter-empty" class="hidden px-6 py-8 text-center text-sm text-muted">No scripts match that name.</p>
 </section>
 {% else %}
 <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">

@@ -44,7 +44,7 @@
                 {% else %}
                 <form method="post" action="{% url 'cpanel:workspace_member_role' pk=workspace.id membership_id=m.id %}" class="flex items-center gap-2">
                     {% csrf_token %}
-                    <select name="role" onchange="this.form.submit()" class="px-2.5 py-1.5 bg-ink border border-line rounded-lg text-text text-xs focus:outline-none focus:ring-2 focus:ring-ok/30 focus:border-ok/60 transition-colors">
+                    <select name="role" onchange="this.form.submit()" aria-label="Role for {{ m.user.email }}" class="px-2.5 py-1.5 bg-panel border border-line-soft rounded-md text-muted text-xs hover:text-text focus:outline-none focus:ring-2 focus:ring-ok/30 focus:border-ok/60 transition-colors">
                         {% for value, label in role_choices %}{% if value != 'owner' or can_manage_owners %}<option value="{{ value }}"{% if value == m.role %} selected{% endif %}>{{ label }}</option>{% endif %}{% endfor %}
                     </select>
                 </form>

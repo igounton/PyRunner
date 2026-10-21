@@ -69,18 +69,32 @@
 {% endif %}
 
 <!-- Users list -->
-<div class="rounded-2xl border border-line bg-panel p-6">
-    <h3 class="text-base font-semibold text-text mb-4">All users</h3>
-    <div class="space-y-3">
-        {% for user in users %}
-        <div class="flex items-center justify-between gap-3 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
-            <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-full bg-info/10 grid place-items-center flex-shrink-0">
-                    <span class="text-info font-semibold">{{ user.email|first|upper }}</span>
-                </div>
-                <div class="min-w-0">
+<section class="rounded-2xl border border-line bg-panel overflow-hidden">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-line-soft">
+        <h3 class="text-base font-semibold text-text">All users <span class="text-faint font-mono tnum text-sm font-normal">{{ users|length }}</span></h3>
+        <div class="relative w-full sm:w-64">
+            <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-faint pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/></svg>
+            <input type="search" id="user-filter" placeholder="Filter by email" aria-label="Filter users by email" autocomplete="off"
+                   class="w-full pl-8 pr-3 py-1.5 text-sm bg-ink border border-line rounded-lg text-text placeholder-faint/60 focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+    <table class="w-full sm:min-w-[760px]">
+        <thead>
+            <tr class="border-b border-line-soft text-left">
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal">User</th>
+                <th class="hidden md:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal">Workspaces</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Joined</th>
+                <th class="hidden sm:table-cell px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right">Last login</th>
+                <th class="px-3 sm:px-6 py-3 eyebrow text-faint font-normal text-right"><span class="sr-only">Actions</span></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-line-soft">
+            {% for user in users %}
+            <tr class="hover:bg-panel-hi/50 transition-colors" data-user-email="{{ user.email|lower }}">
+                <td class="px-3 sm:px-6 py-3.5">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <p class="text-text font-medium truncate">{{ user.email }}</p>
+                        <span class="text-[13.5px] font-medium text-text break-all">{{ user.email }}</span>
                         {% if user.is_superuser %}<span class="px-2 py-0.5 bg-info/10 text-info text-xs rounded-md">Admin</span>{% endif %}
                         {% if user.is_verified %}
                         <span class="px-2 py-0.5 bg-ok/10 text-ok text-xs rounded-md">Verified</span>
@@ -88,26 +102,46 @@
                         <span class="px-2 py-0.5 bg-warn/10 text-warn text-xs rounded-md">Pending</span>
                         {% endif %}
                     </div>
-                    <p class="text-xs text-faint">Joined {{ user.date_joined|timesince }} ago{% if user.last_login %} &bull; Last login {{ user.last_login|timesince }} ago{% endif %}</p>
+                </td>
+                <td class="hidden md:table-cell px-3 sm:px-6 py-3.5">
                     {% if user.memberships_sorted %}
-                    <p class="text-xs text-muted mt-1">Workspaces: {% for m in user.memberships_sorted %}<span class="whitespace-nowrap">{{ m.workspace.name }} ({{ m.get_role_display }})</span>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+                    <p class="text-xs text-muted">{% for m in user.memberships_sorted %}<span class="whitespace-nowrap">{{ m.workspace.name }} ({{ m.get_role_display }})</span>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
                     {% else %}
-                    <p class="text-xs text-faint mt-1">No workspaces</p>
+                    <p class="text-xs text-faint">No workspaces</p>
                     {% endif %}
-                </div>
-            </div>
-            {% if user.pk != request.user.pk %}
-            <form method="post" action="{% url 'cpanel:delete_user' pk=user.pk %}" class="inline flex-shrink-0">
-                {% csrf_token %}
-                <button type="submit" onclick="return confirm('Delete user {{ user.email|escapejs }}? This cannot be undone.{% if user.sole_owned %} They are the only owner of: {{ user.sole_owned|join:', '|escapejs }}; the delete will be refused until another member owns it.{% endif %}')" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
-            </form>
-            {% else %}
-            <span class="text-xs text-faint flex-shrink-0">(You)</span>
-            {% endif %}
-        </div>
-        {% endfor %}
+                </td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{{ user.date_joined|timesince }} ago</td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-3.5 text-right text-xs text-faint whitespace-nowrap">{% if user.last_login %}{{ user.last_login|timesince }} ago{% else %}—{% endif %}</td>
+                <td class="px-3 sm:px-6 py-3.5 text-right">
+                    {% if user.pk != request.user.pk %}
+                    <form method="post" action="{% url 'cpanel:delete_user' pk=user.pk %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" onclick="return confirm('Delete user {{ user.email|escapejs }}? This cannot be undone.{% if user.sole_owned %} They are the only owner of: {{ user.sole_owned|join:', '|escapejs }}; the delete will be refused until another member owns it.{% endif %}')" class="text-[13px] px-3 py-1.5 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete</button>
+                    </form>
+                    {% else %}
+                    <span class="text-xs text-faint">(You)</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     </div>
-</div>
+    <p id="user-filter-empty" class="hidden px-6 py-8 text-center text-sm text-muted">No users match that email.</p>
+</section>
+<script>
+document.getElementById('user-filter').addEventListener('input', function () {
+    const q = this.value.trim().toLowerCase();
+    let shown = 0;
+    document.querySelectorAll('tr[data-user-email]').forEach(function (row) {
+        const hit = !q || row.dataset.userEmail.includes(q);
+        row.classList.toggle('hidden', !hit);
+        if (hit) shown++;
+    });
+    document.getElementById('user-filter-empty').classList.toggle('hidden', shown > 0);
+});
+</script>
+
 <!-- Invite Modal -->
 <div id="invite-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 flex">
     <div class="bg-panel border border-line rounded-2xl p-6 max-w-md w-full mx-4">

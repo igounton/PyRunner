@@ -7,7 +7,7 @@
 {% endif %}{% endblock %}
 {% block heading %}{{ brain.name|default:"Brains" }}{% endblock %}
 {% block actions %}{% block brain_actions %}{% endblock %}{% if brain %}<a href="{% ws_url 'cpanel:brain_export' brain.pk %}" class="inline-flex items-center gap-2 text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Export ZIP</a>{% endif %}{% endblock %}
-{% block subtitle %}{% if brain %}{{ brain.description|default:"A versioned knowledge base for this workspace." }}{% elif request.resolver_match.url_name == 'brain_list' %}Versioned knowledge bases that scripts and MCP clients can read and write.{% endif %}{% endblock %}
+{% block subtitle %}{% if brain %}{{ brain.description|default:"A versioned knowledge base for this workspace." }}{% elif request.resolver_match.url_name == 'brain_list' %}Curated notes with revision history and access grants. Console members can read all workspace notes.{% endif %}{% endblock %}
 
 {% block page %}
 {% if brain %}

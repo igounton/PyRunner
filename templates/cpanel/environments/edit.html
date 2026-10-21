@@ -11,33 +11,38 @@
 {% block subtitle %}Update the name and description{% endblock %}
 
 {% block page %}
-<form method="post" class="rounded-2xl border border-line bg-panel p-6 space-y-5">
-    {% csrf_token %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+    <form method="post" class="lg:col-span-2 max-w-3xl w-full rounded-2xl border border-line bg-panel p-6 space-y-5">
+        {% csrf_token %}
 
-    <div>
-        <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
-        {{ form.name }}
-        {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
-    </div>
+        <div>
+            <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
+            {{ form.name }}
+            {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
+        </div>
 
-    <div>
-        <label for="id_description" class="block text-[13px] font-medium text-text mb-1.5">{{ form.description.label }}</label>
-        {{ form.description }}
-        {% if form.description.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.description.errors.0 }}</p>{% endif %}
-    </div>
+        <div>
+            <label for="id_description" class="block text-[13px] font-medium text-text mb-1.5">{{ form.description.label }}</label>
+            {{ form.description }}
+            {% if form.description.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.description.errors.0 }}</p>{% endif %}
+        </div>
 
-    <div class="rounded-lg border border-line-soft bg-panel-hi/40 p-4">
-        <h3 class="eyebrow text-faint mb-3">Read-only details</h3>
-        <dl class="space-y-2.5 text-sm">
-            <div class="flex justify-between gap-3"><dt class="text-muted">Python version</dt><dd class="font-mono text-text">{{ environment.python_version }}</dd></div>
-            <div class="flex justify-between gap-3"><dt class="text-muted">Path</dt><dd class="font-mono text-text text-xs truncate max-w-[16rem]" title="{{ environment.path }}">{{ environment.path }}</dd></div>
-            <div class="flex justify-between gap-3"><dt class="text-muted">Scripts</dt><dd class="font-mono tnum text-text">{{ environment.script_count }}</dd></div>
-        </dl>
-    </div>
+        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">
+            <a href="{% url 'cpanel:environment_detail' pk=environment.pk %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>
+            <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save changes</button>
+        </div>
+    </form>
 
-    <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">
-        <a href="{% url 'cpanel:environment_detail' pk=environment.pk %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>
-        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save changes</button>
-    </div>
-</form>
+    <!-- Help (side panel on desktop, under the form on phones) -->
+    <aside class="space-y-5">
+        <div class="rounded-2xl border border-line bg-panel p-5">
+                <h3 class="eyebrow text-faint mb-3">Read-only details</h3>
+                <dl class="space-y-2.5 text-sm">
+                    <div class="flex justify-between gap-3"><dt class="text-muted">Python version</dt><dd class="font-mono text-text">{{ environment.python_version }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-muted">Path</dt><dd class="font-mono text-text text-xs truncate max-w-[16rem]" title="{{ environment.path }}">{{ environment.path }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-muted">Scripts</dt><dd class="font-mono tnum text-text">{{ environment.script_count }}</dd></div>
+                </dl>
+            </div>
+    </aside>
+</div>
 {% endblock %}

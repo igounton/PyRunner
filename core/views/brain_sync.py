@@ -22,6 +22,7 @@ class SyncForm(StyledForm, forms.Form):
     def __init__(self, *args, workspace, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["secret"].queryset = Secret.objects.for_workspace(workspace).filter(owner_plugin__isnull=True)
+        self.fields["secret"].empty_label = "Choose a secret…"
 
 
 @login_required

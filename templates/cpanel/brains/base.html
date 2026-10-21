@@ -6,19 +6,22 @@
 {% if brain and request.resolver_match.url_name != 'brain_detail' %}<a href="{% ws_url 'cpanel:brain_detail' brain.pk %}">{{ brain.name }}</a>{% endif %}
 {% endif %}{% endblock %}
 {% block heading %}{{ brain.name|default:"Brains" }}{% endblock %}
+{% block actions %}{% block brain_actions %}{% endblock %}{% if brain %}<a href="{% ws_url 'cpanel:brain_export' brain.pk %}" class="inline-flex items-center gap-2 text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Export ZIP</a>{% endif %}{% endblock %}
 {% block subtitle %}{% if brain %}{{ brain.description|default:"A versioned knowledge base for this workspace." }}{% elif request.resolver_match.url_name == 'brain_list' %}Versioned knowledge bases that scripts and MCP clients can read and write.{% endif %}{% endblock %}
 
 {% block page %}
 {% if brain %}
-<nav class="flex flex-wrap gap-4 text-sm" aria-label="Brain navigation">
-    <a class="text-ok" href="{% ws_url 'cpanel:brain_detail' brain.pk %}">Files</a>
-    <a class="text-ok" href="{% ws_url 'cpanel:brain_revisions' brain.pk %}">Revisions</a>
-    <a class="text-ok" href="{% ws_url 'cpanel:brain_inbox' brain.pk %}">Inbox</a>
-    <a class="text-ok" href="{% ws_url 'cpanel:brain_reader' brain.pk %}">Ask brain</a>
-    {% if can_manage %}<a class="text-ok" href="{% ws_url 'cpanel:brain_settings' brain.pk %}">Settings</a><a class="text-ok" href="{% ws_url 'cpanel:brain_grants' brain.pk %}">Grants</a>{% endif %}
-    <a class="text-ok" href="{% ws_url 'cpanel:brain_export' brain.pk %}">Export ZIP</a>
-    {% if can_manage %}<a class="text-ok" href="{% ws_url 'cpanel:brain_sync' brain.pk %}">GitHub sync</a>{% endif %}
+{% with u=request.resolver_match.url_name %}
+<nav class="inline-flex flex-wrap max-w-full gap-1 p-1 rounded-lg border border-line bg-panel" aria-label="Brain sections">
+    <a href="{% ws_url 'cpanel:brain_detail' brain.pk %}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if u in 'brain_detail brain_edit' %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text hover:bg-panel-hi/50{% endif %}"{% if u in 'brain_detail brain_edit' %} aria-current="page"{% endif %}>Files</a>
+    <a href="{% ws_url 'cpanel:brain_revisions' brain.pk %}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if u in 'brain_revisions brain_diff' %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text hover:bg-panel-hi/50{% endif %}"{% if u in 'brain_revisions brain_diff' %} aria-current="page"{% endif %}>Revisions</a>
+    <a href="{% ws_url 'cpanel:brain_inbox' brain.pk %}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if u in 'brain_inbox brain_feed brain_feed_create' %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text hover:bg-panel-hi/50{% endif %}"{% if u in 'brain_inbox brain_feed brain_feed_create' %} aria-current="page"{% endif %}>Inbox</a>
+    <a href="{% ws_url 'cpanel:brain_reader' brain.pk %}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if u in 'brain_reader' %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text hover:bg-panel-hi/50{% endif %}"{% if u in 'brain_reader' %} aria-current="page"{% endif %}>Ask brain</a>
+    {% if can_manage %}<a href="{% ws_url 'cpanel:brain_settings' brain.pk %}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if u in 'brain_settings' %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text hover:bg-panel-hi/50{% endif %}"{% if u in 'brain_settings' %} aria-current="page"{% endif %}>Settings</a>{% endif %}
+    {% if can_manage %}<a href="{% ws_url 'cpanel:brain_grants' brain.pk %}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if u in 'brain_grants' %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text hover:bg-panel-hi/50{% endif %}"{% if u in 'brain_grants' %} aria-current="page"{% endif %}>Grants</a>{% endif %}
+    {% if can_manage %}<a href="{% ws_url 'cpanel:brain_sync' brain.pk %}" class="px-3 py-1.5 text-sm rounded-md transition-colors {% if u in 'brain_sync' %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text hover:bg-panel-hi/50{% endif %}"{% if u in 'brain_sync' %} aria-current="page"{% endif %}>GitHub sync</a>{% endif %}
 </nav>
+{% endwith %}
 {% endif %}
 {% if contract_warning %}<p class="rounded-xl border border-warn/30 bg-warn/5 p-4 text-sm text-warn">{{ contract_warning }}</p>{% endif %}
 {% if brain.vector_error and can_manage %}<p class="rounded-xl border border-warn/30 bg-warn/5 p-4 text-sm text-warn">{{ brain.vector_error }}</p>{% endif %}

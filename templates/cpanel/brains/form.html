@@ -2,35 +2,61 @@
 {% load workspace_tags %}
 {% block heading %}{{ heading }}{% endblock %}
 {% block brain_content %}
-{% if index_status %}
-<div class="max-w-4xl mb-4 space-y-1.5 text-sm">
-    <p id="brain-index-status" class="{% if index_status.state == 'error' %}text-fail{% elif index_status.state == 'pending' %}text-warn{% elif index_status.state == 'ok' %}text-ok{% else %}text-muted{% endif %} break-words">{{ index_status.text }}</p>
-    <p id="brain-spend" class="text-muted">AI spend today: <span class="font-mono text-text">${{ spent_today|floatformat:4 }}</span>{% if cap_display is not None %} of a <span class="font-mono text-text">${{ cap_display }}</span> daily cap{% else %} (no daily cap){% endif %}.</p>
-</div>
-{% endif %}
-<form method="post" enctype="multipart/form-data" class="rounded-2xl border border-line bg-panel p-5 space-y-5 max-w-4xl" data-brain-form>
-    {% csrf_token %}
-    {% include "cpanel/brains/fields.html" %}
-    <button class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm font-medium">{{ submit }}</button>
-</form>
-{% if delete_zone and brain %}
-<section class="rounded-2xl border border-fail/30 bg-fail/[0.04] p-5 space-y-3 max-w-4xl mt-6" aria-labelledby="brain-delete-heading">
-    <h3 id="brain-delete-heading" class="text-base font-semibold text-text">Delete this brain</h3>
-    {% if brain.owner_plugin %}
-    <p class="text-sm text-muted">This brain is managed by the <span class="font-mono">{{ brain.owner_plugin }}</span> plugin. Remove it from the plugin (or delete the plugin with its data).</p>
-    {% elif not can_delete %}
-    <p class="text-sm text-muted">Only a workspace owner can delete a brain.</p>
-    {% else %}
-    <p class="text-sm text-muted">Deletes every note, revision, grant, feed and reader job of <span class="font-mono">{{ brain.slug }}</span>, its GitHub sync settings and its search chunks{% if bound_tokens %}, and the <strong>{{ bound_tokens }}</strong> API token{{ bound_tokens|pluralize }} bound to it{% endif %}. This cannot be undone; export a ZIP first if you may need it.</p>
-    <form method="post" action="{% ws_url 'cpanel:brain_delete' brain.pk %}" class="flex flex-wrap items-end gap-3">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+    <form method="post" enctype="multipart/form-data" class="lg:col-span-2 max-w-3xl w-full rounded-2xl border border-line bg-panel p-6 space-y-5" data-brain-form>
         {% csrf_token %}
-        <label class="block text-sm">
-            <span class="block text-[13px] font-medium text-text mb-1.5">Type <span class="font-mono">{{ brain.slug }}</span> to confirm</span>
-            <input name="confirm_slug" autocomplete="off" required class="w-64 bg-ink border border-line rounded-lg p-2 text-sm font-mono">
-        </label>
-        <button type="submit" class="px-3.5 py-2 rounded-lg border border-fail/40 bg-fail/10 text-fail text-sm font-medium hover:bg-fail/20">Delete brain</button>
+        {% include "cpanel/brains/fields.html" %}
+        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">
+            <a href="{% if brain %}{% ws_url 'cpanel:brain_detail' brain.pk %}{% else %}{% ws_url 'cpanel:brain_list' %}{% endif %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>
+            <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">{{ submit }}</button>
+        </div>
     </form>
+
+    {% if index_status or delete_zone and brain %}
+    <aside class="space-y-5 min-w-0">
+        {% if index_status %}
+        <section class="rounded-2xl border border-line bg-panel p-5 space-y-1.5 text-sm">
+            <h2 class="eyebrow text-faint mb-2">Search index &amp; AI spend</h2>
+            <p id="brain-index-status" class="{% if index_status.state == 'error' %}text-fail{% elif index_status.state == 'pending' %}text-warn{% elif index_status.state == 'ok' %}text-ok{% else %}text-muted{% endif %} break-words">{{ index_status.text }}</p>
+            <p id="brain-spend" class="text-muted">AI spend today: <span class="font-mono text-text">${{ spent_today|floatformat:4 }}</span>{% if cap_display is not None %} of a <span class="font-mono text-text">${{ cap_display }}</span> daily cap{% else %} (no daily cap){% endif %}.</p>
+        </section>
+        {% endif %}
+        {% if delete_zone and brain %}
+        <section class="rounded-2xl border border-fail/30 bg-fail/[0.04] p-5 space-y-3" aria-labelledby="brain-delete-heading">
+            <h3 id="brain-delete-heading" class="text-base font-semibold text-text">Delete this brain</h3>
+            {% if brain.owner_plugin %}
+            <p class="text-sm text-muted">This brain is managed by the <span class="font-mono">{{ brain.owner_plugin }}</span> plugin. Remove it from the plugin (or delete the plugin with its data).</p>
+            {% elif not can_delete %}
+            <p class="text-sm text-muted">Only a workspace owner can delete a brain.</p>
+            {% else %}
+            <p class="text-sm text-muted">Deletes every note, revision, grant, feed and reader job of <span class="font-mono">{{ brain.slug }}</span>, its GitHub sync settings and its search chunks{% if bound_tokens %}, and the <strong>{{ bound_tokens }}</strong> API token{{ bound_tokens|pluralize }} bound to it{% endif %}. This cannot be undone; export a ZIP first if you may need it.</p>
+            <form method="post" action="{% ws_url 'cpanel:brain_delete' brain.pk %}" class="flex flex-wrap items-end gap-3">
+                {% csrf_token %}
+                <label class="block text-sm">
+                    <span class="block text-[13px] font-medium text-text mb-1.5">Type <span class="font-mono">{{ brain.slug }}</span> to confirm</span>
+                    <input name="confirm_slug" autocomplete="off" required class="w-full sm:w-64 px-3.5 py-2.5 bg-ink border border-line rounded-lg text-text text-sm font-mono focus:outline-none focus:ring-2 focus:ring-fail/30 focus:border-fail/60">
+                </label>
+                <button type="submit" class="px-3.5 py-2 rounded-lg border border-fail/40 bg-fail/10 text-fail text-sm font-medium hover:bg-fail/20">Delete brain</button>
+            </form>
+            {% endif %}
+        </section>
+        {% endif %}
+    </aside>
     {% endif %}
-</section>
+</div>
+{% if 'source' in form.fields %}
+<script>
+// Create form: only show the input the chosen source needs.
+(function () {
+    var source = document.getElementById('{{ form.source.id_for_label }}');
+    if (!source) return;
+    function sync() {
+        document.querySelector('[data-field="archive"]').hidden = source.value !== 'zip';
+        document.querySelector('[data-field="github_url"]').hidden = source.value !== 'github';
+    }
+    source.addEventListener('change', sync);
+    sync();
+})();
+</script>
 {% endif %}
 {% endblock %}

@@ -1,11 +1,11 @@
 {% extends "cpanel/brains/base.html" %}
 {% load workspace_tags %}
 {% block heading %}{{ brain.name }} · Inbox{% endblock %}
-{% block actions %}<a class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm" href="{% ws_url 'cpanel:brain_feed_create' brain.pk %}">Add a source</a>{% endblock %}
+{% block brain_actions %}<a class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition" href="{% ws_url 'cpanel:brain_feed_create' brain.pk %}">Add a source</a>{% endblock %}
 {% block brain_content %}
 <p class="text-sm text-muted">Sources become proposals. An owner or administrator reviews and approves each change.</p>
 <div class="space-y-3">
-{% for feed in page %}<a class="block rounded-xl border border-line bg-panel p-4 min-w-0" href="{% ws_url 'cpanel:brain_feed' brain.pk feed.pk %}">
+{% for feed in page %}<a class="block rounded-2xl border border-line bg-panel p-4 min-w-0" href="{% ws_url 'cpanel:brain_feed' brain.pk feed.pk %}">
 <div class="flex flex-wrap justify-between gap-2"><span class="font-medium break-words">{{ feed.raw_payload.title|default:feed.source_id }}</span><span class="text-sm text-muted">{{ feed.get_status_display }}{% if feed.needs_review %} · Re-review{% endif %}</span></div>
 <p class="text-xs text-muted mt-2">{{ feed.created_at }} · {{ feed.channel }}{% if feed.proposal_edited %} · Edited{% endif %}</p>
 {% if feed.error and feed.status == 'pending' or feed.error and feed.status == 'failed' %}<p class="text-xs text-warn mt-1.5 break-words">Needs attention: {{ feed.error|truncatechars:140 }}</p>{% endif %}

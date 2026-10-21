@@ -96,3 +96,73 @@ class HeaderFixTests(ShellBase):
         html = self.client.get(reverse("cpanel:brain_list")).content.decode()
         self.assertNotIn('class="text-sm text-muted">Brains</a>', html)
         self.assertRegex(html, r"<h1 [^>]*>Brains</h1>")
+
+
+class PagePatternTests(ShellBase):
+    """UX2 / UX3 / UX7 / UX14: forms with a side panel, wide detail pages, Brain tabs, footers."""
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.admin)
+
+    def test_form_pages_put_help_in_a_side_panel(self):
+        html = self.client.get(reverse("cpanel:secret_create")).content.decode()
+        self.assertIn('class="lg:col-span-2 max-w-3xl w-full rounded-2xl', html)
+        self.assertRegex(html, r'<aside class="space-y-5">\s*<div class="rounded-2xl border border-line bg-panel p-5')
+
+    def test_channel_edit_is_two_columns_with_cancel(self):
+        from core.models import Channel
+
+        channel = Channel.objects.create(workspace=self.ws, provider="telegram", name="ops", config={}, created_by=self.admin)
+        html = self.client.get(reverse("cpanel:channel_edit", kwargs={"pk": channel.pk})).content.decode()
+        self.assertIn("<!-- Inbound + approval inbox -->", html)
+        self.assertIn(">Cancel</a>", html)
+        self.assertNotIn(">Back</a>", html)
+
+    def test_plugin_detail_title_is_the_page_header(self):
+        from core.models import Plugin
+
+        Plugin.objects.create(slug="demo_plugin", name="Demo Plugin", status="errored", error_message="boom", manifest={})
+        html = self.client.get(reverse("cpanel:plugin_detail", kwargs={"slug": "demo_plugin"})).content.decode()
+        self.assertRegex(html, r'<h1 class="text-\[22px\][^"]*">Demo Plugin</h1>')
+        self.assertIn("<!-- About / metadata -->", html)
+
+    def test_connect_has_a_side_panel(self):
+        html = self.client.get(reverse("cpanel:connect")).content.decode()
+        self.assertIn("<!-- Token catalog + capacity -->", html)
+
+
+class BrainSectionTests(ShellBase):
+    def setUp(self):
+        super().setUp()
+        from core.brain.service import BrainService
+
+        self.brain = BrainService.create(self.ws, "team-notes", name="Team notes", author=self.admin)
+        self.client.force_login(self.admin)
+
+    def test_tabs_mark_the_current_section_and_export_is_a_header_action(self):
+        html = self.client.get(reverse("cpanel:brain_settings", args=[self.brain.pk])).content.decode()
+        self.assertRegex(html, r'bg-panel-hi text-text font-medium"\s*aria-current="page">Settings</a>')
+        self.assertEqual(html.count('aria-current="page"'), 1)
+        nav = html[html.index('aria-label="Brain sections"'):]
+        nav = nav[:nav.index("</nav>")]
+        self.assertNotIn("Export ZIP", nav)
+        self.assertIn("Export ZIP</a>", html)
+
+    def test_settings_form_names_blank_choices_and_has_a_footer(self):
+        html = self.client.get(reverse("cpanel:brain_settings", args=[self.brain.pk])).content.decode()
+        self.assertIn(">Use the active provider</option>", html)
+        self.assertIn(">No vector collection</option>", html)
+        self.assertNotIn(">---------</option>", html)
+        self.assertIn(">Cancel</a>", html)
+
+    def test_reader_uses_the_console_fields_not_as_p(self):
+        html = self.client.get(reverse("cpanel:brain_reader", args=[self.brain.pk])).content.decode()
+        self.assertIn('data-field="task"', html)
+        self.assertNotIn("<p>\n    <label", html)
+
+    def test_create_form_shows_archive_and_url_per_source(self):
+        html = self.client.get(reverse("cpanel:brain_create")).content.decode()
+        self.assertIn('data-field="archive"', html)
+        self.assertIn('data-field="github_url"', html)
+        self.assertIn("source.value !== 'zip'", html)

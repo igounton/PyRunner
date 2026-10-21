@@ -20,6 +20,7 @@ from core.brain.runtime import daily_spend
 from core.brain.imports import export_zip, import_github, import_zip
 from core.brain.paths import MAX_IMPORT_BYTES, MAX_NOTE_BYTES, MAX_RAW_BYTES, validate_path
 from core.brain.service import BrainService
+from core.forms import CHECK_CLASS, FILE_CLASS, INPUT_CLASS
 from core.models import Brain, BrainGrant, WorkspaceMembership
 from core.views.workspaces import _require_manage, _require_owner
 from core.templatetags.workspace_tags import ws_url
@@ -27,13 +28,20 @@ from core.brain import approval, feeder, intake
 
 
 class StyledForm:
+    """Console field styling for the Brain forms (rendered by brains/fields.html)."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
-            if not isinstance(field.widget, (forms.CheckboxInput, forms.HiddenInput)):
-                field.widget.attrs["class"] = (
-                    "w-full bg-ink border border-line rounded-lg p-2 text-sm"
-                )
+            widget = field.widget
+            if isinstance(widget, forms.HiddenInput):
+                continue
+            if isinstance(widget, forms.CheckboxInput):
+                widget.attrs["class"] = CHECK_CLASS
+            elif isinstance(widget, forms.FileInput):
+                widget.attrs["class"] = FILE_CLASS
+            else:
+                widget.attrs["class"] = INPUT_CLASS
 
 
 class CreateBrainForm(StyledForm, forms.Form):
@@ -124,6 +132,9 @@ class BrainSettingsForm(StyledForm, forms.ModelForm):
         if cap is not None and not self.is_bound:
             self.initial["daily_cost_cap_usd"] = _money(cap)
         self.fields["vector_collection"].queryset = VectorCollection.objects.for_workspace(self.instance.workspace).filter(embedding_provider__isnull=False)
+        # Name what a blank choice means instead of Django's "---------".
+        self.fields["ai_provider"].empty_label = "Use the active provider"
+        self.fields["vector_collection"].empty_label = "No vector collection"
 
 
 class BrainReaderForm(StyledForm, forms.Form):

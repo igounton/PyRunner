@@ -10,147 +10,155 @@
 {% block subtitle %}{{ channel.get_provider_display }}{% endblock %}
 
 {% block page %}
-<!-- Tools: test + find chat id -->
-<div class="rounded-2xl border border-line bg-panel p-6 space-y-4">
-    <div class="flex flex-wrap items-center gap-2.5">
-        <button id="test-btn" type="button" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-line text-text hover:border-faint transition-colors">Test connection</button>
-        <button id="find-btn" type="button" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-line text-text hover:border-faint transition-colors">Find chat ID</button>
-        <span id="tools-status" class="text-sm text-muted"></span>
-    </div>
-    <div id="chat-results" class="hidden space-y-2"></div>
-    <p class="text-xs text-faint">"Find chat ID" reads recent messages your bot received (message the bot first). It works only before inbound webhooks are enabled.</p>
-</div>
-
-<form method="post" autocomplete="off" class="rounded-2xl border border-line bg-panel p-6 space-y-5">
-    {% csrf_token %}
-
-    {% if form.non_field_errors %}
-    <div class="rounded-lg border border-fail/30 bg-fail/10 p-3 text-sm text-fail">{{ form.non_field_errors }}</div>
-    {% endif %}
-
-    <div>
-        <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
-        {{ form.name }}
-        {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
-    </div>
-
-    <div>
-        <label for="id_provider" class="block text-[13px] font-medium text-text mb-1.5">Provider</label>
-        {{ form.provider }}
-        <p class="mt-1.5 text-xs text-faint">Provider can't be changed after creation.</p>
-    </div>
-
-    <div>
-        <label for="id_bot_token" class="block text-[13px] font-medium text-text mb-1.5">{{ form.bot_token.label }}</label>
-        {{ form.bot_token }}
-        <p class="mt-1.5 text-xs text-faint">Leave blank to keep the current token.</p>
-        {% if form.bot_token.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.bot_token.errors.0 }}</p>{% endif %}
-    </div>
-
-    <div>
-        <label for="id_default_target" class="block text-[13px] font-medium text-text mb-1.5">{{ form.default_target.label }}</label>
-        {{ form.default_target }}
-        {% if form.default_target.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.default_target.help_text }}</p>{% endif %}
-        {% if form.default_target.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.default_target.errors.0 }}</p>{% endif %}
-    </div>
-
-    <label class="flex items-center gap-2.5 cursor-pointer">
-        {{ form.enabled }}
-        <span class="text-sm text-text">Enabled</span>
-    </label>
-
-    <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">
-        <a href="{% url 'cpanel:channel_list' %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Back</a>
-        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save changes</button>
-    </div>
-</form>
-
-<!-- Inbound -->
-<div class="rounded-2xl border border-line bg-panel p-6 space-y-5">
-    <div>
-        <h2 class="text-base font-semibold">Inbound</h2>
-        <p class="text-sm text-muted mt-1">Let people message this bot to trigger a script. Requires a publicly reachable HTTPS instance — this does not work on localhost.</p>
-    </div>
-    {% if not supports_inbound %}
-    <p class="text-sm text-faint">This provider doesn't support inbound yet.</p>
-    {% else %}
-    <form method="post" action="{% url 'cpanel:channel_inbound' pk=channel.pk %}" class="space-y-5">
-        {% csrf_token %}
-        <label class="flex items-center gap-2.5 cursor-pointer">
-            {{ inbound_form.inbound_enabled }}
-            <span class="text-sm text-text">Enable inbound</span>
-        </label>
-        <div>
-            <label class="block text-[13px] font-medium text-text mb-1.5">{{ inbound_form.inbound_handler.label }}</label>
-            {{ inbound_form.inbound_handler }}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+    <!-- Channel settings -->
+    <div class="lg:col-span-2 space-y-5 min-w-0">
+        <!-- Tools: test + find chat id -->
+        <div class="rounded-2xl border border-line bg-panel p-6 space-y-4">
+            <div class="flex flex-wrap items-center gap-2.5">
+                <button id="test-btn" type="button" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-line text-text hover:border-faint transition-colors">Test connection</button>
+                <button id="find-btn" type="button" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-line text-text hover:border-faint transition-colors">Find chat ID</button>
+                <span id="tools-status" class="text-sm text-muted"></span>
+            </div>
+            <div id="chat-results" class="hidden space-y-2"></div>
+            <p class="text-xs text-faint">"Find chat ID" reads recent messages your bot received (message the bot first). It works only before inbound webhooks are enabled.</p>
         </div>
-        <div>
-            <label class="block text-[13px] font-medium text-text mb-1.5">{{ inbound_form.inbound_target_id.label }}</label>
-            {{ inbound_form.inbound_target_id }}
-            {% if inbound_form.inbound_target_id.errors %}<p class="mt-1.5 text-xs text-fail">{{ inbound_form.inbound_target_id.errors.0 }}</p>{% endif %}
+
+        <form method="post" autocomplete="off" class="rounded-2xl border border-line bg-panel p-6 space-y-5">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="rounded-lg border border-fail/30 bg-fail/10 p-3 text-sm text-fail">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div>
+                <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
+                {{ form.name }}
+                {% if form.name.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.name.errors.0 }}</p>{% endif %}
+            </div>
+
+            <div>
+                <label for="id_provider" class="block text-[13px] font-medium text-text mb-1.5">Provider</label>
+                {{ form.provider }}
+                <p class="mt-1.5 text-xs text-faint">Provider can't be changed after creation.</p>
+            </div>
+
+            <div>
+                <label for="id_bot_token" class="block text-[13px] font-medium text-text mb-1.5">{{ form.bot_token.label }}</label>
+                {{ form.bot_token }}
+                <p class="mt-1.5 text-xs text-faint">Leave blank to keep the current token.</p>
+                {% if form.bot_token.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.bot_token.errors.0 }}</p>{% endif %}
+            </div>
+
+            <div>
+                <label for="id_default_target" class="block text-[13px] font-medium text-text mb-1.5">{{ form.default_target.label }}</label>
+                {{ form.default_target }}
+                {% if form.default_target.help_text %}<p class="mt-1.5 text-xs text-faint">{{ form.default_target.help_text }}</p>{% endif %}
+                {% if form.default_target.errors %}<p class="mt-1.5 text-xs text-fail">{{ form.default_target.errors.0 }}</p>{% endif %}
+            </div>
+
+            <label class="flex items-center gap-2.5 cursor-pointer">
+                {{ form.enabled }}
+                <span class="text-sm text-text">Enabled</span>
+            </label>
+
+            <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">
+                <a href="{% url 'cpanel:channel_list' %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save changes</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Inbound + approval inbox -->
+    <aside class="space-y-5 min-w-0">
+        <!-- Inbound -->
+        <div class="rounded-2xl border border-line bg-panel p-6 space-y-5">
+            <div>
+                <h2 class="text-base font-semibold">Inbound</h2>
+                <p class="text-sm text-muted mt-1">Let people message this bot to trigger a script. Requires a publicly reachable HTTPS instance — this does not work on localhost.</p>
+            </div>
+            {% if not supports_inbound %}
+            <p class="text-sm text-faint">This provider doesn't support inbound yet.</p>
+            {% else %}
+            <form method="post" action="{% url 'cpanel:channel_inbound' pk=channel.pk %}" class="space-y-5">
+                {% csrf_token %}
+                <label class="flex items-center gap-2.5 cursor-pointer">
+                    {{ inbound_form.inbound_enabled }}
+                    <span class="text-sm text-text">Enable inbound</span>
+                </label>
+                <div>
+                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ inbound_form.inbound_handler.label }}</label>
+                    {{ inbound_form.inbound_handler }}
+                </div>
+                <div>
+                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ inbound_form.inbound_target_id.label }}</label>
+                    {{ inbound_form.inbound_target_id }}
+                    {% if inbound_form.inbound_target_id.errors %}<p class="mt-1.5 text-xs text-fail">{{ inbound_form.inbound_target_id.errors.0 }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ inbound_form.inbound_access.label }}</label>
+                    {{ inbound_form.inbound_access }}
+                </div>
+                <div>
+                    <label class="block text-[13px] font-medium text-text mb-1.5">{{ inbound_form.daily_reply_cap.label }}</label>
+                    {{ inbound_form.daily_reply_cap }}
+                    <p class="mt-1.5 text-xs text-faint">{{ inbound_form.daily_reply_cap.help_text }}</p>
+                </div>
+                {% if webhook_url and channel.inbound_enabled %}
+                <div>
+                    <label class="block text-[13px] font-medium text-text mb-1.5">Webhook URL (registered with the provider)</label>
+                    <input type="text" readonly value="{{ webhook_url }}" onclick="this.select()" class="w-full px-3.5 py-2.5 bg-ink border border-line rounded-lg text-faint text-sm font-mono">
+                </div>
+                {% endif %}
+                <div class="rounded-lg border border-warn/30 bg-warn/10 p-4 flex items-start gap-3">
+                    <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <div class="text-xs text-muted">Deny-by-default: senders land in the approval inbox below and you approve them. Approving a sender lets them trigger this bot — for data-reading handlers that means access to this workspace's data.</div>
+                </div>
+                <div class="flex justify-end pt-2 border-t border-line-soft">
+                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save inbound settings</button>
+                </div>
+            </form>
+            {% endif %}
         </div>
-        <div>
-            <label class="block text-[13px] font-medium text-text mb-1.5">{{ inbound_form.inbound_access.label }}</label>
-            {{ inbound_form.inbound_access }}
-        </div>
-        <div>
-            <label class="block text-[13px] font-medium text-text mb-1.5">{{ inbound_form.daily_reply_cap.label }}</label>
-            {{ inbound_form.daily_reply_cap }}
-            <p class="mt-1.5 text-xs text-faint">{{ inbound_form.daily_reply_cap.help_text }}</p>
-        </div>
-        {% if webhook_url and channel.inbound_enabled %}
-        <div>
-            <label class="block text-[13px] font-medium text-text mb-1.5">Webhook URL (registered with the provider)</label>
-            <input type="text" readonly value="{{ webhook_url }}" onclick="this.select()" class="w-full px-3.5 py-2.5 bg-ink border border-line rounded-lg text-faint text-sm font-mono">
+
+        <!-- Members / approval inbox -->
+        {% if supports_inbound %}
+        <div class="rounded-2xl border border-line bg-panel p-6 space-y-4">
+            <div>
+                <h2 class="text-base font-semibold">Approval inbox</h2>
+                <p class="text-sm text-muted mt-1">People who have messaged this bot. Approve the ones you trust.</p>
+            </div>
+            {% if members %}
+            <div class="space-y-2">
+                {% for m in members %}
+                <div class="flex items-center justify-between gap-3 rounded-lg border border-line-soft bg-panel-hi/40 px-3 py-2">
+                    <div class="min-w-0">
+                        <div class="text-sm text-text truncate">{{ m.display_name|default:m.sender_id }}
+                            <span class="font-mono text-xs text-faint">{{ m.sender_id }}</span>
+                            {% if m.status == 'approved' %}<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-ok/10 text-ok">approved</span>
+                            {% elif m.status == 'blocked' %}<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-fail/10 text-fail">blocked</span>
+                            {% else %}<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-warn/10 text-warn">pending</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        {% if m.status != 'approved' %}
+                        <form method="post" action="{% url 'cpanel:channel_member_action' pk=channel.pk member_pk=m.pk action='approve' %}">{% csrf_token %}<button class="text-xs px-2.5 py-1 rounded-lg border border-ok/30 bg-ok/10 text-ok hover:bg-ok/20 transition-colors">Approve</button></form>
+                        {% endif %}
+                        {% if m.status != 'blocked' %}
+                        <form method="post" action="{% url 'cpanel:channel_member_action' pk=channel.pk member_pk=m.pk action='block' %}">{% csrf_token %}<button class="text-xs px-2.5 py-1 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Block</button></form>
+                        {% endif %}
+                        <form method="post" action="{% url 'cpanel:channel_member_action' pk=channel.pk member_pk=m.pk action='delete' %}">{% csrf_token %}<button class="text-xs px-2.5 py-1 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Remove</button></form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-faint">No one has messaged this bot yet.</p>
+            {% endif %}
         </div>
         {% endif %}
-        <div class="rounded-lg border border-warn/30 bg-warn/10 p-4 flex items-start gap-3">
-            <svg class="w-5 h-5 text-warn flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-            <div class="text-xs text-muted">Deny-by-default: senders land in the approval inbox below and you approve them. Approving a sender lets them trigger this bot — for data-reading handlers that means access to this workspace's data.</div>
-        </div>
-        <div class="flex justify-end pt-2 border-t border-line-soft">
-            <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save inbound settings</button>
-        </div>
-    </form>
-    {% endif %}
+    </aside>
 </div>
-
-<!-- Members / approval inbox -->
-{% if supports_inbound %}
-<div class="rounded-2xl border border-line bg-panel p-6 space-y-4">
-    <div>
-        <h2 class="text-base font-semibold">Approval inbox</h2>
-        <p class="text-sm text-muted mt-1">People who have messaged this bot. Approve the ones you trust.</p>
-    </div>
-    {% if members %}
-    <div class="space-y-2">
-        {% for m in members %}
-        <div class="flex items-center justify-between gap-3 rounded-lg border border-line-soft bg-panel-hi/40 px-3 py-2">
-            <div class="min-w-0">
-                <div class="text-sm text-text truncate">{{ m.display_name|default:m.sender_id }}
-                    <span class="font-mono text-xs text-faint">{{ m.sender_id }}</span>
-                    {% if m.status == 'approved' %}<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-ok/10 text-ok">approved</span>
-                    {% elif m.status == 'blocked' %}<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-fail/10 text-fail">blocked</span>
-                    {% else %}<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-warn/10 text-warn">pending</span>{% endif %}
-                </div>
-            </div>
-            <div class="flex items-center gap-1.5 flex-shrink-0">
-                {% if m.status != 'approved' %}
-                <form method="post" action="{% url 'cpanel:channel_member_action' pk=channel.pk member_pk=m.pk action='approve' %}">{% csrf_token %}<button class="text-xs px-2.5 py-1 rounded-lg border border-ok/30 bg-ok/10 text-ok hover:bg-ok/20 transition-colors">Approve</button></form>
-                {% endif %}
-                {% if m.status != 'blocked' %}
-                <form method="post" action="{% url 'cpanel:channel_member_action' pk=channel.pk member_pk=m.pk action='block' %}">{% csrf_token %}<button class="text-xs px-2.5 py-1 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Block</button></form>
-                {% endif %}
-                <form method="post" action="{% url 'cpanel:channel_member_action' pk=channel.pk member_pk=m.pk action='delete' %}">{% csrf_token %}<button class="text-xs px-2.5 py-1 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Remove</button></form>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <p class="text-sm text-faint">No one has messaged this bot yet.</p>
-    {% endif %}
-</div>
-{% endif %}
 <script>
 (function () {
     const csrf = "{{ csrf_token }}";

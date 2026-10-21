@@ -103,7 +103,7 @@ class FeedReviewTests(BrainBase):
             {"action": "edit", "proposal": "{not json", "expected_digest": approval.digest(feed)},
         )
         self.assertEqual(resp.status_code, 200)
-        self.assertIn('<details class="rounded-xl border border-line bg-panel p-4" open><summary class="text-sm font-medium cursor-pointer">Edit proposal JSON', resp.content.decode())
+        self.assertIn('<details class="rounded-2xl border border-line bg-panel p-4" open><summary class="text-sm font-medium cursor-pointer">Edit proposal JSON', resp.content.decode())
 
     def test_url_refusal_names_the_reason(self):
         with self.assertRaises(ApiError) as ctx:

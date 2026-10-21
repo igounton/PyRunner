@@ -1,6 +1,6 @@
 {% extends "cpanel/brains/base.html" %}
 {% load workspace_tags %}
-{% block actions %}{% if can_manage %}<a class="px-3.5 py-2 rounded-lg bg-ok text-ink text-sm font-medium" href="{% ws_url 'cpanel:brain_create' %}">Create or import</a>{% endif %}{% endblock %}
+{% block brain_actions %}{% if can_manage %}<a class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition" href="{% ws_url 'cpanel:brain_create' %}">Create or import</a>{% endif %}{% endblock %}
 {% block brain_content %}
 <p class="text-sm text-muted">Curated notes with revision history and access grants. Console members can read all workspace notes.</p>
 <div class="space-y-3">

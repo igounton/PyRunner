@@ -3,15 +3,17 @@
 {% block heading %}Ask {{ brain.name }}{% endblock %}
 {% block brain_content %}
 {% include "cpanel/_markdown_style.html" %}
-<div class="rounded-xl border border-line bg-panel p-5 space-y-4">
+<div class="rounded-2xl border border-line bg-panel p-6 space-y-4 max-w-3xl">
     <p class="text-sm text-muted">Assemble context from your brain's current notes. Your query runs in the background. Results and verified sources appear here when ready.</p>
     <form method="post" class="space-y-4">{% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="rounded-lg bg-ok px-4 py-2 text-ink text-sm font-medium">Assemble context</button>
+        {% include "cpanel/brains/fields.html" %}
+        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-line-soft">
+            <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Assemble context</button>
+        </div>
     </form>
 </div>
 {% if job %}
-<section id="reader-result" class="rounded-xl border border-line bg-panel p-5 space-y-4" data-poll="{% ws_url 'cpanel:brain_reader_status' brain.pk job.pk %}" data-note="{% ws_url 'cpanel:brain_detail' brain.pk %}">
+<section id="reader-result" class="rounded-2xl border border-line bg-panel p-5 space-y-4" data-poll="{% ws_url 'cpanel:brain_reader_status' brain.pk job.pk %}" data-note="{% ws_url 'cpanel:brain_detail' brain.pk %}">
     <div class="text-sm">
         <p class="text-xs font-medium uppercase tracking-wide text-faint">Task{% if job.lens %} · lens {{ job.lens }}{% endif %}</p>
         <p class="text-text whitespace-pre-wrap break-words">{{ job.task }}</p>

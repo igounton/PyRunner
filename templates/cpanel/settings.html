@@ -58,8 +58,10 @@
                 <p class="mt-1.5 text-xs text-faint">{{ general_form.admin_url_slug.help_text }}</p>
                 {% if general_form.admin_url_slug.errors %}<p class="mt-1.5 text-xs text-fail">{{ general_form.admin_url_slug.errors.0 }}</p>{% endif %}
             </div>
+            <div class="lg:col-span-12 flex justify-end">
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
+            </div>
         </div>
-        <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
     </form>
 </div>
 
@@ -104,7 +106,9 @@
                 Add your domain to the key's allowed list.
             </p>
 
-            <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save reCAPTCHA settings</button>
+            <div class="flex justify-end mt-5 pt-4 border-t border-line-soft">
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save reCAPTCHA settings</button>
+            </div>
         </form>
 
         <!-- Side column: password + account -->
@@ -257,12 +261,12 @@
                     {{ notification_form.default_notification_email }}
                     <p class="mt-1.5 text-xs text-faint">{{ notification_form.default_notification_email.help_text }}</p>
                 </div>
+                <div class="flex flex-wrap items-center justify-end gap-2.5 mt-5 pt-4 border-t border-line-soft">
+                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
+                    <button type="button" onclick="sendTestEmail()" id="test-email-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Send test email</button>
+                </div>
             </div>
 
-            <div class="flex items-center gap-2.5">
-                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
-                <button type="button" onclick="sendTestEmail()" id="test-email-btn" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Send test email</button>
-            </div>
 
             <div id="test-email-result" class="hidden p-4 rounded-lg"></div>
         </form>
@@ -325,8 +329,10 @@
                         </div>
                     </div>
                 </div>
+                <div class="flex justify-end mt-5 pt-4 border-t border-line-soft">
+                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
+                </div>
             </div>
-            <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
         </form>
 
         <!-- Side column: manual cleanup -->
@@ -383,10 +389,10 @@
                         {% if worker_form.q_queue_limit.errors %}<p class="mt-1.5 text-xs text-fail">{{ worker_form.q_queue_limit.errors.0 }}</p>{% endif %}
                     </div>
                 </div>
-            </div>
-            <div class="mt-5 flex items-center gap-4">
-                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
-                <p class="text-xs text-faint">Remember to restart workers after saving.</p>
+                <div class="flex flex-wrap items-center justify-end gap-2.5 mt-5 pt-4 border-t border-line-soft">
+                    <p class="text-xs text-faint">Remember to restart workers after saving.</p>
+                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
+                </div>
             </div>
         </form>
 
@@ -476,8 +482,10 @@
                         {% if isolation_form.sandbox_rlimit_fsize_mb.errors %}<p class="mt-1.5 text-xs text-fail">{{ isolation_form.sandbox_rlimit_fsize_mb.errors.0 }}</p>{% endif %}
                     </div>
                 </div>
+                <div class="flex justify-end mt-5 pt-4 border-t border-line-soft">
+                    <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
+                </div>
             </div>
-            <button type="submit" class="mt-5 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save settings</button>
         </form>
 
         <!-- Side column: active-tier status -->

@@ -41,111 +41,77 @@
 </div>
 {% endif %}
 
-<!-- Connection -->
-<section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
-    <h2 class="text-sm font-medium text-text">Connection</h2>
-    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-        <div>
-            <dt class="eyebrow text-faint">Server</dt>
-            <dd class="font-mono text-text mt-0.5">{{ server.host }}:{{ server.port }}</dd>
-        </div>
-        <div>
-            <dt class="eyebrow text-faint">Server database</dt>
-            <dd class="font-mono text-text mt-0.5">{{ server.dbname }}</dd>
-        </div>
-        <div>
-            <dt class="eyebrow text-faint">Schema</dt>
-            <dd class="font-mono text-text mt-0.5">{{ database.schema_name }}</dd>
-        </div>
-        <div>
-            <dt class="eyebrow text-faint">Role</dt>
-            <dd class="font-mono text-text mt-0.5">{{ database.role_name }}</dd>
-        </div>
-    </dl>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+    <!-- Tables, access, usage -->
+    <div class="lg:col-span-2 space-y-5 min-w-0">
+        <!-- Tables (read-only view) -->
+        {% if database.status == "ready" %}
+        <section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
+            <div>
+                <h2 class="text-sm font-medium text-text">Tables</h2>
+                <p class="text-xs text-muted mt-1">Read-only view of the schema's tables. Row counts are planner estimates (~).</p>
+            </div>
+            {% if tables_error %}
+            <div class="rounded-lg border border-warn/30 bg-warn/5 p-3 text-sm text-muted">Could not read tables: {{ tables_error }}</div>
+            {% elif tables %}
+            <div class="overflow-x-auto rounded-lg border border-line-soft">
+                <table class="w-full min-w-[480px]">
+                    <thead>
+                        <tr class="border-b border-line-soft text-left">
+                            <th class="px-4 py-2.5 eyebrow text-faint font-normal">Table</th>
+                            <th class="px-4 py-2.5 eyebrow text-faint font-normal text-right">~ Rows</th>
+                            <th class="px-4 py-2.5 eyebrow text-faint font-normal text-right">Size</th>
+                            <th class="px-4 py-2.5 eyebrow text-faint font-normal text-right"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-line-soft">
+                        {% for t in tables %}
+                        <tr class="hover:bg-panel-hi/50 transition-colors">
+                            <td class="px-4 py-2.5"><a href="{% url 'cpanel:database_table' pk=database.pk table=t.name %}" class="font-mono text-sm text-info hover:underline">{{ t.name }}</a></td>
+                            <td class="px-4 py-2.5 text-right font-mono tnum text-sm text-muted">{{ t.row_estimate }}</td>
+                            <td class="px-4 py-2.5 text-right font-mono tnum text-sm text-muted">{{ t.size_display }}</td>
+                            <td class="px-4 py-2.5 text-right"><a href="{% url 'cpanel:database_table' pk=database.pk table=t.name %}" class="text-[13px] px-3 py-1 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Browse</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-sm text-muted">No tables yet — granted scripts create them with plain SQL (<code class="font-mono text-info">CREATE TABLE ...</code>).</p>
+            {% endif %}
+        </section>
+        {% endif %}
 
-    {% if revealed_dsn %}
-    <div class="rounded-lg border border-warn/30 bg-warn/5 p-4 space-y-2">
-        <p class="text-xs text-warn font-medium">Not stored in the page — reveal it again whenever you need it. Treat it like a password: anyone with this string has full access to this database (and only this database).</p>
-        <code id="revealed-dsn" class="block px-3 py-2.5 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text break-all select-all">{{ revealed_dsn }}</code>
-        <button type="button" onclick="(function(b){var t=document.getElementById('revealed-dsn').textContent;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1500);},function(){b.textContent='Select and copy';});})(this)" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Copy</button>
-    </div>
-    {% elif database.status == "ready" %}
-    <form method="post" action="{% url 'cpanel:database_reveal' pk=database.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Show connection string</button>
-        <span class="ml-2 text-xs text-faint">For external SQL clients — scripts don't need it.</span>
-    </form>
-    {% endif %}
-</section>
+        <!-- Script access -->
+        <section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
+            <div>
+                <h2 class="text-sm font-medium text-text">Script access</h2>
+                <p class="text-xs text-muted mt-1">Only granted scripts can connect. Access is explicit — nothing is granted by default.</p>
+            </div>
+            {% if scripts %}
+            <form method="post" action="{% url 'cpanel:database_grants' pk=database.pk %}" class="space-y-4">
+                {% csrf_token %}
+                <div class="max-h-72 overflow-y-auto rounded-lg border border-line-soft divide-y divide-line-soft">
+                    {% for script in scripts %}
+                    <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-panel-hi/50 transition-colors cursor-pointer">
+                        <input type="checkbox" name="granted_script_ids" value="{{ script.pk }}"
+                               {% if script.pk|stringformat:"s" in granted_ids %}checked{% endif %}
+                               class="rounded border-line text-ok focus:ring-ok">
+                        <span class="font-mono text-sm text-text">{{ script.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save access</button>
+            </form>
+            {% else %}
+            <p class="text-sm text-muted">No scripts in this workspace yet.</p>
+            {% endif %}
+        </section>
 
-<!-- Tables (read-only view) -->
-{% if database.status == "ready" %}
-<section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
-    <div>
-        <h2 class="text-sm font-medium text-text">Tables</h2>
-        <p class="text-xs text-muted mt-1">Read-only view of the schema's tables. Row counts are planner estimates (~).</p>
-    </div>
-    {% if tables_error %}
-    <div class="rounded-lg border border-warn/30 bg-warn/5 p-3 text-sm text-muted">Could not read tables: {{ tables_error }}</div>
-    {% elif tables %}
-    <div class="overflow-x-auto rounded-lg border border-line-soft">
-        <table class="w-full min-w-[480px]">
-            <thead>
-                <tr class="border-b border-line-soft text-left">
-                    <th class="px-4 py-2.5 eyebrow text-faint font-normal">Table</th>
-                    <th class="px-4 py-2.5 eyebrow text-faint font-normal text-right">~ Rows</th>
-                    <th class="px-4 py-2.5 eyebrow text-faint font-normal text-right">Size</th>
-                    <th class="px-4 py-2.5 eyebrow text-faint font-normal text-right"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-line-soft">
-                {% for t in tables %}
-                <tr class="hover:bg-panel-hi/50 transition-colors">
-                    <td class="px-4 py-2.5"><a href="{% url 'cpanel:database_table' pk=database.pk table=t.name %}" class="font-mono text-sm text-info hover:underline">{{ t.name }}</a></td>
-                    <td class="px-4 py-2.5 text-right font-mono tnum text-sm text-muted">{{ t.row_estimate }}</td>
-                    <td class="px-4 py-2.5 text-right font-mono tnum text-sm text-muted">{{ t.size_display }}</td>
-                    <td class="px-4 py-2.5 text-right"><a href="{% url 'cpanel:database_table' pk=database.pk table=t.name %}" class="text-[13px] px-3 py-1 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Browse</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <p class="text-sm text-muted">No tables yet — granted scripts create them with plain SQL (<code class="font-mono text-info">CREATE TABLE ...</code>).</p>
-    {% endif %}
-</section>
-{% endif %}
-
-<!-- Script access -->
-<section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
-    <div>
-        <h2 class="text-sm font-medium text-text">Script access</h2>
-        <p class="text-xs text-muted mt-1">Only granted scripts can connect. Access is explicit — nothing is granted by default.</p>
-    </div>
-    {% if scripts %}
-    <form method="post" action="{% url 'cpanel:database_grants' pk=database.pk %}" class="space-y-4">
-        {% csrf_token %}
-        <div class="max-h-72 overflow-y-auto rounded-lg border border-line-soft divide-y divide-line-soft">
-            {% for script in scripts %}
-            <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-panel-hi/50 transition-colors cursor-pointer">
-                <input type="checkbox" name="granted_script_ids" value="{{ script.pk }}"
-                       {% if script.pk|stringformat:"s" in granted_ids %}checked{% endif %}
-                       class="rounded border-line text-ok focus:ring-ok">
-                <span class="font-mono text-sm text-text">{{ script.name }}</span>
-            </label>
-            {% endfor %}
-        </div>
-        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">Save access</button>
-    </form>
-    {% else %}
-    <p class="text-sm text-muted">No scripts in this workspace yet.</p>
-    {% endif %}
-</section>
-
-<!-- Usage -->
-<section class="rounded-2xl border border-line bg-panel p-5">
-    <h2 class="text-sm font-medium text-text mb-2">Using this database in a script</h2>
-    <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text whitespace-pre overflow-x-auto">import pyrunner_db
+        <!-- Usage -->
+        <section class="rounded-2xl border border-line bg-panel p-5">
+            <h2 class="text-sm font-medium text-text mb-2">Using this database in a script</h2>
+            <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text whitespace-pre overflow-x-auto">import pyrunner_db
 
 with pyrunner_db.connect("{{ database.name }}") as conn:
     conn.execute("CREATE TABLE IF NOT EXISTS items (id serial PRIMARY KEY, data jsonb)")
@@ -154,34 +120,76 @@ with pyrunner_db.connect("{{ database.name }}") as conn:
 
 # pandas / SQLAlchemy? Use the URL instead:
 # engine_url = pyrunner_db.sqlalchemy_url("{{ database.name }}")</code>
-    <p class="text-xs text-faint mt-2">Tables live in the <code class="font-mono">{{ database.schema_name }}</code> schema automatically — no schema prefix needed in queries. <code class="font-mono">connect()</code> needs the <code class="font-mono">psycopg</code> package in the script's environment (install <code class="font-mono">psycopg[binary]</code> via the environment's Packages page).</p>
-</section>
-
-<!-- Danger zone -->
-<section class="rounded-2xl border border-fail/30 bg-panel p-5 space-y-3">
-    <div>
-        <h2 class="text-sm font-medium text-fail">Danger zone</h2>
-        <p class="text-xs text-muted mt-1">Deleting drops the schema and <strong class="text-text">all data in it</strong> from the data server. This cannot be undone.</p>
+            <p class="text-xs text-faint mt-2">Tables live in the <code class="font-mono">{{ database.schema_name }}</code> schema automatically — no schema prefix needed in queries. <code class="font-mono">connect()</code> needs the <code class="font-mono">psycopg</code> package in the script's environment (install <code class="font-mono">psycopg[binary]</code> via the environment's Packages page).</p>
+        </section>
     </div>
-    <form method="post" action="{% url 'cpanel:database_delete' pk=database.pk %}" class="space-y-3">
-        {% csrf_token %}
-        <div>
-            <label for="confirm_name" class="block text-[13px] font-medium text-text mb-1.5">Type <code class="font-mono text-fail">{{ database.name }}</code> to confirm</label>
-            <input type="text" name="confirm_name" id="confirm_name" autocomplete="off"
-                   class="w-full sm:w-80 px-3 py-2 bg-ink border border-line rounded-lg text-sm font-mono text-text focus:outline-none focus:border-fail"
-                   placeholder="{{ database.name }}">
-        </div>
-        <label class="flex items-center gap-2 text-xs text-muted">
-            <input type="checkbox" name="delete_anyway" class="rounded border-line text-fail focus:ring-fail">
-            Delete anyway if the data server is unreachable (leaves the schema/role behind)
-        </label>
-        {% if database.owner_plugin and user.is_superuser %}
-        <label class="flex items-center gap-2 text-xs text-muted">
-            <input type="checkbox" name="force" value="1" class="rounded border-line text-fail focus:ring-fail">
-            Force-delete this plugin-managed database (superuser escape hatch)
-        </label>
-        {% endif %}
-        <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete database</button>
-    </form>
-</section>
+
+    <!-- Connection + danger zone -->
+    <aside class="space-y-5 min-w-0">
+        <!-- Connection -->
+        <section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
+            <h2 class="text-sm font-medium text-text">Connection</h2>
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                <div>
+                    <dt class="eyebrow text-faint">Server</dt>
+                    <dd class="font-mono text-text mt-0.5">{{ server.host }}:{{ server.port }}</dd>
+                </div>
+                <div>
+                    <dt class="eyebrow text-faint">Server database</dt>
+                    <dd class="font-mono text-text mt-0.5">{{ server.dbname }}</dd>
+                </div>
+                <div>
+                    <dt class="eyebrow text-faint">Schema</dt>
+                    <dd class="font-mono text-text mt-0.5">{{ database.schema_name }}</dd>
+                </div>
+                <div>
+                    <dt class="eyebrow text-faint">Role</dt>
+                    <dd class="font-mono text-text mt-0.5">{{ database.role_name }}</dd>
+                </div>
+            </dl>
+
+            {% if revealed_dsn %}
+            <div class="rounded-lg border border-warn/30 bg-warn/5 p-4 space-y-2">
+                <p class="text-xs text-warn font-medium">Not stored in the page — reveal it again whenever you need it. Treat it like a password: anyone with this string has full access to this database (and only this database).</p>
+                <code id="revealed-dsn" class="block px-3 py-2.5 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text break-all select-all">{{ revealed_dsn }}</code>
+                <button type="button" onclick="(function(b){var t=document.getElementById('revealed-dsn').textContent;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1500);},function(){b.textContent='Select and copy';});})(this)" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Copy</button>
+            </div>
+            {% elif database.status == "ready" %}
+            <form method="post" action="{% url 'cpanel:database_reveal' pk=database.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="text-[13px] px-3 py-1.5 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Show connection string</button>
+                <span class="ml-2 text-xs text-faint">For external SQL clients — scripts don't need it.</span>
+            </form>
+            {% endif %}
+        </section>
+
+        <!-- Danger zone -->
+        <section class="rounded-2xl border border-fail/30 bg-panel p-5 space-y-3">
+            <div>
+                <h2 class="text-sm font-medium text-fail">Danger zone</h2>
+                <p class="text-xs text-muted mt-1">Deleting drops the schema and <strong class="text-text">all data in it</strong> from the data server. This cannot be undone.</p>
+            </div>
+            <form method="post" action="{% url 'cpanel:database_delete' pk=database.pk %}" class="space-y-3">
+                {% csrf_token %}
+                <div>
+                    <label for="confirm_name" class="block text-[13px] font-medium text-text mb-1.5">Type <code class="font-mono text-fail">{{ database.name }}</code> to confirm</label>
+                    <input type="text" name="confirm_name" id="confirm_name" autocomplete="off"
+                           class="w-full sm:w-80 px-3 py-2 bg-ink border border-line rounded-lg text-sm font-mono text-text focus:outline-none focus:border-fail"
+                           placeholder="{{ database.name }}">
+                </div>
+                <label class="flex items-center gap-2 text-xs text-muted">
+                    <input type="checkbox" name="delete_anyway" class="rounded border-line text-fail focus:ring-fail">
+                    Delete anyway if the data server is unreachable (leaves the schema/role behind)
+                </label>
+                {% if database.owner_plugin and user.is_superuser %}
+                <label class="flex items-center gap-2 text-xs text-muted">
+                    <input type="checkbox" name="force" value="1" class="rounded border-line text-fail focus:ring-fail">
+                    Force-delete this plugin-managed database (superuser escape hatch)
+                </label>
+                {% endif %}
+                <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-fail/30 bg-fail/10 text-fail hover:bg-fail/20 transition-colors">Delete database</button>
+            </form>
+        </section>
+    </aside>
+</div>
 {% endblock %}

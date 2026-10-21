@@ -26,15 +26,15 @@
                     {% endfor %}
                 </div>
 
-                <div class="flex items-center flex-wrap gap-3">
+                <div class="flex items-center flex-wrap gap-3 min-w-0 w-full sm:w-auto">
                     <!-- Text search: script name + error output; stdout on request -->
-                    <form method="get" action="{% url 'cpanel:run_list' %}" class="flex items-center flex-wrap gap-2">
+                    <form method="get" action="{% url 'cpanel:run_list' %}" class="flex items-center flex-wrap gap-2 min-w-0 w-full sm:w-auto">
                         {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
                         {% if script_filter %}<input type="hidden" name="script" value="{{ script_filter }}">{% endif %}
-                        <div class="relative">
+                        <div class="relative flex-1 min-w-0 sm:flex-none">
                             <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-faint pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/></svg>
                             <input type="search" name="q" value="{{ search_query }}" maxlength="200" placeholder="Search name or error output"
-                                   class="w-56 pl-8 pr-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text placeholder-faint/60 focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
+                                   class="w-full sm:w-56 pl-8 pr-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text placeholder-faint/60 focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
                         </div>
                         <label class="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none" title="Also search stdout. Slower on large histories.">
                             <input type="checkbox" name="deep" value="1" {% if search_output %}checked{% endif %} class="w-3.5 h-3.5 rounded text-ok bg-ink border-line focus:ring-ok/40 focus:ring-2">
@@ -44,10 +44,10 @@
                     </form>
 
                     {% if scripts %}
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 min-w-0 w-full sm:w-auto">
                         <span class="eyebrow text-faint">Script</span>
                         <select onchange="window.location.href='{% url 'cpanel:run_list' %}?script=' + this.value + '{% if querystring_without_script %}&{{ querystring_without_script|escapejs }}{% endif %}'"
-                                class="px-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
+                                class="flex-1 min-w-0 sm:flex-none sm:max-w-xs px-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
                             <option value="">All scripts</option>
                             {% for script in scripts %}
                             <option value="{{ script.pk }}" {% if script_filter == script.pk|stringformat:"s" %}selected{% endif %}>{{ script.name }}</option>

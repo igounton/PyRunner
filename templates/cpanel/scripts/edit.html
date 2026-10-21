@@ -15,14 +15,14 @@
             <div class="sticky top-16 z-20 bg-ink/85 backdrop-blur border-b border-line">
                 <div class="px-5 lg:px-8 py-3.5 max-w-[1440px] mx-auto flex items-center justify-between gap-4">
                     <div class="min-w-0">
-                        <nav class="flex items-center gap-1.5 eyebrow text-faint mb-1">
+                        <nav class="flex items-center gap-1.5 eyebrow text-faint mb-1 min-w-0">
                             <a href="{% url 'cpanel:script_list' %}" class="hover:text-text transition-colors">Scripts</a>
-                            <span>/</span>
-                            <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="hover:text-text transition-colors truncate max-w-[12rem]">{{ script.name }}</a>
+                            <span class="hidden sm:inline">/</span>
+                            <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="hidden sm:inline hover:text-text transition-colors truncate min-w-0 shrink max-w-[12rem]">{{ script.name }}</a>
                             <span>/</span>
                             <span class="text-muted">Edit</span>
                         </nav>
-                        <h1 class="text-lg font-semibold tracking-tight truncate">Edit script</h1>
+                        <h1 class="text-lg font-semibold tracking-tight truncate"><span class="sr-only">Edit </span>{{ script.name }}</h1>
                     </div>
                     <div class="flex items-center gap-2.5 flex-shrink-0">
                         <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="text-[13px] px-3.5 py-2 rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Cancel</a>

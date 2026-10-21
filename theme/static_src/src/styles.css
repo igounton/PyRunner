@@ -111,6 +111,14 @@ body {
     font-family: 'JetBrains Mono', ui-monospace, 'Consolas', monospace;
 }
 
+/* Native single-line selects: the forms plugin draws the chevron at the right
+   edge, but a px-* utility resets its padding so the chevron covers the last
+   letters ("All levels" / "Sort: Name"). This selector out-ranks px-* so every
+   console select keeps room for it. */
+select:not([multiple]):not([size]) {
+    padding-right: 2rem;
+}
+
 @layer components {
     /* Monospace caps label used for eyebrows / section headers */
     .eyebrow {

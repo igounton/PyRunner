@@ -157,12 +157,16 @@
                     {% if recent_runs %}
                     <div class="divide-y divide-line-soft">
                         {% for run in recent_runs %}
-                        <a href="{% url 'cpanel:run_detail' pk=run.pk %}" class="flex items-center gap-4 px-6 py-3 hover:bg-panel-hi/50 transition">
+                        <a href="{% url 'cpanel:run_detail' pk=run.pk %}" class="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3 hover:bg-panel-hi/50 transition">
                             <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 {% if run.status == 'success' %}bg-ok{% elif run.status == 'failed' or run.status == 'timeout' %}bg-fail{% elif run.status == 'running' %}bg-warn animate-pulse{% else %}bg-faint{% endif %}"></span>
-                            <span class="flex-1 text-[13.5px] font-medium truncate text-text">{{ run.script.name }}</span>
-                            <span class="text-xs font-mono w-20 {% if run.status == 'success' %}text-ok{% elif run.status == 'failed' or run.status == 'timeout' %}text-fail{% elif run.status == 'running' %}text-warn{% else %}text-faint{% endif %}">{{ run.get_status_display|lower }}</span>
-                            <span class="text-xs text-muted font-mono tnum w-16 text-right">{% if run.duration_display %}{{ run.duration_display }}{% else %}—{% endif %}</span>
-                            <span class="text-xs text-faint w-28 text-right whitespace-nowrap">{{ run.created_at|ago }}</span>
+                            <span class="flex-1 min-w-0">
+                                <span class="block text-[13.5px] font-medium truncate text-text">{{ run.script.name }}</span>
+                                <!-- Phones: status + time under the name, so the name keeps the row width -->
+                                <span class="sm:hidden block text-xs mt-0.5 whitespace-nowrap"><span class="font-mono {% if run.status == 'success' %}text-ok{% elif run.status == 'failed' or run.status == 'timeout' %}text-fail{% elif run.status == 'running' %}text-warn{% else %}text-faint{% endif %}">{{ run.get_status_display|lower }}</span> <span class="text-faint">· {{ run.created_at|ago }}</span></span>
+                            </span>
+                            <span class="hidden sm:block flex-shrink-0 text-xs font-mono w-20 {% if run.status == 'success' %}text-ok{% elif run.status == 'failed' or run.status == 'timeout' %}text-fail{% elif run.status == 'running' %}text-warn{% else %}text-faint{% endif %}">{{ run.get_status_display|lower }}</span>
+                            <span class="hidden sm:block flex-shrink-0 text-xs text-muted font-mono tnum w-16 text-right">{% if run.duration_display %}{{ run.duration_display }}{% else %}—{% endif %}</span>
+                            <span class="hidden sm:block flex-shrink-0 text-xs text-faint text-right whitespace-nowrap">{{ run.created_at|ago }}</span>
                         </a>
                         {% endfor %}
                     </div>

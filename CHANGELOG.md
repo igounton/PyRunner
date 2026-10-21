@@ -196,6 +196,12 @@ begins tracking at the current release; earlier history is in the git log.
   the restore stop with "Cannot decrypt empty value", so no backup of that
   instance could be restored. It is now restored in error status with a warning,
   like any other database that can't be provisioned.
+- **A database restart no longer loses a finished run's result.** When the
+  PostgreSQL server holding the core database restarted while a script ran, the
+  script finished but its result could not be saved over the worker's dead
+  connection: the run kept showing "running" until the stale-run check failed it
+  minutes later, with its output lost. The worker now reconnects and retries the
+  save for about a minute.
 - **Brain AI works on PostgreSQL.** Every brain feeder extraction and reader
   run failed on a PostgreSQL core database ("Extraction failed. Check the worker
   and retry."): the daily-cap check locked the brain row outside a transaction,

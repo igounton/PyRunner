@@ -647,6 +647,66 @@ def _kill_abandoned_process(backend, handle, run_id) -> None:
         logger.exception("Run %s: failed to kill abandoned process tree", run_id)
 
 
+# Seconds to wait between attempts to save a finished run when the database
+# connection fails. A PostgreSQL restart while a script runs kills the worker's
+# persistent connection, so the final save hit that dead connection and the run's
+# status and output were lost (it stayed "running" until reconcile_stale's
+# deadline). About a minute in total covers a database restart.
+FINAL_SAVE_RETRY_DELAYS = (1, 2, 4, 8, 15, 30)
+
+
+def _persist_final_state(run: Run) -> int:
+    """Save a finished run's terminal state; return the number of rows updated.
+
+    The conditional UPDATE never clobbers an external CANCELLED. On a
+    connection-level error (OperationalError / InterfaceError) the broken
+    connection is closed — outside an atomic block, as in a worker — so the next
+    attempt reconnects, and the write is retried after each delay in
+    ``FINAL_SAVE_RETRY_DELAYS``. If the database is still unreachable after the
+    last attempt the error propagates as before and ``reconcile_stale`` settles
+    the run later.
+    """
+    import time
+
+    from django.db import InterfaceError, OperationalError, connection
+
+    delays = list(FINAL_SAVE_RETRY_DELAYS)
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            return (
+                Run.objects.filter(pk=run.pk)
+                .exclude(status=Run.Status.CANCELLED)
+                .update(
+                    status=run.status,
+                    stdout=run.stdout,
+                    stderr=run.stderr,
+                    exit_code=run.exit_code,
+                    ended_at=run.ended_at,
+                    pid=None,
+                )
+            )
+        except (OperationalError, InterfaceError) as e:
+            if not delays:
+                logger.error(
+                    f"Run {run.id}: could not save the final state after "
+                    f"{attempt} attempts: {e}"
+                )
+                raise
+            delay = delays.pop(0)
+            logger.warning(
+                f"Run {run.id}: saving the final state failed ({e}); "
+                f"reconnecting and retrying in {delay}s (attempt {attempt})"
+            )
+            if not connection.in_atomic_block:
+                try:
+                    connection.close()
+                except Exception:  # the connection is already broken
+                    pass
+            time.sleep(delay)
+
+
 def execute_run(run: Run, webhook_data: dict | None = None) -> None:
     """
     Execute a script run and update the Run record with results.
@@ -933,18 +993,7 @@ def execute_run(run: Run, webhook_data: dict | None = None) -> None:
         # A plain refresh-then-save would leave a race window where a kill landing
         # between the two could be overwritten, so use a conditional UPDATE that
         # excludes CANCELLED. This is the documented gotcha for this feature.
-        updated = (
-            Run.objects.filter(pk=run.pk)
-            .exclude(status=Run.Status.CANCELLED)
-            .update(
-                status=run.status,
-                stdout=run.stdout,
-                stderr=run.stderr,
-                exit_code=run.exit_code,
-                ended_at=run.ended_at,
-                pid=None,
-            )
-        )
+        updated = _persist_final_state(run)
         if not updated:
             # Externally cancelled/killed — keep that terminal state; only make
             # sure the now-dead PID is cleared so it can't be reused for a kill.

@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError
+from django.db.models import Count
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -569,11 +570,35 @@ def brain_export_view(request, brain_id):
     return response
 
 
+# Inbox status tabs (U108): key -> (label, feed statuses). "" = every feed.
+INBOX_TABS = [
+    ("", "All", None),
+    ("review", "Needs review", ("proposed",)),
+    ("progress", "In progress", ("pending", "extracting", "approving")),
+    ("applied", "Applied", ("applied",)),
+    ("failed", "Failed", ("failed",)),
+    ("rejected", "Rejected", ("rejected",)),
+]
+
+
 @login_required
 def brain_inbox_view(request, brain_id):
     brain = _brain(request, brain_id)
-    page = Paginator(brain.feeds.filter(brain__workspace=request.workspace), 50).get_page(request.GET.get("page"))
-    return render(request, "cpanel/brains/inbox.html", _context(request, brain, page=page))
+    feeds = brain.feeds.filter(brain__workspace=request.workspace)
+    by_status = dict(feeds.order_by().values_list("status").annotate(n=Count("pk")))
+    current = request.GET.get("status", "")
+    tabs = []
+    for key, label, statuses in INBOX_TABS:
+        count = sum(by_status.values()) if statuses is None else sum(by_status.get(s, 0) for s in statuses)
+        tabs.append({"key": key, "label": label, "count": count, "active": key == current})
+        if key == current and statuses is not None:
+            feeds = feeds.filter(status__in=statuses)
+    if not any(t["active"] for t in tabs):
+        current = ""
+        tabs[0]["active"] = True
+    page = Paginator(feeds, 50).get_page(request.GET.get("page"))
+    return render(request, "cpanel/brains/inbox.html",
+                  _context(request, brain, page=page, tabs=tabs, status_filter=current))
 
 
 @login_required

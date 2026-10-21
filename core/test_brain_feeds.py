@@ -369,6 +369,38 @@ class FeedTests(TestCase):
         with self.assertRaises(ApiError):
             validate_brain_backup(bad)
 
+    def test_inbox_status_tabs_filter_and_count(self):
+        """U108: the inbox splits feeds by status with a count per tab."""
+        _mock_setup(self)
+        WorkspaceMembership.objects.create(workspace=self.ws, user=self.user, role="member")
+        self.client.force_login(self.user)
+        for status, title in (("proposed", "Review me"), ("failed", "Broke once"), ("failed", "Broke twice"),
+                              ("applied", "Done"), ("pending", "Queued one")):
+            feed = self.feed()
+            BrainFeed.objects.filter(pk=feed.pk).update(status=status, raw_payload={"title": title})
+        url = reverse("cpanel_ws:brain_inbox", args=[self.ws.pk, self.brain.pk])
+        html = self.client.get(url).content.decode()
+        for title in ("Review me", "Broke once", "Done", "Queued one"):
+            self.assertIn(title, html)
+        self.assertRegex(html, r'aria-current="page">All<span[^>]*>5</span>')
+        self.assertRegex(html, r'>Failed<span[^>]*>2</span>')
+        self.assertRegex(html, r'>In progress<span[^>]*>1</span>')
+        html = self.client.get(url + "?status=failed").content.decode()
+        self.assertIn("Broke once", html)
+        self.assertIn("Broke twice", html)
+        self.assertNotIn("Review me", html)
+        self.assertNotIn("Queued one", html)
+        self.assertRegex(html, r'aria-current="page">Failed<span')
+        html = self.client.get(url + "?status=review").content.decode()
+        self.assertIn("Review me", html)
+        self.assertNotIn("Broke once", html)
+        html = self.client.get(url + "?status=rejected").content.decode()
+        self.assertIn("No sources with this status.", html)
+        # an unknown tab falls back to every feed
+        html = self.client.get(url + "?status=bogus").content.decode()
+        self.assertIn("Broke once", html)
+        self.assertIn("Review me", html)
+
     def test_console_members_propose_edit_but_only_owner_decides(self):
         _mock_setup(self)
         WorkspaceMembership.objects.create(workspace=self.ws, user=self.user, role="member")

@@ -4,12 +4,15 @@
 {% block brain_actions %}<a class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition" href="{% ws_url 'cpanel:brain_feed_create' brain.pk %}">Add a source</a>{% endblock %}
 {% block brain_content %}
 <p class="text-sm text-muted">Sources become proposals. An owner or administrator reviews and approves each change.</p>
+<nav class="inline-flex flex-wrap max-w-full items-center gap-1 p-1 rounded-lg border border-line bg-panel" aria-label="Filter the inbox by status">
+{% for tab in tabs %}<a href="?{% if tab.key %}status={{ tab.key }}{% endif %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors {% if tab.active %}{% if tab.key == 'failed' %}bg-fail/10 text-fail{% elif tab.key == 'applied' %}bg-ok/10 text-ok{% elif tab.key == 'review' %}bg-warn/10 text-warn{% else %}bg-panel-hi text-text{% endif %} font-medium{% else %}text-muted hover:text-text{% endif %}"{% if tab.active %} aria-current="page"{% endif %}>{{ tab.label }}<span class="font-mono tnum text-xs {% if tab.active %}opacity-80{% else %}text-faint{% endif %}">{{ tab.count }}</span></a>{% endfor %}
+</nav>
 <div class="space-y-3">
 {% for feed in page %}<a class="block rounded-2xl border border-line bg-panel p-4 min-w-0" href="{% ws_url 'cpanel:brain_feed' brain.pk feed.pk %}">
 <div class="flex flex-wrap justify-between gap-2"><span class="font-medium break-words">{{ feed.raw_payload.title|default:feed.source_id }}</span><span class="text-sm text-muted">{{ feed.get_status_display }}{% if feed.needs_review %} · Re-review{% endif %}</span></div>
 <p class="text-xs text-muted mt-2">{{ feed.created_at }} · {{ feed.channel }}{% if feed.proposal_edited %} · Edited{% endif %}</p>
 {% if feed.error and feed.status == 'pending' or feed.error and feed.status == 'failed' %}<p class="text-xs text-warn mt-1.5 break-words">Needs attention: {{ feed.error|truncatechars:140 }}</p>{% endif %}
-</a>{% empty %}<p class="text-muted text-sm">No sources captured yet.</p>{% endfor %}
+</a>{% empty %}<p class="text-muted text-sm">{% if status_filter %}No sources with this status. <a class="text-info hover:underline" href="?">Show all</a>{% else %}No sources captured yet.{% endif %}</p>{% endfor %}
 </div>
-<div class="flex gap-4 text-sm">{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}{% if page.has_next %}<a href="?page={{ page.next_page_number }}">Next</a>{% endif %}</div>
+<div class="flex gap-4 text-sm">{% if page.has_previous %}<a href="?{% if status_filter %}status={{ status_filter }}&amp;{% endif %}page={{ page.previous_page_number }}">Previous</a>{% endif %}{% if page.has_next %}<a href="?{% if status_filter %}status={{ status_filter }}&amp;{% endif %}page={{ page.next_page_number }}">Next</a>{% endif %}</div>
 {% endblock %}

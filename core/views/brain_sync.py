@@ -48,5 +48,10 @@ def brain_sync_view(request, brain_id):
             if action not in {"save", "pull", "export"}:
                 raise ApiError("invalid_input", "Unknown sync action.")
         except (ApiError, ValidationError) as exc:
-            _error(form, exc)
+            if action == "save":
+                _error(form, exc)
+            else:
+                # Pull/export refusals belong to no settings field and the settings
+                # form is unbound for them: report them as a message (F124).
+                messages.error(request, "; ".join(exc.messages) if isinstance(exc, ValidationError) else exc.message)
     return render(request, "cpanel/brains/sync.html", _context(request, brain, form=form, sync=value))

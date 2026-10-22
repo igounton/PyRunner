@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import re
 import uuid
 from datetime import timedelta
 
@@ -11,7 +12,7 @@ from django.utils import timezone
 
 from core.api.exceptions import ApiError
 from core.models import BrainFeed, BrainSync, Workspace, WorkspaceMembership
-from .github import GitHub, sha, validate_repository
+from .github import GitHub, validate_repository
 from .service import BrainService
 
 log = logging.getLogger(__name__)
@@ -76,7 +77,11 @@ def submit(workspace, brain_id, operation, *, user=None, initial_sha="", acknowl
         if not can_manage(user, workspace) or not acknowledge:
             raise ApiError("forbidden", "An owner/admin must acknowledge exporting all visibility tiers.", 403)
         if not expected:
-            expected = sha(initial_sha)
+            initial_sha = (initial_sha or "").strip().lower()
+            if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", initial_sha):
+                # User input, not a GitHub response (F124).
+                raise ApiError("invalid_input", "Enter the full commit SHA of the destination branch (40 hexadecimal characters).")
+            expected = initial_sha
         if BrainFeed.objects.filter(brain=brain, channel="sync", status="proposed").exists():
             raise ApiError("sync_conflict", "Review or reject incoming sync proposals before exporting.", 409)
     value.status, value.operation, value.error, value.result_feed = "queued", operation, "", None

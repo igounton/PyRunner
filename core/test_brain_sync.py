@@ -248,6 +248,35 @@ class SyncTests(TestCase):
         WorkspaceMembership.objects.filter(user=self.user, workspace=self.ws).update(role="member")
         self.assertEqual(self.client.get(url).status_code, 403)
 
+    def test_console_refused_pull_and_export_show_a_message_not_a_500(self):
+        """F124: a refused export/pull rendered the unbound settings form's error -> HTTP 500."""
+        _mock_setup(self)
+        self.client.force_login(self.user)
+        url = reverse("cpanel_ws:brain_sync", args=[self.ws.pk, self.brain.pk])
+        cases = [
+            ({"action": "export", "initial_sha": A}, "An owner/admin must acknowledge"),
+            ({"action": "export", "acknowledge": "on"}, "Enter the full commit SHA"),
+            ({"action": "export", "acknowledge": "on", "initial_sha": "abc123"}, "Enter the full commit SHA"),
+        ]
+        for data, text in cases:
+            response = self.client.post(url, data)
+            self.assertEqual(response.status_code, 200, data)
+            self.assertContains(response, text)
+        self.config.refresh_from_db()
+        self.assertEqual((self.config.status, self.config.operation), ("idle", ""))
+        # A pasted upper-case SHA is accepted (GitHub shows lower case, users may not).
+        response = self.client.post(url, {"action": "export", "acknowledge": "on", "initial_sha": A.upper()})
+        self.assertRedirects(response, url, fetch_redirect_response=False)
+        self.config.refresh_from_db()
+        self.assertEqual((self.config.status, self.config.job["expected"]), ("queued", A))
+        # Busy and pending-proposal refusals are messages too.
+        response = self.client.post(url, {"action": "pull"})
+        self.assertContains(response, "A sync job is already queued or running.")
+        BrainSync.objects.filter(pk=self.config.pk).update(status="idle")
+        self.remote(contract_files() | {"raw/new.md": "Pending"})
+        response = self.client.post(url, {"action": "export", "acknowledge": "on", "initial_sha": A})
+        self.assertContains(response, "Review or reject incoming sync proposals before exporting.")
+
     @override_settings(PYRUNNER_ALLOW_PRIVATE_NETWORK=True)
     def test_http_client_conflict_force_false_and_full_tree(self):
         client = GitHub(self.config)

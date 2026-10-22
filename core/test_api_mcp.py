@@ -280,6 +280,27 @@ class MCPTests(TestCase):
         )
         self.assertEqual(self.rpc(path=path).status_code, 401)
 
+    def test_url_token_works_without_trailing_slash(self):
+        """F125: claude.ai POSTs to /mcp/k/<token> (no slash) after initialize; it got a
+        301 (APPEND_SLASH), followed it as a GET and failed on the 405."""
+        raw = APIToken.generate_token(scope="api", kind="url")
+        APIToken.objects.create(
+            name="URL", scope="api", kind="url", token=raw, permissions=["brain:read"],
+            workspace=self.ws, expires_at=timezone.now() + timedelta(days=1),
+        )
+        gs = GlobalSettings.get_settings()
+        gs.mcp_url_tokens_enabled = True
+        gs.save()
+        for path in (f"/mcp/k/{raw}/", f"/mcp/k/{raw}"):
+            response = self.rpc("initialize", {"protocolVersion": LEGACY[0], "capabilities": {},
+                                "clientInfo": {"name": "c", "version": "1"}}, path=path, raw="")
+            self.assertEqual(response.status_code, 200, path)
+            self.assertEqual(self.rpc(path=path, raw="").status_code, 200, path)
+            self.assertEqual(self.rpc("notifications/initialized", notification=True, path=path, raw="").status_code, 202)
+            get = self.client.get(path, HTTP_ACCEPT="text/event-stream")
+            self.assertEqual((get.status_code, get["Allow"]), (405, "POST, OPTIONS"))
+        self.assertEqual(self.rpc(path="/mcp/k/not-a-token").status_code, 401)
+
     def test_shared_endpoint_limit_and_budget(self):
         original = registry.get("fixture.echo")
         from dataclasses import replace

@@ -56,6 +56,9 @@ urlpatterns = [
     path("mcp", mcp_dispatch, name="mcp"),
     path("mcp/", mcp_dispatch),
     path("mcp/k/<str:url_token>/", mcp_dispatch, name="mcp_url_token"),
+    # claude.ai drops the trailing slash after initialize; APPEND_SLASH would answer
+    # that POST with a 301, which clients follow as a GET (405) (F125).
+    path("mcp/k/<str:url_token>", mcp_dispatch),
     # Internal loopback-only datastore API. Signed per-run token auth; exempt
     # from SSL redirect + setup gate (see settings). Live path: the datastore
     # helper calls it over loopback on no-DB-file/Postgres deploys (idle on

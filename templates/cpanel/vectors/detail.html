@@ -144,7 +144,7 @@ hits = col.search_vector([...], k=5, filter={"tier": "public"})
         <!-- Stats -->
         <section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
             <h2 class="text-sm font-medium text-text">Collection</h2>
-            <dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3 text-sm">
+            <dl class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div>
                     <dt class="eyebrow text-faint">Points</dt>
                     <dd class="font-mono tnum text-text mt-0.5">{{ collection.points_count }}{% if sample_error %} <span class="font-sans text-xs text-faint">(last known)</span>{% endif %}</dd>
@@ -209,7 +209,7 @@ hits = col.search_vector([...], k=5, filter={"tier": "public"})
                 <div>
                     <label for="confirm_name" class="block text-[13px] font-medium text-text mb-1.5">Type <code class="font-mono text-fail">{{ collection.name }}</code> to confirm</label>
                     <input type="text" name="confirm_name" id="confirm_name" autocomplete="off"
-                           class="w-full sm:w-80 px-3 py-2 bg-ink border border-line rounded-lg text-sm font-mono text-text focus:outline-none focus:border-fail"
+                           class="w-full sm:w-80 lg:w-full px-3 py-2 bg-ink border border-line rounded-lg text-sm font-mono text-text focus:outline-none focus:border-fail"
                            placeholder="{{ collection.name }}">
                 </div>
                 {% if collection.owner_plugin and user.is_superuser %}

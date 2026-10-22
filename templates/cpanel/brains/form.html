@@ -32,9 +32,9 @@
             <p class="text-sm text-muted">Deletes every note, revision, grant, feed and reader job of <span class="font-mono">{{ brain.slug }}</span>, its GitHub sync settings and its search chunks{% if bound_tokens %}, and the <strong>{{ bound_tokens }}</strong> API token{{ bound_tokens|pluralize }} bound to it{% endif %}. This cannot be undone; export a ZIP first if you may need it.</p>
             <form method="post" action="{% ws_url 'cpanel:brain_delete' brain.pk %}" class="flex flex-wrap items-end gap-3">
                 {% csrf_token %}
-                <label class="block text-sm">
+                <label class="block text-sm w-full sm:w-auto lg:w-full">
                     <span class="block text-[13px] font-medium text-text mb-1.5">Type <span class="font-mono">{{ brain.slug }}</span> to confirm</span>
-                    <input name="confirm_slug" autocomplete="off" required class="w-full sm:w-64 px-3.5 py-2.5 bg-ink border border-line rounded-lg text-text text-sm font-mono focus:outline-none focus:ring-2 focus:ring-fail/30 focus:border-fail/60">
+                    <input name="confirm_slug" autocomplete="off" required class="w-full sm:w-64 lg:w-full px-3.5 py-2.5 bg-ink border border-line rounded-lg text-text text-sm font-mono focus:outline-none focus:ring-2 focus:ring-fail/30 focus:border-fail/60">
                 </label>
                 <button type="submit" class="px-3.5 py-2 rounded-lg border border-fail/40 bg-fail/10 text-fail text-sm font-medium hover:bg-fail/20">Delete brain</button>
             </form>

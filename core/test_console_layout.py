@@ -422,3 +422,65 @@ class InlineFormErrorTests(ShellBase):
         html = resp.content.decode()
         self.assertIn('id="id_active_provider_error"', html)
         self.assertIn("That provider no longer exists", html)
+
+
+class WideScreenAsideTests(ShellBase):
+    """§26 re-run on rc28 (F115): at 640-1280 px the Users table's sr-only header
+    escaped its scroll box and widened the page, and the narrow side column of
+    the detail pages (from lg up) kept the phone/tablet grids and fixed-width
+    confirm inputs, so they ran past the page edge or drew over each other."""
+
+    def setUp(self):
+        super().setUp()
+        from core.brain.service import BrainService
+
+        self.brain = BrainService.create(self.ws, "team-notes", name="Team notes", author=self.admin)
+        self.client.force_login(self.admin)
+
+    def test_users_table_scroll_box_contains_its_sr_only_header(self):
+        html = self.client.get(reverse("cpanel:user_list")).content.decode()
+        self.assertRegex(html, r'<div class="relative overflow-x-auto">\s*<table class="table-cards')
+
+    def test_expired_invite_badge_stays_whole_next_to_a_long_email(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from core.models import UserInvite
+
+        email = "a-very-long-invitee-address-for-phones@example.invalid"
+        inv = UserInvite.create_invite(email, self.admin)
+        UserInvite.objects.filter(pk=inv.pk).update(expires_at=timezone.now() - timedelta(days=1))
+        html = self.client.get(reverse("cpanel:user_list")).content.decode()
+        # the email truncates on its own; the badge sits outside the truncated span
+        self.assertIn(f'<span class="truncate">{email}</span><span class="flex-shrink-0 ', html)
+
+    def test_brain_delete_confirm_fits_the_side_column(self):
+        html = self.client.get(reverse("cpanel:brain_settings", args=[self.brain.pk])).content.decode()
+        self.assertIn('class="block text-sm w-full sm:w-auto lg:w-full"', html)
+        self.assertIn('name="confirm_slug" autocomplete="off" required class="w-full sm:w-64 lg:w-full ', html)
+
+    def test_detail_asides_use_side_column_grids(self):
+        from pathlib import Path
+
+        from django.conf import settings
+
+        tpl = Path(settings.BASE_DIR) / "templates" / "cpanel"
+        db = (tpl / "databases" / "detail.html").read_text(encoding="utf-8")
+        self.assertIn('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-x-6', db)
+        self.assertEqual(db.count('<dd class="font-mono text-text mt-0.5 break-all">'), 4)
+        self.assertIn('class="w-full sm:w-80 lg:w-full px-3', db)
+        vec = (tpl / "vectors" / "detail.html").read_text(encoding="utf-8")
+        self.assertIn('grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-x-6', vec)
+        self.assertIn('class="w-full sm:w-80 lg:w-full px-3', vec)
+        plug = (tpl / "plugins" / "detail.html").read_text(encoding="utf-8")
+        self.assertIn('grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-x-4', plug)
+
+    def test_side_column_utilities_are_compiled(self):
+        from pathlib import Path
+
+        from django.conf import settings
+
+        css = (Path(settings.BASE_DIR) / "theme" / "static" / "css" / "dist" / "styles.css").read_text(encoding="utf-8")
+        for rule in ("lg\:grid-cols-1{", "lg\:grid-cols-2{", "lg\:w-full{", "sm\:w-auto{"):
+            self.assertIn(rule, css)

@@ -129,22 +129,22 @@ with pyrunner_db.connect("{{ database.name }}") as conn:
         <!-- Connection -->
         <section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
             <h2 class="text-sm font-medium text-text">Connection</h2>
-            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-x-6 gap-y-3 text-sm">
                 <div>
                     <dt class="eyebrow text-faint">Server</dt>
-                    <dd class="font-mono text-text mt-0.5">{{ server.host }}:{{ server.port }}</dd>
+                    <dd class="font-mono text-text mt-0.5 break-all">{{ server.host }}:{{ server.port }}</dd>
                 </div>
                 <div>
                     <dt class="eyebrow text-faint">Server database</dt>
-                    <dd class="font-mono text-text mt-0.5">{{ server.dbname }}</dd>
+                    <dd class="font-mono text-text mt-0.5 break-all">{{ server.dbname }}</dd>
                 </div>
                 <div>
                     <dt class="eyebrow text-faint">Schema</dt>
-                    <dd class="font-mono text-text mt-0.5">{{ database.schema_name }}</dd>
+                    <dd class="font-mono text-text mt-0.5 break-all">{{ database.schema_name }}</dd>
                 </div>
                 <div>
                     <dt class="eyebrow text-faint">Role</dt>
-                    <dd class="font-mono text-text mt-0.5">{{ database.role_name }}</dd>
+                    <dd class="font-mono text-text mt-0.5 break-all">{{ database.role_name }}</dd>
                 </div>
             </dl>
 
@@ -174,7 +174,7 @@ with pyrunner_db.connect("{{ database.name }}") as conn:
                 <div>
                     <label for="confirm_name" class="block text-[13px] font-medium text-text mb-1.5">Type <code class="font-mono text-fail">{{ database.name }}</code> to confirm</label>
                     <input type="text" name="confirm_name" id="confirm_name" autocomplete="off"
-                           class="w-full sm:w-80 px-3 py-2 bg-ink border border-line rounded-lg text-sm font-mono text-text focus:outline-none focus:border-fail"
+                           class="w-full sm:w-80 lg:w-full px-3 py-2 bg-ink border border-line rounded-lg text-sm font-mono text-text focus:outline-none focus:border-fail"
                            placeholder="{{ database.name }}">
                 </div>
                 <label class="flex items-center gap-2 text-xs text-muted">

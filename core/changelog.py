@@ -172,8 +172,10 @@ CHANGELOG = [
                     "manage.py migrate_db copies every table to PostgreSQL, so users, "
                     "API tokens, AI providers and channels come along, brain AI "
                     "calls work on a PostgreSQL core database, a finished run keeps "
-                    "its result when that database restarts while it runs, and a "
-                    "worker killed hard is replaced cleanly instead of running twice."
+                    "its result when that database restarts while it runs, a "
+                    "worker killed hard is replaced cleanly instead of running twice, "
+                    "and the Logs page keeps every process's lines after the log "
+                    "file rotates."
                 ),
             },
             {

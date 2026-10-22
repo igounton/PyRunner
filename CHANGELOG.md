@@ -225,6 +225,13 @@ begins tracking at the current release; earlier history is in the git log.
   to them: two clusters with twice the configured workers, and "Restart
   workers" could only stop the new one. The monitor now stops what is left of
   the old worker before it starts the new one.
+- **The Logs page keeps every process's lines after the log rotates.** The web
+  workers and the task worker write one `pyrunner.log`; when it reached 10 MB
+  the process that rotated it moved on to a new file while the others kept
+  writing to the renamed one, so the Logs page showed only part of the log,
+  later rotations deleted files still in use, and two processes rotating at once
+  printed a "Logging error". Every process now follows the current file and
+  only one rotates it at a time.
 - **Brain AI works on PostgreSQL.** Every brain feeder extraction and reader
   run failed on a PostgreSQL core database ("Extraction failed. Check the worker
   and retry."): the daily-cap check locked the brain row outside a transaction,

@@ -613,7 +613,7 @@ LOGGING = {
             "formatter": "verbose",
         },
         "file": {
-            "class": "logging.handlers.RotatingFileHandler",
+            "class": "core.logging.MultiProcessRotatingFileHandler",
             "filename": LOGS_DIR / "pyrunner.log",
             "maxBytes": 10 * 1024 * 1024,  # 10 MB
             "backupCount": 5,

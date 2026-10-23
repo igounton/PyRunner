@@ -1322,7 +1322,7 @@ function testSandbox() {
 }
 
 // Check URL hash for tab navigation
-// A refused save re-renders at the POST URL with that tab open (U69).
+// A refused save re-renders at the POST URL with that tab open.
 const hash = window.location.hash || '#{{ active_tab|default:"general" }}';
 if (hash === '#security') {
     showTab('security');

@@ -233,7 +233,7 @@
         opts = opts || {};
         const body = node.querySelector(".pyai-body");
         // Styled by .pyai-error in this page's <style> (the Tailwind classes used
-        // before weren't in the built CSS, so errors looked like answers — U54).
+        // before weren't in the built CSS, so errors looked like answers).
         body.classList.toggle("pyai-error", !!opts.error);
         if (opts.error) {
             const label = document.createElement("span");

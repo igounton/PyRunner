@@ -944,7 +944,7 @@ function escapeHtml(text) {
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-// Test results (U37, U46, U47, U60). The server may add a second line starting
+// Test results. The server may add a second line starting
 // with "Details: " (the raw network error); it folds under a toggle. The box is
 // moved right under what was clicked — the form's button row, or the table of
 // saved rows — instead of the bottom of the card, far from the button.
@@ -970,7 +970,7 @@ function placeTestResult(div, btn) {
 }
 
 // New rows ask for the key; only an edited row with a stored key may leave it
-// blank (U48): the forms render the "Paste the …" text, editing swaps it.
+// blank: the forms render the "Paste the …" text, editing swaps it.
 function setKeyPlaceholder(input, keepSaved) {
     if (!input) return;
     if (!input.dataset.addPlaceholder) input.dataset.addPlaceholder = input.placeholder;
@@ -1185,7 +1185,7 @@ function aiApplyTypeHints(prefillBaseUrl) {
 function aiShowProviderForm(keepErrors) {
     aiResetFormTestFeedback();
     if (!keepErrors) {
-        // A refused save's errors belong to what was typed, not to the next provider (U69).
+        // A refused save's errors belong to what was typed, not to the next provider.
         document.querySelectorAll('#ai-provider-form [data-form-errors], #ai-provider-form [id$="_error"]').forEach(el => el.remove());
         document.querySelectorAll('#ai-provider-form [aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
     }
@@ -1249,7 +1249,7 @@ function aiRenderTestResult(data, btn) {
         ? 'bg-ok/10 border-ok/30 text-ok' : 'bg-fail/10 border-fail/30 text-fail');
     const heading = passed ? 'Connection successful' : 'Connection failed';
     const detail = (passed ? data.message : data.error) || 'No further details were returned.';
-    // The model answers in Markdown (U59): render the shared escaped subset.
+    // The model answers in Markdown: render the shared escaped subset.
     const body = passed && window.PyRunMarkdown
         ? '<div class="mt-1 pyrun-md text-text">' + window.PyRunMarkdown.render(detail) + '</div>'
         : '<div class="mt-1">' + testResultBody(detail) + '</div>';
@@ -1650,7 +1650,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     {% if storage_form_open %}
-    // A refused save (U47): the form comes back open with what was typed.
+    // A refused save: the form comes back open with what was typed.
     toggleS3Config();
     storageApplyPreset(storageFormField('provider_type').value, {prefillEndpoint: false});
     {% if storage_form.instance %}
@@ -1689,7 +1689,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     {% if ai_form_open or claude_form_refused %}
-    // A refused AI provider / AI settings save (U69): open the card on it.
+    // A refused AI provider / AI settings save: open the card on it.
     toggleClaudeConfig();
     {% if ai_form_open %}
     aiApplyTypeHints(false);

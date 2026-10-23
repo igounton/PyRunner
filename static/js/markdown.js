@@ -2,7 +2,7 @@
  * PyRunMarkdown — a small, escaped Markdown subset for AI answers (Py AI, Ask
  * brain, AI provider Test). Input is escaped first, so model output can never
  * inject markup. Code spans are kept literal: emphasis rules never run inside
- * `code` (2.0 release test U58: `25 * 1024 * 1024` lost its asterisks).
+ * `code` (`25 * 1024 * 1024` lost its asterisks).
  * Style the output with templates/cpanel/_markdown_style.html (.pyrun-md).
  */
 (function () {

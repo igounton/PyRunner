@@ -57,7 +57,7 @@
             var isActive = filename === active;
             // A wrapper holds two real buttons (a button can't contain one):
             // the tab and its remove control, which is focusable and always
-            // visible on the active tab, so touch and keyboard users can use it (U34).
+            // visible on the active tab, so touch and keyboard users can use it.
             var wrap = document.createElement('span');
             wrap.className = 'group inline-flex items-center rounded-t-md border-b-2 transition-colors ' +
                 (isActive

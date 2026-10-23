@@ -206,7 +206,7 @@ function rowHtml(entry) {
         '<p class="text-xs text-faint break-all">Logger: ' + escapeHtml(entry.logger) + '</p>' + exc + '</div></details></td></tr>';
 }
 
-// Redraw only the table (U76): the old reload lost the scroll position and any
+// Redraw only the table: the old reload lost the scroll position and any
 // expanded row. Skipped while a row is open so it doesn't close under the reader.
 function refreshLogs() {
     const body = document.getElementById('log-body');

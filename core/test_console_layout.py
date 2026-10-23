@@ -235,8 +235,7 @@ class ListAndDetailPolishTests(ShellBase):
 
         Script.objects.create(name="Nightly sync", workspace=self.ws, environment=Environment.objects.get(name="default"))
         html = self.client.get(reverse("cpanel:script_list")).content.decode()
-        self.assertIn('id="script-name-filter"', html)
-        self.assertIn('data-script-name="nightly sync"', html)
+        self.assertIn('id="script-search"', html)  # server-side search (D14) replaced the client filter
         self.assertIn("bg-panel-hi text-muted whitespace-nowrap", html)  # env chip stays on one line
         self.assertIn('<table class="table-cards w-full sm:min-w-[820px]">', html)
         self.assertIn('data-label="Environment"', html)

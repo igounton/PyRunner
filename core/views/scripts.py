@@ -7,6 +7,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
+from django.db.models import Q
 from django.views.decorators.http import require_POST
 from django.http import HttpRequest, HttpResponse, JsonResponse
 
@@ -22,6 +24,8 @@ _ENV_REF_RE = re.compile(
     r"""os\.(?:environ\s*\[|environ\.get\s*\(|getenv\s*\()\s*['"]([A-Za-z_][A-Za-z0-9_]*)['"]"""
 )
 
+
+SCRIPTS_PER_PAGE = 25
 
 def _reconcile_grants(script, secret_ids, workspace) -> None:
     """Make the script's SecretGrant set exactly match ``secret_ids`` (Selected mode).
@@ -115,7 +119,8 @@ print(answer)
 
 @login_required
 def script_list_view(request: HttpRequest) -> HttpResponse:
-    """List all scripts with optional filtering."""
+    """List scripts: status/tag/owner filters, a name + description search
+    and pagination, all carried in the URL so they combine and can be shared."""
     scripts = (
         Script.objects.for_workspace(request.workspace)
         .select_related("environment", "created_by")
@@ -125,6 +130,8 @@ def script_list_view(request: HttpRequest) -> HttpResponse:
 
     # Optional filtering by status
     status_filter = request.GET.get("status")
+    if status_filter not in ("enabled", "disabled", "archived"):
+        status_filter = None
     if status_filter == "enabled":
         scripts = scripts.filter(is_enabled=True, archived_at__isnull=True)
     elif status_filter == "disabled":
@@ -159,16 +166,45 @@ def script_list_view(request: HttpRequest) -> HttpResponse:
     if owner_filter:
         scripts = scripts.filter(owner_plugin=owner_filter)
 
+    # Text search on name and description (server-side, so it covers every page).
+    search_query = (request.GET.get("q") or "").strip()[:200]
+    if search_query:
+        scripts = scripts.filter(
+            Q(name__icontains=search_query) | Q(description__icontains=search_query)
+        )
+
+    paginator = Paginator(scripts, SCRIPTS_PER_PAGE)
+    page_obj = paginator.get_page(request.GET.get("page"))
+    page_range = paginator.get_elided_page_range(page_obj.number, on_each_side=1, on_ends=1)
+
+    # Every link keeps the other filters; changing one filter drops `page`.
+    params = request.GET.copy()
+    params.pop("page", None)
+
+    def _without(*keys):
+        q = params.copy()
+        for k in keys:
+            q.pop(k, None)
+        return q.urlencode()
+
     # Get all tags for filter dropdown
     all_tags = Tag.objects.all().order_by("name")
 
     return render(request, "cpanel/scripts/list.html", {
-        "scripts": scripts,
+        "scripts": page_obj,
+        "page_obj": page_obj,
+        "page_range": page_range,
+        "querystring": params.urlencode(),
+        "querystring_without_status": _without("status"),
+        "querystring_without_tag": _without("tag"),
+        "querystring_without_q": _without("q"),
         "status_filter": status_filter,
         "all_tags": all_tags,
         "selected_tag": selected_tag,
         "owners": owners,
         "selected_owner": owner_filter or "",
+        "search_query": search_query,
+        "is_filtered": bool(status_filter or selected_tag or owner_filter or search_query),
     })
 
 

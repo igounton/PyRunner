@@ -3,7 +3,7 @@
 {% block title %}Scripts - {{ instance_name }}{% endblock %}
 
 {% block heading %}Scripts{% endblock %}
-{% block subtitle %}Your Python scripts {% if scripts %}· <span class="font-mono tnum text-text">{{ scripts|length }}</span> {% if status_filter %}{{ status_filter }}{% else %}active{% endif %}{% endif %}{% endblock %}
+{% block subtitle %}Your Python scripts {% if page_obj.paginator.count %}· <span class="font-mono tnum text-text">{{ page_obj.paginator.count }}</span> {% if status_filter %}{{ status_filter }}{% else %}active{% endif %}{% endif %}{% endblock %}
 {% block actions %}
 <a href="{% url 'cpanel:script_create' %}"
    class="inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition">
@@ -13,70 +13,67 @@
 {% endblock %}
 
 {% block page %}
-<!-- Filters -->
+<!-- Filters: status tabs, search, tag and owner all live in the URL and combine -->
 <div class="flex items-center flex-wrap gap-3 justify-between">
-    <div class="inline-flex flex-wrap max-w-full items-center gap-1 p-1 rounded-lg border border-line bg-panel">
-        <a href="{% url 'cpanel:script_list' %}{% if selected_tag %}?tag={{ selected_tag.pk }}{% endif %}"
+    <div class="inline-flex flex-wrap max-w-full items-center gap-1 p-1 rounded-lg border border-line bg-panel" role="group" aria-label="Status">
+        <a href="{% url 'cpanel:script_list' %}{% if querystring_without_status %}?{{ querystring_without_status }}{% endif %}"
+           {% if not status_filter %}aria-current="page"{% endif %}
            class="px-3 py-1.5 text-sm rounded-md transition-colors {% if not status_filter %}bg-panel-hi text-text font-medium{% else %}text-muted hover:text-text{% endif %}">All</a>
-        <a href="{% url 'cpanel:script_list' %}?status=enabled{% if selected_tag %}&tag={{ selected_tag.pk }}{% endif %}"
+        <a href="{% url 'cpanel:script_list' %}?status=enabled{% if querystring_without_status %}&{{ querystring_without_status }}{% endif %}"
+           {% if status_filter == 'enabled' %}aria-current="page"{% endif %}
            class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'enabled' %}bg-ok/10 text-ok font-medium{% else %}text-muted hover:text-text{% endif %}">Enabled</a>
-        <a href="{% url 'cpanel:script_list' %}?status=disabled{% if selected_tag %}&tag={{ selected_tag.pk }}{% endif %}"
+        <a href="{% url 'cpanel:script_list' %}?status=disabled{% if querystring_without_status %}&{{ querystring_without_status }}{% endif %}"
+           {% if status_filter == 'disabled' %}aria-current="page"{% endif %}
            class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'disabled' %}bg-warn/10 text-warn font-medium{% else %}text-muted hover:text-text{% endif %}">Disabled</a>
-        <a href="{% url 'cpanel:script_list' %}?status=archived{% if selected_tag %}&tag={{ selected_tag.pk }}{% endif %}"
+        <a href="{% url 'cpanel:script_list' %}?status=archived{% if querystring_without_status %}&{{ querystring_without_status }}{% endif %}"
+           {% if status_filter == 'archived' %}aria-current="page"{% endif %}
            class="px-3 py-1.5 text-sm rounded-md transition-colors {% if status_filter == 'archived' %}bg-fail/10 text-fail font-medium{% else %}text-muted hover:text-text{% endif %}">Archived</a>
     </div>
 
-    {% if scripts %}
-    <!-- Name filter (client-side: the list is not paginated) -->
-    <div class="relative w-full sm:w-56">
-        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-faint pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/></svg>
-        <input type="search" id="script-name-filter" placeholder="Filter by name" aria-label="Filter scripts by name" autocomplete="off"
-               class="w-full pl-8 pr-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text placeholder-faint/60 focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
-    </div>
-    {% endif %}
+    <div class="flex items-center flex-wrap gap-3 min-w-0 w-full sm:w-auto">
+        <!-- Search: name + description, server-side so it covers every page -->
+        <form method="get" action="{% url 'cpanel:script_list' %}" role="search" class="flex items-center gap-2 min-w-0 w-full sm:w-auto">
+            {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+            {% if selected_tag %}<input type="hidden" name="tag" value="{{ selected_tag.pk }}">{% endif %}
+            {% if selected_owner %}<input type="hidden" name="owner_plugin" value="{{ selected_owner }}">{% endif %}
+            <div class="relative flex-1 min-w-0 sm:flex-none">
+                <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-faint pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/></svg>
+                <input type="search" name="q" id="script-search" value="{{ search_query }}" maxlength="200" placeholder="Search name or description" aria-label="Search scripts by name or description" autocomplete="off"
+                       class="w-full sm:w-60 pl-8 pr-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text placeholder-faint/60 focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
+            </div>
+            <button type="submit" class="px-3 py-1.5 text-sm rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">Search</button>
+            {% if search_query %}
+            <a href="{% url 'cpanel:script_list' %}{% if querystring_without_q %}?{{ querystring_without_q }}{% endif %}" class="text-sm text-muted hover:text-text transition-colors">Clear</a>
+            {% endif %}
+        </form>
 
-    {% if all_tags %}
-    <div class="flex items-center gap-2">
-        <span class="eyebrow text-faint">Tag</span>
-        <select onchange="filterByTag(this.value)"
-                class="px-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
-            <option value="">All tags</option>
-            {% for tag in all_tags %}
-            <option value="{{ tag.pk }}" {% if selected_tag.pk == tag.pk %}selected{% endif %}>{{ tag.name }}</option>
-            {% endfor %}
-        </select>
-        {% if selected_tag %}
-        <a href="{% url 'cpanel:script_list' %}{% if status_filter %}?status={{ status_filter }}{% endif %}"
-           class="text-sm text-muted hover:text-text transition-colors">Clear</a>
+        {% if all_tags %}
+        <div class="flex items-center gap-2">
+            <label for="script-tag-filter" class="eyebrow text-faint">Tag</label>
+            <select id="script-tag-filter" onchange="filterByTag(this.value)"
+                    class="px-3 py-1.5 text-sm bg-panel border border-line rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-ok/40 focus:border-ok/50 transition">
+                <option value="">All tags</option>
+                {% for tag in all_tags %}
+                <option value="{{ tag.pk }}" {% if selected_tag.pk == tag.pk %}selected{% endif %}>{{ tag.name }}</option>
+                {% endfor %}
+            </select>
+            {% if selected_tag %}
+            <a href="{% url 'cpanel:script_list' %}{% if querystring_without_tag %}?{{ querystring_without_tag }}{% endif %}"
+               class="text-sm text-muted hover:text-text transition-colors">Clear</a>
+            {% endif %}
+        </div>
         {% endif %}
-    </div>
-    {% endif %}
 
-    {% include "cpanel/_owner_filter.html" with owners=owners selected_owner=selected_owner %}
+        {% include "cpanel/_owner_filter.html" with owners=owners selected_owner=selected_owner %}
+    </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const box = document.getElementById('script-name-filter');
-    if (!box) return;
-    const rows = document.querySelectorAll('tr[data-script-name]');
-    const empty = document.getElementById('script-name-filter-empty');
-    box.addEventListener('input', function () {
-        const q = box.value.trim().toLowerCase();
-        let shown = 0;
-        rows.forEach(function (row) {
-            const hit = !q || row.dataset.scriptName.includes(q);
-            row.classList.toggle('hidden', !hit);
-            if (hit) shown++;
-        });
-        empty.classList.toggle('hidden', shown > 0);
-    });
-});
-
 function filterByTag(tagId) {
     const url = new URL(window.location.href);
     if (tagId) { url.searchParams.set('tag', tagId); }
     else { url.searchParams.delete('tag'); }
+    url.searchParams.delete('page');
     window.location.href = url.toString();
 }
 </script>
@@ -99,7 +96,7 @@ function filterByTag(tagId) {
         </thead>
         <tbody class="divide-y divide-line-soft">
             {% for script in scripts %}
-            <tr class="hover:bg-panel-hi/50 transition-colors" data-script-name="{{ script.name|lower }}">
+            <tr class="hover:bg-panel-hi/50 transition-colors">
                 <td class="px-3 sm:px-6 py-3.5 max-w-xs">
                     <a href="{% url 'cpanel:script_detail' pk=script.pk %}" class="text-[13.5px] font-medium text-text hover:text-ok transition-colors">{{ script.name }}</a>
                     {% include "cpanel/_owner_pill.html" with obj=script %}
@@ -113,7 +110,7 @@ function filterByTag(tagId) {
                 <td data-label="Tags" class="px-3 sm:px-6 py-3.5">
                     <div class="flex flex-wrap gap-1">
                         {% for tag in script.tags.all %}
-                        <a href="{% url 'cpanel:script_list' %}?tag={{ tag.pk }}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+                        <a href="{% url 'cpanel:script_list' %}?tag={{ tag.pk }}{% if querystring_without_tag %}&{{ querystring_without_tag }}{% endif %}"
                            class="inline-flex items-center px-2 py-0.5 text-xs rounded-full tag-{{ tag.color }} hover:opacity-80 transition-opacity">{{ tag.name }}</a>
                         {% empty %}
                         <span class="text-faint text-sm">—</span>
@@ -143,20 +140,21 @@ function filterByTag(tagId) {
         </tbody>
     </table>
     </div>
-    <p id="script-name-filter-empty" class="hidden px-6 py-8 text-center text-sm text-muted">No scripts match that name.</p>
 </section>
+
+{% include "cpanel/_pagination.html" %}
 {% else %}
 <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
     <div class="w-14 h-14 rounded-full bg-ok/10 grid place-items-center mx-auto mb-4">
         <svg class="w-7 h-7 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
     </div>
     <h3 class="text-base font-semibold mb-1">
-        {% if status_filter or selected_tag %}No scripts match these filters{% else %}No scripts yet{% endif %}
+        {% if is_filtered %}No scripts match these filters{% else %}No scripts yet{% endif %}
     </h3>
     <p class="text-sm text-muted mb-6">
-        {% if status_filter or selected_tag %}Try a different status or tag.{% else %}Create your first Python script to get started.{% endif %}
+        {% if is_filtered %}{% if search_query %}Nothing matches “{{ search_query }}”{% if status_filter or selected_tag or selected_owner %} with these filters{% endif %}. Try another word, status, tag or owner.{% else %}Try a different status, tag or owner.{% endif %}{% else %}Create your first Python script to get started.{% endif %}
     </p>
-    {% if status_filter or selected_tag %}
+    {% if is_filtered %}
     <a href="{% url 'cpanel:script_list' %}" class="text-sm text-info hover:underline">Clear filters</a>
     {% else %}
     <a href="{% url 'cpanel:script_create' %}"

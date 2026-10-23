@@ -110,7 +110,9 @@ For clients that can only accept a URL, an instance administrator can enable
 permissions and a mandatory expiry (90 days by default). Its endpoint is
 `POST /mcp/k/<url-token>/`. It cannot be used as a REST/bearer token. The URL itself
 is a credential: keep connector configuration private and redact that route from
-reverse-proxy access logs. Use a public HTTPS address for remote connectors.
+reverse-proxy access logs. Because the token travels in the request path, reverse
+proxies, CDNs and PyRun's own access log record it unless you redact it; that is why
+URL tokens are read-only and always expire. Use a public HTTPS address for remote connectors.
 Disabling URL tokens or revoking a token closes that route immediately.
 
 ## Capacity and failures

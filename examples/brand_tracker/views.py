@@ -191,11 +191,27 @@ def test_serper(request):
     return JsonResponse(prov.test_serper(request.POST))
 
 
+def _in_data_workspace(request):
+    """Brand Tracker's data lives in the default workspace; its share must too,
+    or Settings -> API Tokens (filtered by workspace) could not see or revoke it."""
+    if getattr(request.workspace, "is_default", False):
+        return True
+    messages.error(
+        request,
+        "Brand Tracker keeps its mentions in the default workspace. Switch to it to "
+        "share or revoke the public report, so the link is listed under "
+        "Settings → API Tokens there.",
+    )
+    return False
+
+
 @superuser_required
 @require_POST
 def share_report(request):
     """Create (or re-surface) the public report link."""
-    url_path = prov.share_report(created_by=request.user)
+    if not _in_data_workspace(request):
+        return redirect(reverse("brand_tracker:index") + "#mentions")
+    url_path = prov.share_report(created_by=request.user, workspace=request.workspace)
     messages.success(
         request,
         f"Public report is live at {url_path} — anyone with the link can view it. "
@@ -208,7 +224,9 @@ def share_report(request):
 @require_POST
 def revoke_report(request):
     """Kill the public report link (permanent; re-sharing issues a new URL)."""
-    if prov.revoke_report():
+    if not _in_data_workspace(request):
+        return redirect(reverse("brand_tracker:index") + "#mentions")
+    if prov.revoke_report(workspace=request.workspace):
         messages.info(request, "Public report link revoked — that URL is permanently dead.")
     else:
         messages.error(request, "There is no public report link to revoke.")

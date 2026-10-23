@@ -7,7 +7,7 @@ class BrandTrackerConfig(PluginAppConfig):
     plugin = PyRunnerPlugin(
         slug="brand_tracker",
         name="Brand Tracker",
-        version="1.1.1",
+        version="1.1.2",
         nav_items=[
             NavItem(
                 label="Brand Tracker",

@@ -43,6 +43,7 @@
 =============================================================================
 """
 
+import html
 import os
 import sys
 from collections import Counter, defaultdict
@@ -594,6 +595,11 @@ def enrich_mentions(new_mentions):
 _SOURCE_LABEL = {"web": "Web", "news": "News", "hackernews": "Hacker News", "reddit": "Reddit"}
 
 
+def _href(url):
+    # Scraped URLs go into an href: only http(s), everything escaped.
+    return html.escape(url, quote=True) if str(url).lower().startswith(("http://", "https://")) else "#"
+
+
 def build_email_html(new_by_keyword):
     today = datetime.now().strftime("%B %d, %Y")
     total = sum(len(v) for v in new_by_keyword.values())
@@ -603,20 +609,23 @@ def build_email_html(new_by_keyword):
             continue
         rows.append(
             f'<tr><td style="padding:24px 32px 8px 32px;border-bottom:2px solid #e5e7eb;">'
-            f'<span style="font-size:16px;font-weight:600;color:#111827;">"{keyword}"</span>'
+            f'<span style="font-size:16px;font-weight:600;color:#111827;">"{html.escape(keyword)}"</span>'
             f'<span style="background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:600;'
             f'padding:2px 9px;border-radius:10px;margin-left:8px;">{len(mentions)} new</span></td></tr>'
         )
         for m in mentions:
-            label = _SOURCE_LABEL.get(m["source"], m["source"])
+            label = html.escape(str(_SOURCE_LABEL.get(m["source"], m["source"])))
+            title = html.escape(str(m["title"] or ""))
+            url = html.escape(str(m["url"] or ""))
+            snippet = html.escape(str(m["snippet"] or ""))
             rows.append(
                 f'<tr><td style="padding:12px 32px 0 32px;">'
-                f'<a href="{m["url"]}" style="color:#1d4ed8;font-size:15px;font-weight:600;'
-                f'text-decoration:none;">{m["title"]}</a>'
+                f'<a href="{_href(m["url"] or "")}" style="color:#1d4ed8;font-size:15px;font-weight:600;'
+                f'text-decoration:none;">{title}</a>'
                 f'<span style="background:#f1f5f9;color:#475569;font-size:11px;font-weight:600;'
                 f'padding:1px 7px;border-radius:8px;margin-left:8px;">{label}</span>'
-                f'<p style="color:#6b7280;font-size:12px;margin:4px 0 0 0;word-break:break-all;">{m["url"]}</p>'
-                f'<p style="color:#4b5563;font-size:14px;margin:6px 0 10px 0;line-height:1.5;">{m["snippet"]}</p>'
+                f'<p style="color:#6b7280;font-size:12px;margin:4px 0 0 0;word-break:break-all;">{url}</p>'
+                f'<p style="color:#4b5563;font-size:14px;margin:6px 0 10px 0;line-height:1.5;">{snippet}</p>'
                 f'</td></tr>'
             )
     return (

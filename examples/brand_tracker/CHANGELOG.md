@@ -3,6 +3,15 @@
 All notable changes to the Brand Tracker plugin are documented here. This
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.2] - 2026-10-23
+
+### Security
+- The email digest put scraped titles, URLs and snippets into its HTML unescaped;
+  they are now escaped, and a link is only rendered for http(s) URLs.
+- The public report share is bound to the workspace its data lives in (the
+  default one) and is refused from another workspace with a message, so it is
+  always listed (and revocable) under Settings → API Tokens there.
+
 ## [1.1.1] - 2026-10-23
 
 ### Fixed

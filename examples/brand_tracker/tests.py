@@ -692,3 +692,57 @@ class PublicReportPageTests(TestCase):
         # Re-share rotates: a revoked URL never resurrects.
         new_url = prov.share_report()
         self.assertNotEqual(url, new_url)
+
+
+class DigestEscapingTests(SimpleTestCase):
+    # 1.1.2: scraped title/url/snippet went into the email digest unescaped.
+    def test_scraped_fields_are_escaped_and_hrefs_are_http_only(self):
+        body = wb.build_email_html({"<b>kw</b>": [{
+            "source": "web", "title": "<script>alert(1)</script>",
+            "url": 'javascript:alert(1)"', "snippet": "<img src=x onerror=alert(1)>",
+        }]})
+        self.assertNotIn("<script>", body)
+        self.assertNotIn("<img", body)
+        self.assertNotIn("<b>kw</b>", body)
+        self.assertIn('href="#"', body)
+        self.assertIn("&lt;script&gt;", body)
+        ok = wb.build_email_html({"k": [{"source": "web", "title": "t",
+                                         "url": "https://x.example/?a=1&b=2", "snippet": ""}]})
+        self.assertIn('href="https://x.example/?a=1&amp;b=2"', ok)
+
+
+class ShareWorkspaceTests(TestCase):
+    # 1.1.2: the share is bound to the workspace the report's data lives in
+    # (the default one), and refused from another workspace with a message.
+    def _call(self, view, workspace):
+        from django.test import RequestFactory
+
+        from core.models import User
+
+        from . import views
+
+        request = RequestFactory().post("/")
+        request.user = User.objects.create_superuser(
+            username=f"su{workspace.pk.hex[:6]}", email=f"{workspace.pk.hex[:6]}@x.test",
+            password="pw-12345678!",
+        )
+        request.workspace = workspace
+        with mock.patch.object(views, "messages") as msgs, \
+                mock.patch.object(views, "reverse", return_value="/plugins/brand_tracker/"):
+            getattr(views, view)(request)
+        return msgs
+
+    def test_share_from_another_workspace_is_refused(self):
+        from core.models import PluginPublicPage, Workspace
+
+        msgs = self._call("share_report", Workspace.objects.create(name="other"))
+        msgs.error.assert_called_once()
+        self.assertFalse(PluginPublicPage.objects.filter(plugin_slug=prov.OWNER).exists())
+
+    def test_share_from_the_default_workspace_is_listed_there(self):
+        from core.models import PluginPublicPage, Workspace
+
+        default = Workspace.get_default()
+        self._call("share_report", default)
+        row = PluginPublicPage.objects.get(plugin_slug=prov.OWNER)
+        self.assertEqual(row.workspace_id, default.pk)

@@ -151,19 +151,23 @@ def list_environments():
 # Public report share (capability URL at /p/<token>/)
 # --------------------------------------------------------------------------- #
 
-def share_report(created_by=None):
+# The report shows this plugin's default-workspace data, so the share row is
+# bound to that same workspace (passed explicitly; None means the default too).
+# Settings -> API Tokens oversight and its revoke list it there.
+
+def share_report(created_by=None, workspace=None):
     """Share (or return the existing) public report link; returns the URL path."""
-    return PublicPageAPI(OWNER).share(REPORT_PAGE, created_by=created_by)
+    return PublicPageAPI(OWNER, workspace).share(REPORT_PAGE, created_by=created_by)
 
 
-def revoke_report():
+def revoke_report(workspace=None):
     """Kill the public report link permanently. True if one existed."""
-    return PublicPageAPI(OWNER).revoke(REPORT_PAGE)
+    return PublicPageAPI(OWNER, workspace).revoke(REPORT_PAGE)
 
 
-def report_share():
+def report_share(workspace=None):
     """Current share state dict (or None if the report was never shared)."""
-    return PublicPageAPI(OWNER).get(REPORT_PAGE)
+    return PublicPageAPI(OWNER, workspace).get(REPORT_PAGE)
 
 
 def initial_from_config():

@@ -58,7 +58,11 @@ class MemberlessUserTests(TestCase):
                 response = self.client.get(reverse(f"cpanel:{name}"))
                 self.assertEqual(response.status_code, 403)
                 self.assertContains(response, "not in any workspace", status_code=403)
-                self.assertContains(response, reverse("auth:logout"), status_code=403)
+                # Sign out is a POST form (logout_view is POST-only).
+                self.assertContains(
+                    response, f'<form method="post" action="{reverse("auth:logout")}">',
+                    status_code=403,
+                )
 
     def test_script_create_and_run_are_refused(self):
         response = self.client.post(
@@ -79,6 +83,11 @@ class MemberlessUserTests(TestCase):
 
     def test_auth_pages_still_work(self):
         self.assertEqual(self.client.get(reverse("auth:change_password")).status_code, 200)
+
+    def test_sign_out_from_the_no_workspace_page_works(self):
+        response = self.client.post(reverse("auth:logout"))
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_superuser_without_membership_keeps_the_default_workspace(self):
         admin = User.objects.create_superuser(

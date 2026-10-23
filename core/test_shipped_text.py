@@ -136,3 +136,17 @@ class AnonymousPagesHideVersionTests(TestCase):
             User.objects.create_superuser(username="v", email="v@x.test", password="pw-12345678!")
         )
         self.assertIn(f"v{__version__}", self.client.get(reverse("cpanel:dashboard")).content.decode())
+
+
+class ExternalScriptsHaveSriTests(SimpleTestCase):
+    # F140: pinned jsDelivr loads (Monaco loader, Chart.js) carried no integrity.
+    def test_every_external_script_is_pinned_by_integrity(self):
+        tag = re.compile(r"<script[^>]+src=\"https?://[^\"]+\"[^>]*>")
+        hits = []
+        for path in ROOT.glob("templates/**/*.html"):
+            for match in tag.findall(shipped_text(path)):
+                if "google.com/recaptcha/" in match:
+                    continue  # served dynamically by Google; SRI cannot pin it
+                if 'integrity="sha384-' not in match or 'crossorigin="anonymous"' not in match:
+                    hits.append(f"{path.relative_to(ROOT)}: {match[:90]}")
+        self.assertEqual(hits, [])

@@ -159,6 +159,18 @@ CHANGELOG = [
                 ),
             },
             {
+                "tag": "Improved",
+                "title": "Console: icons, script search and brain grant pickers",
+                "body": (
+                    "The sidebar and section cards use Lucide icons, drawn inline. "
+                    "The Scripts list shows 25 per page and searches names and "
+                    "descriptions; status, tag, owner, search and page stay in the URL "
+                    "and combine. On a brain's Grants page, plugins and Py AI (the "
+                    "console or a channel) are picked from a list by name, and the Py AI "
+                    "page shows which brains it can read."
+                ),
+            },
+            {
                 "tag": "Fixed",
                 "title": "Safer restores and more resilient workers",
                 "body": (

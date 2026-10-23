@@ -308,6 +308,17 @@ begins tracking at the current release; earlier history is in the git log.
   three named volumes explicitly and refuses to continue if any survive.
 
 ### Improved (2.0 release-test polish)
+- **Console icons.** The sidebar, section cards and empty states use Lucide
+  icons (ISC, vendored in `core/icons/lucide/`, rendered inline by the
+  `{% icon %}` template tag: no CDN or JavaScript). Plugin nav icons are unchanged.
+- **Scripts list.** 25 scripts per page, a search on name and description, and
+  status, tag, owner, search and page in the URL so they combine and can be shared.
+- **Brain grants.** Plugin and agent grants are picked from a list (installed
+  plugins by name; "Py AI (console)" or Py AI on a channel) instead of typing an
+  identifier; existing grants show the friendly name. The Py AI page lists the
+  brains it can read, with tier and a link to the grants.
+- **brand_tracker 1.1.1.** The public report no longer shows its template
+  comment as text at the top of the page.
 - **Readable failures.** Secret-provider, vector-store and Telegram network
   errors are one line naming the host, port and cause ("doesn't resolve",
   "connection refused", "timed out after 10 s"); the raw text is under

@@ -671,6 +671,17 @@ class PublicReportPageTests(TestCase):
         html = api.report(self._page_request(workspace=other))
         self.assertIn("no data yet", html)
 
+    def test_report_does_not_show_its_template_comment(self):
+        # 1.1.1: a multi-line {# #} rendered as page text on the public report.
+        from core.models import Workspace
+
+        from . import api
+
+        html = api.report(self._page_request(workspace=Workspace.objects.create(name="c")))
+        self.assertTrue(html.lstrip().startswith("<!DOCTYPE html>"))
+        self.assertNotIn("script-free report", html)
+        self.assertNotIn("{#", html)
+
     def test_share_and_revoke_round_trip(self):
         url = prov.share_report()
         self.assertTrue(url.startswith("/p/"))

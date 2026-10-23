@@ -3,6 +3,13 @@
 All notable changes to the Brand Tracker plugin are documented here. This
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-10-23
+
+### Fixed
+- The shareable public report showed its template comment ("Public, script-free
+  report — served under a strict CSP …") as text at the top of the page: a
+  multi-line `{# #}` is not a Django comment. It is now a `{% comment %}` block.
+
 ## [1.1.0] - 2026-07-15
 
 External read-only API via PyRun's plugin API seam (SDK 2.3, PyRun ≥ 1.16).

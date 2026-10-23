@@ -1,4 +1,4 @@
-{% load static %}
+{% load static icon_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -87,7 +87,7 @@
                     {% if show_workspace_switcher %}
                     <details class="relative hidden sm:block">
                         <summary class="list-none cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[13px] text-muted hover:text-text hover:border-faint transition-colors">
-                            <svg class="w-[15px] h-[15px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5"/></svg>
+                            {% icon "layout-grid" class="w-[15px] h-[15px]" %}
                             <span class="max-w-[10rem] truncate">{{ active_workspace.name|default:"Workspace" }}</span>
                             <svg class="w-3.5 h-3.5 text-faint" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                         </summary>

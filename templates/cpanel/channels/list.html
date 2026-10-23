@@ -1,4 +1,5 @@
 {% extends "cpanel/layout.html" %}
+{% load icon_tags %}
 
 {% block title %}Channels - {{ instance_name }}{% endblock %}
 
@@ -81,7 +82,7 @@
 {% else %}
 <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
     <div class="w-14 h-14 rounded-full bg-info/10 grid place-items-center mx-auto mb-4">
-        <svg class="w-7 h-7 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.84L3 20l1.16-3.48A7.93 7.93 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        {% icon "messages-square" class="w-7 h-7 text-info" %}
     </div>
     <h3 class="text-base font-semibold mb-1">No channels yet</h3>
     <p class="text-sm text-muted mb-6">{% if encryption_configured %}Connect a Telegram bot to send run notifications to a chat.{% else %}Configure encryption to start adding channels.{% endif %}</p>

@@ -1,4 +1,5 @@
 {% extends "cpanel/layout.html" %}
+{% load icon_tags %}
 
 {% block title %}Runs - {{ instance_name }}{% endblock %}
 
@@ -119,7 +120,7 @@
 {% else %}
 <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
     <div class="w-14 h-14 rounded-full bg-ok/10 grid place-items-center mx-auto mb-4">
-        <svg class="w-7 h-7 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        {% icon "circle-play" class="w-7 h-7 text-ok" %}
     </div>
     <h3 class="text-base font-semibold mb-1">
         {% if search_query %}No runs match “{{ search_query }}”{% elif status_filter or script_filter %}No runs match these filters{% else %}No runs yet{% endif %}

@@ -1,4 +1,5 @@
 {% extends "cpanel/layout.html" %}
+{% load icon_tags %}
 
 {% block title %}Scripts - {{ instance_name }}{% endblock %}
 
@@ -146,7 +147,7 @@ function filterByTag(tagId) {
 {% else %}
 <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
     <div class="w-14 h-14 rounded-full bg-ok/10 grid place-items-center mx-auto mb-4">
-        <svg class="w-7 h-7 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        {% icon "file-code-2" class="w-7 h-7 text-ok" %}
     </div>
     <h3 class="text-base font-semibold mb-1">
         {% if is_filtered %}No scripts match these filters{% else %}No scripts yet{% endif %}

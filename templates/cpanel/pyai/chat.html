@@ -1,5 +1,5 @@
 {% extends "cpanel/layout.html" %}
-{% load static workspace_tags %}
+{% load static workspace_tags icon_tags %}
 
 {% block title %}Py AI - {{ instance_name }}{% endblock %}
 
@@ -32,7 +32,7 @@
     <div class="flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 py-3 border-b border-line bg-ink">
         <div class="flex items-center gap-3 min-w-0">
             <span class="w-9 h-9 rounded-xl bg-ok/15 grid place-items-center flex-shrink-0">
-                <svg class="w-[18px] h-[18px] text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3zM5 19l.6 1.4L7 21l-1.4.6L5 23l-.6-1.4L3 21l1.4-.6L5 19zM19 15l.6 1.4L21 17l-1.4.6L19 19l-.6-1.4L17 17l1.4-.6L19 15z"/></svg>
+                {% icon "sparkles" class="w-[18px] h-[18px] text-ok" %}
             </span>
             <div class="min-w-0">
                 <h1 class="text-[17px] font-semibold tracking-tight leading-tight">Py AI</h1>
@@ -59,7 +59,7 @@
             {% if is_superuser and settings_form %}
             <button id="pyai-settings-open" type="button" title="Py AI settings" aria-label="Py AI settings" aria-haspopup="dialog" aria-controls="pyai-settings-modal"
                     class="w-9 h-9 grid place-items-center rounded-lg border border-line text-muted hover:text-text hover:border-faint transition-colors">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                {% icon "settings" class="w-[18px] h-[18px]" %}
             </button>
             {% endif %}
         </div>
@@ -72,7 +72,7 @@
         <div id="pyai-empty" class="h-full grid place-items-center px-6 text-center">
             <div class="max-w-md">
                 <div class="w-12 h-12 rounded-2xl bg-ok/10 grid place-items-center mx-auto mb-4">
-                    <svg class="w-6 h-6 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/></svg>
+                    {% icon "sparkles" class="w-6 h-6 text-ok" %}
                 </div>
                 <h2 class="text-base font-semibold">Ask about {% if active_workspace %}{{ active_workspace.name }}{% else %}this workspace{% endif %}</h2>
                 <p class="text-sm text-muted mt-1.5">Py AI can look at scripts, runs, schedules, and datastores in this workspace. It never runs, edits, or deletes anything, and never sees your secrets.</p>
@@ -219,7 +219,7 @@
         wrap.className = "flex gap-3";
         wrap.innerHTML =
             '<span class="w-7 h-7 mt-0.5 rounded-lg bg-ok/15 grid place-items-center flex-shrink-0" aria-hidden="true">' +
-            '<svg class="w-3.5 h-3.5 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/></svg></span>' +
+            '{% icon "sparkles" class="w-3.5 h-3.5 text-ok" %}</span>' +
             '<div class="min-w-0 flex-1 max-w-[92%] sm:max-w-[85%]">' +
             '<div class="pyai-body rounded-2xl rounded-tl-md bg-panel border border-line px-4 py-3 text-sm text-text"></div>' +
             '<p class="pyai-tools text-[11px] text-faint mt-1.5 pl-1 hidden"></p></div>';

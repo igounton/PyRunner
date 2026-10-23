@@ -1,4 +1,5 @@
 {% extends "cpanel/layout.html" %}
+{% load icon_tags %}
 
 {% block title %}Plugins - {{ instance_name }}{% endblock %}
 
@@ -118,7 +119,7 @@
 {% else %}
 <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
     <div class="w-14 h-14 rounded-full bg-ok/10 grid place-items-center mx-auto mb-4">
-        <svg class="w-7 h-7 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5a2 2 0 00-2 2v6a2 2 0 002 2h14a2 2 0 002-2v-6a2 2 0 00-2-2zm-2 0V7a5 5 0 00-10 0v4"/></svg>
+        {% icon "puzzle" class="w-7 h-7 text-ok" %}
     </div>
     <h3 class="text-base font-semibold mb-1">No plugins installed</h3>
     <p class="text-sm text-muted mb-6">Upload a plugin .zip to extend PyRun.</p>

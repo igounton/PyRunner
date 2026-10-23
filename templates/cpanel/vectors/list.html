@@ -1,4 +1,5 @@
 {% extends "cpanel/layout.html" %}
+{% load icon_tags %}
 
 {% block title %}Vectors - {{ instance_name }}{% endblock %}
 
@@ -98,7 +99,7 @@
 {% elif available %}
 <section class="rounded-2xl border border-line bg-panel px-6 py-16 text-center">
     <div class="w-14 h-14 rounded-full bg-info/10 grid place-items-center mx-auto mb-4">
-        <svg class="w-7 h-7 text-info" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20l5-5m0 0l4 4 7-7m-11 3V9a2 2 0 012-2h3m6 0h.01M6 4h.01M18 4h.01M12 12h.01"/></svg>
+        {% icon "chart-scatter" class="w-7 h-7 text-info" %}
     </div>
     <h3 class="text-base font-semibold mb-1">No collections yet</h3>
     <p class="text-sm text-muted mb-6">Create a collection to give your scripts, plugins and agents semantic search over their own data.</p>

@@ -127,10 +127,8 @@ def send(request: HttpRequest) -> JsonResponse:
     from core.services import ChannelService
     from core.services.channels import ChannelError
 
+    # An unscoped run reaches no channel (fail closed, F129).
     ws_id = getattr(request, "datastore_workspace", None)
-    if ws_id is None:
-        default_ws = Workspace.get_default()
-        ws_id = default_ws.id if default_ws else None
 
     channel = Channel.objects.filter(workspace_id=ws_id, name=target).first()
     if channel is None:

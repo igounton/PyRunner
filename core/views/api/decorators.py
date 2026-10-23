@@ -174,8 +174,8 @@ def internal_datastore_token_required(view_func):
         # Derive the run's workspace SERVER-SIDE (tenancy Stage 2), so by-name
         # datastore resolution is scoped to it. The token carries only a signed
         # run_id, so the workspace cannot be forged by the running script —
-        # unlike the SQLite helper's env var. None ⇒ the resolver falls back to
-        # the default workspace.
+        # unlike the SQLite helper's env var. None ⇒ the resolvers see only
+        # unassigned rows (fail closed, F129).
         ws_id = None
         try:
             from core.models import Run

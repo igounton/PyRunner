@@ -48,14 +48,9 @@ def list_datastores(request: HttpRequest) -> JsonResponse:
         datastores = [token.datastore]
     else:
         # Global token: list only the token's workspace datastores (tenancy
-        # Stage 3). A NULL-workspace token falls back to the default workspace,
-        # so a single-workspace instance is byte-for-byte (every store is there).
-        effective_ws = token.workspace or Workspace.get_default()
-        datastores = (
-            DataStore.objects.for_workspace(effective_ws)
-            if effective_ws is not None
-            else DataStore.objects.all()
-        )
+        # Stage 3). A NULL-workspace token sees only unassigned stores (F129;
+        # the 0035 backfill gave every pre-tenancy token the default workspace).
+        datastores = DataStore.objects.for_workspace(token.workspace)
 
     data = {
         "datastores": [
@@ -234,8 +229,8 @@ def _get_authorized_datastore(request: HttpRequest, name: str):
 
     # Scope by-name resolution to the token's workspace (tenancy Decision 2B). A
     # datastore-scoped token resolves within its datastore's workspace; a global
-    # token resolves within its own workspace FK (Stage 3); NULL falls back to
-    # the default workspace.
+    # token resolves within its own workspace FK (Stage 3); NULL sees only
+    # unassigned stores (F129).
     if token.datastore_id:
         workspace_id = token.datastore.workspace_id
     else:

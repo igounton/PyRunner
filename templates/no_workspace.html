@@ -1,0 +1,13 @@
+{% extends "error_base.html" %}
+{% comment %}
+Shown (403) to a signed-in user who is not a member of any workspace (an admin
+removed their last membership): the console and plugin pages need one.
+{% endcomment %}
+
+{% block title %}No workspace - {{ instance_name }}{% endblock %}
+{% block error_code %}403{% endblock %}
+{% block error_title %}You're not in any workspace{% endblock %}
+{% block error_tint %}bg-fail/10{% endblock %}
+{% block error_icon %}<svg class="w-6 h-6 text-fail" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>{% endblock %}
+{% block error_message %}Your account isn't a member of any workspace, so there is nothing you can open here yet. Ask an admin to add you to a workspace, then sign in again.{% endblock %}
+{% block error_action %}<a href="{% url 'auth:logout' %}" class="inline-block py-3 px-6 bg-ok text-ink font-semibold rounded-lg hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ok/40 focus:ring-offset-2 focus:ring-offset-ink">Sign out</a>{% endblock %}

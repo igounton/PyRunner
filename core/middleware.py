@@ -171,7 +171,19 @@ class ActiveWorkspaceMiddleware:
             raise Http404("Workspace not found")
 
         request.workspace = workspace
+        if workspace is None and not user.is_superuser and self._needs_workspace(request):
+            # A signed-in user with no membership (an admin removed the last
+            # one) must not reach the console: "no workspace" is never
+            # "unscoped". Superusers always resolve to the default workspace.
+            from django.shortcuts import render
+
+            return render(request, "no_workspace.html", status=403)
         return None
+
+    @staticmethod
+    def _needs_workspace(request):
+        # A /w/<id>/ URL for a non-member already 404s above.
+        return request.path_info.startswith(("/cpanel/", "/plugins/"))
 
 
 class TimezoneMiddleware:

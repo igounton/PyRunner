@@ -111,7 +111,9 @@ def resolve_secrets_for_run(run) -> dict:
         def _ws_scope(qs):
             if ws_id is not None:
                 return qs.filter(Q(workspace_id=ws_id) | Q(workspace__isnull=True))
-            return qs
+            # An unscoped run (no workspace on the run or its script) only sees
+            # unscoped secrets — never every workspace's (fail closed).
+            return qs.filter(workspace__isnull=True)
 
         mode = "all"
         owner = None
@@ -290,13 +292,9 @@ def _build_script_environment(
 
         # Trusted workspace id for datastore-by-name scoping (tenancy Stage 2).
         # The SQLite helper scopes lookups to this workspace; it is derived from
-        # the run (never script-supplied) or else its script (F82), defaulting to
-        # the default workspace for an un-scoped run so single-workspace
-        # resolution is unchanged.
+        # the run (never script-supplied) or else its script (F82). An un-scoped
+        # run gets none, so it resolves only unassigned stores (F129).
         ws_id = run_workspace_id(run)
-        if ws_id is None:
-            default_ws = Workspace.get_default()
-            ws_id = default_ws.id if default_ws else None
         if ws_id is not None:
             env["PYRUNNER_WORKSPACE_ID"] = ws_id.hex
 

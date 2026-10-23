@@ -166,14 +166,13 @@ class Database(models.Model):
         """Resolve a database by ``name`` within a workspace.
 
         Same contract as ``DataStore.resolve_for_workspace`` (tenancy Decision
-        2B): an un-scoped lookup defaults to the default workspace, then falls
-        back to a still-unassigned (``workspace IS NULL``) row. Raises
+        2B): a lookup in a workspace falls back to a still-unassigned
+        (``workspace IS NULL``) row; an un-scoped lookup sees only those (F129). Raises
         ``Database.DoesNotExist`` if neither exists. The workspace source is
         always trusted/server-derived, never a value the script supplied.
         """
-        if workspace_id is None:
-            default = Workspace.get_default()
-            workspace_id = default.id if default else None
+        # Fail closed (F129): no workspace resolves only still-unassigned rows,
+        # never the default workspace's.
 
         if workspace_id is not None:
             try:

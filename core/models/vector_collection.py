@@ -211,9 +211,8 @@ class VectorCollection(models.Model):
         """Resolve a collection by ``name`` within a workspace (same contract as Database)."""
         from .workspace import Workspace
 
-        if workspace_id is None:
-            default = Workspace.get_default()
-            workspace_id = default.id if default else None
+        # Fail closed (F129): no workspace resolves only still-unassigned rows,
+        # never the default workspace's.
         if workspace_id is not None:
             try:
                 return cls.objects.get(name=name, workspace_id=workspace_id)

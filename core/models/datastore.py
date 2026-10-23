@@ -115,9 +115,9 @@ class DataStore(models.Model):
         Names are unique per workspace, so this returns at most one row. The
         back-compat rule keeps a single-workspace / pre-tenancy instance
         byte-for-byte:
-        - an un-scoped lookup (``workspace_id`` None) defaults to the default
-          workspace, so a run/token without a workspace still resolves today's
-          stores;
+        - an un-scoped lookup (``workspace_id`` None) resolves only unassigned
+          stores, never the default workspace's (fail closed, F129; the 0035
+          backfill leaves no un-scoped run or token on an upgraded instance);
         - if no store exists in the resolved workspace, fall back to a
           still-unassigned (``workspace IS NULL``) store created before scoping.
 
@@ -125,9 +125,8 @@ class DataStore(models.Model):
         is always trusted/server-derived (the run's workspace, the active
         workspace, or the API token's), never a value the script supplied.
         """
-        if workspace_id is None:
-            default = Workspace.get_default()
-            workspace_id = default.id if default else None
+        # Fail closed (F129): no workspace resolves only still-unassigned rows,
+        # never the default workspace's.
 
         if workspace_id is not None:
             try:

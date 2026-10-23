@@ -14,7 +14,7 @@ from django.utils.text import slugify
 from core.api.exceptions import ApiError
 from core.api.schema import validate
 from core.models import BrainFeed
-from core.netguard import is_safe_endpoint_url
+from core.netguard import guarded_opener, is_safe_endpoint_url
 from .access import access_for, resolve, unknown
 from .imports import _NoRedirect
 from .paths import utf8_size
@@ -77,7 +77,7 @@ def safe_url(url):
 def fetch_text(url, *, deadline=None):
     """One 15-second budget, three explicitly checked redirects, bounded reads."""
     end = min(deadline or float("inf"), time.monotonic() + 15)
-    opener = urllib.request.build_opener(_NoRedirect())
+    opener = guarded_opener(_NoRedirect())
     for hop in range(4):
         safe_url(url)
         remaining = end - time.monotonic()

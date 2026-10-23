@@ -30,7 +30,9 @@ def complete(provider_name, *, system, prompt, timeout):
     headers = {"anthropic-version": "2023-06-01", "Content-Type": "application/json"}
     headers["x-api-key" if provider.is_anthropic else "Authorization"] = credential if provider.is_anthropic else f"Bearer {credential}"
     try:
-        with BudgetSession(time.monotonic() + min(30, max(1, float(timeout)))) as session:
+        with BudgetSession(
+            time.monotonic() + min(30, max(1, float(timeout))), guard_addresses=True
+        ) as session:
             response = session.post(url, headers=headers, json={
                 "model": provider.default_model, "max_tokens": 1800,
                 "system": system, "messages": [{"role": "user", "content": prompt}],

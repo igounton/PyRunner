@@ -50,7 +50,7 @@ class GitHub:
         self.origin = (parsed.scheme, parsed.netloc)
         self.root = self.base + "/repos/" + "/".join(quote(p, safe="") for p in sync.repository.split("/"))
         self.branch = quote(sync.branch, safe="")
-        self.session = BudgetSession(time.monotonic() + 120, max_response_bytes=MAX_IMPORT_BYTES, reject_redirects=False)
+        self.session = BudgetSession(time.monotonic() + 120, max_response_bytes=MAX_IMPORT_BYTES, reject_redirects=False, guard_addresses=True)
         self.session.trust_env = False
 
     def close(self):

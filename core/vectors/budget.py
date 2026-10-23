@@ -9,8 +9,20 @@ from urllib3.util import Timeout
 class BudgetSession(requests.Session):
     bounded = True
 
-    def __init__(self, deadline, *, max_response_bytes=8 * 1024 * 1024, reject_redirects=True):
+    def __init__(
+        self,
+        deadline,
+        *,
+        max_response_bytes=8 * 1024 * 1024,
+        reject_redirects=True,
+        guard_addresses=False,
+    ):
         super().__init__()
+        if guard_addresses:
+            # User-supplied hosts: check the address actually connected to (F130).
+            from core.netguard import mount_guarded_adapters
+
+            mount_guarded_adapters(self)
         self.deadline = deadline
         self.max_response_bytes = max_response_bytes
         self.reject_redirects = reject_redirects

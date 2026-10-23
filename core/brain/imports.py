@@ -8,7 +8,7 @@ import urllib.request
 import zipfile
 
 from core.api.errors import ApiError
-from core.netguard import is_safe_endpoint_url
+from core.netguard import guarded_opener, is_safe_endpoint_url
 from .contract import validate_contract
 from .paths import (
     MAX_FILES,
@@ -115,7 +115,7 @@ def github_zip_url(url):
 
 def fetch_github(url):
     url = github_zip_url(url)
-    opener = urllib.request.build_opener(_NoRedirect())
+    opener = guarded_opener(_NoRedirect())
     try:
         for redirects in range(4):
             parsed = urllib.parse.urlsplit(url)

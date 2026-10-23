@@ -939,9 +939,9 @@ print(answer)</code></pre>
 <script src="{% static 'js/markdown.js' %}"></script>
 <script>
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    // Safe in element text and in quoted attributes (escapes both quotes too).
+    return String(text == null ? '' : text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // Test results (U37, U46, U47, U60). The server may add a second line starting

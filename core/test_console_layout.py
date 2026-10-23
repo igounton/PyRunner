@@ -115,7 +115,7 @@ class PagePatternTests(ShellBase):
 
         channel = Channel.objects.create(workspace=self.ws, provider="telegram", name="ops", config={}, created_by=self.admin)
         html = self.client.get(reverse("cpanel:channel_edit", kwargs={"pk": channel.pk})).content.decode()
-        self.assertIn("<!-- Inbound + approval inbox -->", html)
+        self.assertIn('<aside class="space-y-5 min-w-0">', html)  # inbound + approval side column
         self.assertIn(">Cancel</a>", html)
         self.assertNotIn(">Back</a>", html)
 
@@ -125,11 +125,11 @@ class PagePatternTests(ShellBase):
         Plugin.objects.create(slug="demo_plugin", name="Demo Plugin", status="errored", error_message="boom", manifest={})
         html = self.client.get(reverse("cpanel:plugin_detail", kwargs={"slug": "demo_plugin"})).content.decode()
         self.assertRegex(html, r'<h1 class="text-\[22px\][^"]*">Demo Plugin</h1>')
-        self.assertIn("<!-- About / metadata -->", html)
+        self.assertIn('<aside class="space-y-5 min-w-0">', html)  # about / metadata side column
 
     def test_connect_has_a_side_panel(self):
         html = self.client.get(reverse("cpanel:connect")).content.decode()
-        self.assertIn("<!-- Token catalog + capacity -->", html)
+        self.assertRegex(html, r'<aside class="space-y-5">\s*<div[^>]*>\s*<h2 class="font-semibold">Token catalog</h2>')
 
 
 class BrainSectionTests(ShellBase):

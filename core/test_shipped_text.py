@@ -75,3 +75,30 @@ class RenderedPagesHaveNoHtmlCommentsTests(TestCase):
                 response = self.client.get(reverse(f"cpanel:{name}"))
                 self.assertEqual(response.status_code, 200)
                 self.assertNotIn("<!--", response.content.decode())
+
+
+class NoPrivateDocLinksTests(SimpleTestCase):
+    # F137: tracked code pointed readers at gitignored planning/audit docs.
+    def test_tracked_files_only_reference_published_docs(self):
+        import subprocess
+
+        try:
+            tracked = subprocess.run(
+                ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
+            ).stdout.split()
+        except (OSError, subprocess.CalledProcessError):
+            self.skipTest("not a git checkout")
+        published = {p for p in tracked if p.startswith("docs/")}
+        reference = re.compile(r"docs/[A-Za-z0-9_.-]+\.md")
+        hits = []
+        for name in tracked:
+            if name.startswith("docs/") or name in {"CHANGELOG.md", ".dockerignore"}:
+                continue
+            if name == "core/test_docker_context.py" or name.endswith((".png", ".zip", ".ico")):
+                continue
+            try:
+                text = (ROOT / name).read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            hits += [f"{name}: {ref}" for ref in reference.findall(text) if ref not in published]
+        self.assertEqual(hits, [])

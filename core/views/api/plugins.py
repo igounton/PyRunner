@@ -2,7 +2,7 @@
 Plugin API dispatcher — /api/v1/plugins/<slug>/<resource>/[<item_id>/].
 
 The ONE core-owned route for every plugin's external HTTP resources
-(docs/PLAN_plugin_api.md). Core owns 100% of auth, rate limiting, and
+(docs/plugins.md). Core owns 100% of auth, rate limiting, and
 workspace scoping; a plugin contributes only a declared manifest entry
 (plugin.json "provides.api_resources") plus a marked handler in its api.py —
 it never sees a raw request, a token, or a tenancy decision, and it has zero

@@ -4,7 +4,7 @@ Channel model — multi-instance chat integrations (Channels subsystem).
 A Channel is one configured connection to an external chat service (Telegram,
 Slack, Discord, …). Unlike the singleton Services (S3/Claude on GlobalSettings),
 you can have N channels of one provider — e.g. several Telegram bots, each bound
-to a different handler. See docs/PLAN_channels.md.
+to a different handler.
 
 Credentials live encrypted ON this row (a Fernet JSON blob), NOT in the Secret
 namespace: scripts send *through* a channel server-side and never see raw tokens.

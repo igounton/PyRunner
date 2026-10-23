@@ -1,6 +1,6 @@
 """
 Security regression tests for the 2026-07-05 audit
-(docs/SECURITY_AUDIT_2026-07-05.md): missing-authorization fixes (Vulns 3/4/5)
+(2026-07 security audit): missing-authorization fixes (Vulns 3/4/5)
 and the bulk-requirements pip source-injection fix (Vuln 6).
 
 For the authz fixes, a plain authenticated **member** (non-superuser) must not be

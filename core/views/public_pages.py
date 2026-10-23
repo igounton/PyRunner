@@ -5,7 +5,7 @@ The /webhook/<token>/ idiom applied to HTML: no session, no auth header — the
 unguessable token IS the capability. Core owns the whole envelope; the plugin's
 @page handler only turns a PageRequest into an HTML string.
 
-Hard rules (docs/PLAN_plugin_api.md, Stage 5):
+Hard rules (docs/plugins.md):
 - Per-IP rate limit runs FIRST, before the DB token lookup — this is an
   unauthenticated surface, where token scanning is the whole attack, and a
   guess must not cost a DB query once the budget is burned.

@@ -40,4 +40,4 @@ workspace for plugins under development: `manage.py test plugins.<slug>` works
 directly, and Dev Mode (`PYRUNNER_PLUGIN_DEV`, see the plugin author guide in
 `docs/plugins.md`) can point at the folder for live-reload iteration.
 
-See `docs/PLAN_plugin_system.md` for the full design.
+See `docs/plugins.md` for the plugin guide.

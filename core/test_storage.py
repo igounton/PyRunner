@@ -4,7 +4,7 @@ Storage seam (object storage as a platform capability) — Stage 1 + Stage 2.
 Covers the full seam without a real bucket (boto3 is mocked throughout; the
 ``core.netguard`` SSRF guard blocks localhost unless the operator sets
 ``PYRUNNER_ALLOW_PRIVATE_NETWORK``, so a local MinIO is not a default test
-target — see docs/PLAN_storage_seam.md):
+target):
 
 - StorageConnection: single-default invariant, is_configured/is_public
 - migration contract: connection config moved off GlobalSettings, backup policy

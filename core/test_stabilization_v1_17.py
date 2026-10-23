@@ -1,7 +1,7 @@
 """
 Regression tests for the v1.17 stabilization pass.
 
-Each class pins one of the fixes in docs/PLAN_v1_17.md (1C/1D): reconciled runs
+Each class pins one of the v1.17 stabilization fixes (1C/1D): reconciled runs
 notify, hardened pip tasks, orphan venv / plugin folder recovery, the
 ``min_pyrunner`` gate, the ensurepip probe, and the admin-slug restart notice.
 """

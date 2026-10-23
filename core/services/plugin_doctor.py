@@ -53,7 +53,7 @@ _RECOMMENDED_FIELDS = ("author", "license", "summary", "icon")
 # before the app registry is ready). core.plugins (incl .api) is import-light.
 _CORE_INTERNAL_PREFIXES = ("core.models", "core.tasks", "core.services", "core.executor")
 
-# Plugin API (docs/PLAN_plugin_api.md): GET-only in v1 — the manifest shape is
+# Plugin API (docs/plugins.md): GET-only in v1 — the manifest shape is
 # POST-ready, but the doctor pins declared methods until writes are designed.
 _API_METHODS_ALLOWED = {"GET"}
 # Network clients in an api.py are the slow-handler smell: a sync handler can't
@@ -434,7 +434,7 @@ def _check_sdk_usage(folder: Path, report: DoctorReport):
 
 
 def _check_api_resources(folder: Path, report: DoctorReport):
-    """Plugin API — manifest ⇄ api.py drift (docs/PLAN_plugin_api.md, Stage 3).
+    """Plugin API — manifest ⇄ api.py drift (docs/plugins.md).
 
     Declared ∧ registered = servable, so drift is the failure mode: a declared
     resource with no ``@resource`` handler can never serve (FAIL pre-ship); a

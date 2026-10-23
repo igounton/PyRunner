@@ -15,8 +15,7 @@ from the signed ``run_id``:
   own prefix, so it cannot reach another plugin's objects — by construction, not
   by validation.
 - v1 scope: a run whose script has NO ``owner_plugin`` (a user-created script) is
-  refused. Non-plugin script storage is deliberately deferred; see
-  docs/PLAN_storage_seam.md.
+  refused. Non-plugin script storage is deliberately deferred.
 
 POST /internal/storage/put     {"key": "...", "data": "<base64>", "content_type": "..."}
 POST /internal/storage/get     {"key": "..."}   -> {"data": "<base64>"}

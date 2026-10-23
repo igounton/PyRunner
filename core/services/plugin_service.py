@@ -5,7 +5,7 @@ Implements the lifecycle the management UI drives — install (from an uploaded
 .zip), activate, deactivate, delete — plus the "restart required" detection and
 the controlled-restart trigger.
 
-Safety is the whole point (see docs/PLAN_plugin_system.md):
+Safety is the whole point (see docs/plugins.md):
   * Upload NEVER imports the plugin. It unpacks (zip-slip safe) + writes a DB row
     with status INSTALLED. The running site is untouched.
   * Activate validates the plugin in an ISOLATED subprocess (plugin_preflight)

@@ -14,7 +14,8 @@ services:
       - PORT=8000
 
       # REQUIRED — container will fail to start if these are not set.
-      # See docs/COOLIFY.md for generation commands.
+      # SECRET_KEY: python -c "import secrets; print(secrets.token_urlsafe(50))"
+      # ENCRYPTION_KEY: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
       - SECRET_KEY=${SECRET_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
 

@@ -47,19 +47,18 @@ from core.api.exceptions import ApiError as BrainError  # noqa: F401 — SDK sur
 # 2.2 (additive): DatabaseAPI — owner-scoped managed Postgres databases
 # (provision/get/list/grant/dsn) on the attached data server.
 # 2.3 (additive): external-API surface — @resource handler marker, APIRequest,
-# APIError (docs/PLAN_plugin_api.md) — plus read-only workspace-scoped
+# APIError (docs/plugins.md) — plus read-only workspace-scoped
 # ChannelAPI.list(), and public pages (@page, PageRequest, PublicPageAPI).
 # 2.4 (additive): LibraryAPI — shared multi-module code attached to scripts and
 # materialized onto a run's PYTHONPATH, pinned to the revision stamped at queue
-# time (docs/PLAN_script_libraries.md).
+# time.
 # 2.5 (additive): StorageAPI — owner-scoped object storage on the instance's
 # assets StorageConnection, every key forced under apps/<owner>/; worker scripts
-# reach the same prefix through the pyrunner_storage helper
-# (docs/PLAN_storage_seam.md).
+# reach the same prefix through the pyrunner_storage helper.
 # 2.6 (additive): VectorAPI — owner-scoped vector collections (embeddings +
 # similarity search with a portable payload filter) on the Local store or
 # Qdrant; worker scripts reach the same collections through the
-# pyrunner_vectors helper (docs/PLAN_vector_db.md).
+# pyrunner_vectors helper.
 # 2.7 (additive): BrainAPI — owned brains and grant-checked shared read handlers.
 API_VERSION = "2.7"
 

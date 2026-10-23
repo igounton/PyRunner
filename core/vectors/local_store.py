@@ -1,7 +1,7 @@
 """
 Local vector backend: one SQLite file per collection + exact numpy search.
 
-Why this shape (locked in docs/PLAN_vector_db.md): zero infrastructure, exact
+Why this shape: zero infrastructure, exact
 results, fine to ~50k points per collection (the console suggests Qdrant above
 ``SOFT_LIMIT_POINTS``; ``HARD_LIMIT_POINTS`` is refused), and numpy is the only
 new dependency. FAISS/hnswlib, sqlite-vec and pickle persistence were rejected.

@@ -1,4 +1,4 @@
-"""Py AI — built-in read-only assistant (standalone feature). See docs/PLAN_pyai.md."""
+"""Py AI — built-in read-only assistant (standalone feature)."""
 
 from .runtime import PyAIError, PyAIResult, PyAIService
 

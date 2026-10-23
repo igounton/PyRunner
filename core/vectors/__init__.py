@@ -1,7 +1,7 @@
 """
 Vector seam — embeddings + vector collections as a platform capability.
 
-Layout (see docs/PLAN_vector_db.md):
+Layout:
 
 - ``errors``        ``VectorError`` and the backends' ``StoreError`` family
                     (dependency-free, so the plugin SDK can re-export them)

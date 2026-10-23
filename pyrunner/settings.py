@@ -725,7 +725,7 @@ MCP_ALLOWED_ORIGINS = [
 # Set to "*" to allow all origins (suitable for self-hosted), or comma-separated origins
 API_CORS_ORIGINS = os.environ.get("API_CORS_ORIGINS", "*")
 
-# Plugin API (/api/v1/plugins/…) — docs/PLAN_plugin_api.md. Per-token requests
+# Plugin API (/api/v1/plugins/…) — docs/plugins.md. Per-token requests
 # reuse API_RATE_LIMIT above; these add the per-plugin ceiling (slowness is
 # per-plugin), the pre-auth per-IP auth-failure throttle (anti token-scanning),
 # and the response size backstop (handlers must paginate at the query level).

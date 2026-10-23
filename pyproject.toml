@@ -26,7 +26,7 @@ select = ["E4", "E7", "E9", "F"]
 # The codes below are IGNORED as an intentionally lenient baseline: each has
 # pre-existing hits in the tree today, and a repo-wide auto-fix would collide
 # with in-flight feature work. Re-enable them incrementally with a dedicated
-# cleanup once that work has merged (tracked in docs/PLAN_optimization.md).
+# cleanup once that work has merged.
 ignore = [
     "E402",  # module-import-not-at-top — intentional in settings.py (WAL signal + plugin loader)
     "F401",  # unused-import (~18) — cleanup pending

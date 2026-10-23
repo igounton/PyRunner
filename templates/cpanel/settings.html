@@ -6,7 +6,7 @@
 {% block subtitle %}Configure this PyRun instance — access, email, workers, retention, and backups.{% endblock %}
 
 {% block page %}
-<!-- Tabs -->
+{# Tabs #}
 <div class="mb-6">
     <div class="bg-panel border border-line rounded-xl p-1.5 inline-flex flex-wrap gap-1">
         <button type="button" onclick="showTab('general')" id="tab-general" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg bg-panel-hi text-text transition-colors">General</button>
@@ -22,13 +22,13 @@
     </div>
 </div>
 
-<!-- General Settings Tab -->
+{# General Settings Tab #}
 <div id="panel-general" class="tab-panel">
     <form method="post" action="{% url 'cpanel:general_settings' %}">
         {% csrf_token %}
         {% if general_form.errors %}<div class="mb-4">{% include "cpanel/_form_errors.html" with form=general_form %}</div>{% endif %}
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            <!-- Primary column: instance identity & formatting -->
+            {# Primary column: instance identity & formatting #}
             <div class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
                 <h3 class="text-base font-semibold text-text mb-1">Instance</h3>
                 <p class="text-sm text-muted mb-5">Name your instance and choose the timezone times are displayed in across the console.</p>
@@ -48,7 +48,7 @@
                 </div>
             </div>
 
-            <!-- Side column: admin access URL -->
+            {# Side column: admin access URL #}
             <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
                 <h3 class="text-base font-semibold text-text mb-1">Admin access URL</h3>
                 <p class="text-sm text-muted mb-5">The path segment that fronts the control panel. Keep it private to reduce exposure.</p>
@@ -68,10 +68,10 @@
     </form>
 </div>
 
-<!-- Security Tab -->
+{# Security Tab #}
 <div id="panel-security" class="tab-panel hidden">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        <!-- Primary column: login protection -->
+        {# Primary column: login protection #}
         <form method="post" action="{% url 'cpanel:recaptcha_settings' %}" class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
             {% csrf_token %}
             {% if recaptcha_form.errors %}<div class="mb-4">{% include "cpanel/_form_errors.html" with form=recaptcha_form %}</div>{% endif %}
@@ -115,7 +115,7 @@
             </div>
         </form>
 
-        <!-- Side column: password + account -->
+        {# Side column: password + account #}
         <div class="lg:col-span-5 space-y-5">
             <div class="bg-panel border border-line rounded-2xl p-6">
                 <h3 class="text-base font-semibold text-text mb-4">Password</h3>
@@ -154,10 +154,10 @@
     </div>
 </div>
 
-<!-- Schedule Control Tab -->
+{# Schedule Control Tab #}
 <div id="panel-schedules" class="tab-panel hidden">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        <!-- Primary column: control -->
+        {# Primary column: control #}
         <div class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
             <h3 class="text-base font-semibold text-text mb-1">Schedule control</h3>
             <p class="text-sm text-muted mb-5">Pause every scheduled run at once — useful during maintenance or incident response.</p>
@@ -178,7 +178,7 @@
             </p>
         </div>
 
-        <!-- Side column: current status -->
+        {# Side column: current status #}
         <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
             <h3 class="text-base font-semibold text-text mb-4">Current status</h3>
             <div class="flex items-center gap-3 p-4 rounded-lg border {% if settings.schedules_paused %}bg-warn/10 border-warn/30{% else %}bg-ok/10 border-ok/20{% endif %}">
@@ -192,10 +192,10 @@
     </div>
 </div>
 
-<!-- Notifications Tab -->
+{# Notifications Tab #}
 <div id="panel-notifications" class="tab-panel hidden">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        <!-- Primary column: email configuration -->
+        {# Primary column: email configuration #}
         <form method="post" action="{% url 'cpanel:notification_settings' %}" class="lg:col-span-8 space-y-5">
             {% csrf_token %}
             {% if notification_form.errors %}<div class="mb-4">{% include "cpanel/_form_errors.html" with form=notification_form %}</div>{% endif %}
@@ -281,7 +281,7 @@
             <div id="test-email-result" class="hidden p-4 rounded-lg"></div>
         </form>
 
-        <!-- Side column: status & guidance -->
+        {# Side column: status & guidance #}
         <div class="lg:col-span-4 space-y-5">
             {% if settings.email_backend == 'disabled' %}
             <div class="bg-fail/10 border border-fail/30 rounded-2xl p-6">
@@ -311,10 +311,10 @@
     </div>
 </div>
 
-<!-- Log Retention Tab -->
+{# Log Retention Tab #}
 <div id="panel-retention" class="tab-panel hidden">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        <!-- Primary column: policy -->
+        {# Primary column: policy #}
         <form method="post" action="{% url 'cpanel:retention_settings' %}" class="lg:col-span-7">
             {% csrf_token %}
             {% if retention_form.errors %}<div class="mb-4">{% include "cpanel/_form_errors.html" with form=retention_form %}</div>{% endif %}
@@ -348,7 +348,7 @@
             </div>
         </form>
 
-        <!-- Side column: manual cleanup -->
+        {# Side column: manual cleanup #}
         <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
             <h3 class="text-base font-semibold text-text mb-1">Manual cleanup</h3>
             <p class="text-sm text-muted mb-4">Run the policy now instead of waiting for the scheduled sweep.{% if settings.last_cleanup_at %} Last cleanup {{ settings.last_cleanup_at|timesince }} ago.{% endif %}</p>
@@ -366,10 +366,10 @@
     </div>
 </div>
 
-<!-- Worker Settings Tab -->
+{# Worker Settings Tab #}
 <div id="panel-workers" class="tab-panel hidden">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        <!-- Primary column: queue configuration -->
+        {# Primary column: queue configuration #}
         <form method="post" action="{% url 'cpanel:worker_settings' %}" class="lg:col-span-7">
             {% csrf_token %}
             {% if worker_form.errors %}<div class="mb-4">{% include "cpanel/_form_errors.html" with form=worker_form %}</div>{% endif %}
@@ -410,7 +410,7 @@
             </div>
         </form>
 
-        <!-- Side column: restart status & control -->
+        {# Side column: restart status & control #}
         <div class="lg:col-span-5 space-y-5">
             {% if settings.worker_restart_required %}
             <div class="bg-warn/10 border border-warn/30 rounded-2xl p-6">
@@ -440,10 +440,10 @@
     </div>
 </div>
 
-<!-- Execution / Isolation Tab -->
+{# Execution / Isolation Tab #}
 <div id="panel-isolation" class="tab-panel hidden">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        <!-- Primary column: isolation configuration -->
+        {# Primary column: isolation configuration #}
         <form method="post" action="{% url 'cpanel:execution_isolation_settings' %}" class="lg:col-span-7">
             {% csrf_token %}
             {% if isolation_form.errors %}<div class="mb-4">{% include "cpanel/_form_errors.html" with form=isolation_form %}</div>{% endif %}
@@ -503,7 +503,7 @@
             </div>
         </form>
 
-        <!-- Side column: active-tier status -->
+        {# Side column: active-tier status #}
         <div class="lg:col-span-5 space-y-5">
             <div class="bg-panel border border-line rounded-2xl p-6">
                 <h3 class="text-base font-semibold text-text mb-4">Active protection</h3>
@@ -554,7 +554,7 @@
     </div>
 </div>
 
-<!-- System Info Tab -->
+{# System Info Tab #}
 <div id="panel-system" class="tab-panel hidden">
     <div class="bg-panel border border-line rounded-2xl p-6">
         <div class="flex items-center justify-between mb-5">
@@ -594,10 +594,10 @@
     </div>
 </div>
 
-<!-- Backup & Restore Tab -->
+{# Backup & Restore Tab #}
 <div id="panel-backup" class="tab-panel hidden">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-    <!-- Create Backup -->
+    {# Create Backup #}
     <div class="bg-panel border border-line rounded-2xl p-6">
         <h3 class="text-base font-semibold text-text mb-4">📦 Create backup</h3>
         <p class="text-sm text-muted mb-2">Export a backup of your PyRun instance: scripts, secrets, settings, libraries, data stores, brains and execution history.</p>
@@ -632,7 +632,7 @@
         </form>
     </div>
 
-    <!-- Restore Backup -->
+    {# Restore Backup #}
     <div class="bg-panel border border-line rounded-2xl p-6">
         <h3 class="text-base font-semibold text-text mb-4">📥 Restore backup</h3>
         <p class="text-sm text-muted mb-4">Upload a backup file to restore your PyRun instance.</p>
@@ -660,7 +660,7 @@
     </div>
     </div>
 
-    <!-- Scheduled S3 Backups -->
+    {# Scheduled S3 Backups #}
     <div class="bg-panel border border-line rounded-2xl p-6 mt-5">
         <h3 class="text-base font-semibold text-text mb-4">☁️ Scheduled S3 backups</h3>
         <p class="text-sm text-muted mb-4">Automatically backup your PyRun instance to S3-compatible storage on a schedule.</p>
@@ -753,10 +753,10 @@
     </div>
 </div>
 
-<!-- API Tab -->
+{# API Tab #}
 <div id="panel-api" class="tab-panel hidden">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        <!-- Primary column: access & tokens -->
+        {# Primary column: access & tokens #}
         <div class="lg:col-span-7 bg-panel border border-line rounded-2xl p-6">
             <h3 class="text-base font-semibold text-text mb-1">API access</h3>
             <p class="text-sm text-muted mb-3">PyRun exposes a read-only REST API for your datastores. Create a token to let external applications fetch entries.</p>
@@ -774,7 +774,7 @@
             </div>
         </div>
 
-        <!-- Side column: endpoint reference -->
+        {# Side column: endpoint reference #}
         <div class="lg:col-span-5 bg-panel border border-line rounded-2xl p-6">
             <h3 class="text-base font-semibold text-text mb-3">Endpoints</h3>
             <div class="p-4 bg-ink border border-line-soft rounded-lg space-y-2 text-[13px] font-mono text-muted">
@@ -793,7 +793,7 @@
         </div>
     </div>
 </div>
-<!-- Restore Preview Modal -->
+{# Restore Preview Modal #}
 <div id="restore-preview-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" style="display: none;">
     <div class="bg-panel border border-line rounded-2xl p-6 max-w-2xl w-full mx-4">
         <div class="flex items-center justify-between mb-4">

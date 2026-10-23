@@ -1,9 +1,9 @@
 {% load workspace_tags icon_tags %}
-<!-- Sidebar Navigation Component -->
-<!-- Mobile drawer backdrop (before the drawer so the drawer stacks above it; dims the header too) -->
+{# Sidebar Navigation Component #}
+{# Mobile drawer backdrop (before the drawer so the drawer stacks above it; dims the header too) #}
 <div id="sidebar-overlay" onclick="closeSidebar()" class="fixed inset-0 bg-black/60 z-50 hidden lg:hidden"></div>
 <aside id="app-sidebar" class="fixed lg:sticky top-0 lg:top-16 left-0 z-50 lg:z-auto h-screen lg:h-[calc(100vh-4rem)] w-64 max-w-[82vw] flex-shrink-0 flex flex-col bg-panel lg:bg-panel/60 border-r border-line -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out">
-    <!-- Mobile drawer header (dismiss from inside) -->
+    {# Mobile drawer header (dismiss from inside) #}
     <div class="lg:hidden flex items-center justify-between h-16 px-4 border-b border-line flex-shrink-0">
         <span class="flex items-center gap-2.5">
             <span class="w-8 h-8 rounded-lg bg-ok/15 grid place-items-center">
@@ -34,7 +34,7 @@
         {% endif %}
         <div class="eyebrow text-faint px-3 pb-2 pt-1">Operate</div>
 
-        <!-- Dashboard -->
+        {# Dashboard #}
         <a href="{% url 'cpanel:dashboard' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if request.resolver_match.url_name == 'dashboard' %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if request.resolver_match.url_name == 'dashboard' %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -42,7 +42,7 @@
             <span>Dashboard</span>
         </a>
 
-        <!-- Scripts -->
+        {# Scripts #}
         <a href="{% url 'cpanel:script_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'script' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'script' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -50,7 +50,7 @@
             <span>Scripts</span>
         </a>
 
-        <!-- Libraries (shared code attached to scripts; lives next to Scripts) -->
+        {# Libraries (shared code attached to scripts; lives next to Scripts) #}
         <a href="{% url 'cpanel:library_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'library' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'library' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -63,7 +63,7 @@
             <span>Brains</span>
         </a>
 
-        <!-- Runs -->
+        {# Runs #}
         <a href="{% url 'cpanel:run_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'run' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'run' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -71,7 +71,7 @@
             <span>Runs</span>
         </a>
 
-        <!-- Py AI (owners/admins of the workspace; members are refused by the view) -->
+        {# Py AI (owners/admins of the workspace; members are refused by the view) #}
         {% if user_can_manage_workspace %}
         <a href="{% url 'cpanel:pyai' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'pyai' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
@@ -81,7 +81,7 @@
         </a>
         {% endif %}
 
-        <!-- Tasks -->
+        {# Tasks #}
         <a href="{% url 'cpanel:tasks' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'task' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'task' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -96,7 +96,7 @@
             <span>Connect</span>
         </a>
 
-        <!-- Environments -->
+        {# Environments #}
         <a href="{% url 'cpanel:environment_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'environment' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'environment' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -104,7 +104,7 @@
             <span>Environments</span>
         </a>
 
-        <!-- Secrets -->
+        {# Secrets #}
         <a href="{% url 'cpanel:secret_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'secret' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'secret' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -112,7 +112,7 @@
             <span>Secrets</span>
         </a>
 
-        <!-- Tags -->
+        {# Tags #}
         <a href="{% url 'cpanel:tag_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'tag' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'tag' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -120,7 +120,7 @@
             <span>Tags</span>
         </a>
 
-        <!-- Data Stores -->
+        {# Data Stores #}
         <a href="{% url 'cpanel:datastore_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'datastore' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'datastore' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -129,7 +129,7 @@
         </a>
 
         {% if user_can_manage_workspace %}
-        <!-- Databases (managed Postgres; Owner/Admin only) -->
+        {# Databases (managed Postgres; Owner/Admin only) #}
         <a href="{% url 'cpanel:database_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'database' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'database' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -137,7 +137,7 @@
             <span>Databases</span>
         </a>
 
-        <!-- Vectors (vector collections; Owner/Admin only) -->
+        {# Vectors (vector collections; Owner/Admin only) #}
         <a href="{% url 'cpanel:vector_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'vector' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'vector' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -146,7 +146,7 @@
         </a>
         {% endif %}
 
-        <!-- Channels -->
+        {# Channels #}
         <a href="{% url 'cpanel:channel_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'channel' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'channel' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -155,8 +155,8 @@
         </a>
 
         {% if request.user.is_superuser %}
-        <!-- Services, Settings and Logs are instance-wide (superuser only) -->
-        <!-- Services -->
+        {# Services, Settings and Logs are instance-wide (superuser only) #}
+        {# Services #}
         <a href="{% url 'cpanel:services' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'service' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'service' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -164,7 +164,7 @@
             <span>Services</span>
         </a>
 
-        <!-- Settings -->
+        {# Settings #}
         <a href="{% url 'cpanel:settings' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'settings' in request.resolver_match.url_name and 'brain' not in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'settings' in request.resolver_match.url_name and 'brain' not in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -172,7 +172,7 @@
             <span>Settings</span>
         </a>
 
-        <!-- Logs -->
+        {# Logs #}
         <a href="{% url 'cpanel:logs' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'logs' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'logs' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -180,7 +180,7 @@
             <span>Logs</span>
         </a>
         {% elif user_can_manage_workspace %}
-        <!-- Owners/Admins manage members here; superusers find it under Admin -->
+        {# Owners/Admins manage members here; superusers find it under Admin #}
         <a href="{% url 'cpanel:workspace_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'workspace' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'workspace' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -205,7 +205,7 @@
         {% if request.user.is_superuser %}
         <div class="eyebrow text-faint px-3 pb-1.5 pt-4">Admin</div>
 
-        <!-- Workspaces (Admin only) -->
+        {# Workspaces (Admin only) #}
         <a href="{% url 'cpanel:workspace_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'workspace' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'workspace' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -213,7 +213,7 @@
             <span>Workspaces</span>
         </a>
 
-        <!-- Users (Admin only) -->
+        {# Users (Admin only) #}
         <a href="{% url 'cpanel:user_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'user' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'user' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -221,7 +221,7 @@
             <span>Users</span>
         </a>
 
-        <!-- Plugins (Admin only) -->
+        {# Plugins (Admin only) #}
         <a href="{% url 'cpanel:plugin_list' %}"
            class="relative flex items-center gap-3 px-3 py-1.5 rounded-md text-sm transition-colors {% if 'plugin' in request.resolver_match.url_name %}font-medium text-ok bg-ok/10{% else %}text-muted hover:text-text hover:bg-panel-hi{% endif %}">
             {% if 'plugin' in request.resolver_match.url_name %}<span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-ok"></span>{% endif %}
@@ -231,13 +231,13 @@
         {% endif %}
     </nav>
 
-    <!-- Footer (fixed at bottom; nothing to show from xl up) -->
+    {# Footer (fixed at bottom; nothing to show from xl up) #}
     <div class="xl:hidden flex-shrink-0 border-t border-line p-3 space-y-2">
         {# Phones: the header hides What's new and the version label (F20). #}
         <a href="{% url 'cpanel:changelog' %}" class="sm:hidden block text-xs text-muted hover:text-text transition-colors">What's new · v{{ pyrunner_version }}</a>
-        <!-- Docs / GitHub / Discord: the header shows them from xl up, so the
+        {% comment %} Docs / GitHub / Discord: the header shows them from xl up, so the
              sidebar carries them below that (the developer links live in
-             Settings -> System). -->
+             Settings -> System). {% endcomment %}
         <div class="flex items-center gap-3 text-xs">
             <a href="https://github.com/hassancs91/PyRun#readme" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors">Docs</a>
             <a href="https://github.com/hassancs91/PyRun" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors">GitHub</a>

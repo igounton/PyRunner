@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block page %}
-<!-- Stats -->
+{# Stats #}
 <section class="rounded-2xl border border-line bg-panel grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-line-soft">
     <div class="px-6 py-5">
         <div class="eyebrow text-faint">Queued</div>
@@ -33,7 +33,7 @@
     </div>
 </section>
 
-<!-- Stuck tasks -->
+{# Stuck tasks #}
 {% if stuck_tasks %}
 <section class="rounded-2xl border border-warn/30 bg-warn/10 p-5">
     <div class="flex items-center gap-3 mb-3">
@@ -58,7 +58,7 @@
 </section>
 {% endif %}
 
-<!-- Running tasks -->
+{# Running tasks #}
 {% if running_tasks %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="flex items-center justify-between px-6 py-4 border-b border-line-soft">
@@ -93,7 +93,7 @@
 </section>
 {% endif %}
 
-<!-- Queued tasks -->
+{# Queued tasks #}
 {% if queued_tasks %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="flex items-center justify-between px-6 py-4 border-b border-line-soft">
@@ -130,7 +130,7 @@
 </section>
 {% endif %}
 
-<!-- Task history -->
+{# Task history #}
 <div>
     <div class="flex items-center justify-between mb-3">
         <div class="flex flex-wrap items-center gap-3">

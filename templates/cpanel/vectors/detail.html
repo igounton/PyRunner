@@ -21,7 +21,7 @@
 {% block subtitle %}{% if collection.description %}{{ collection.description }}{% endif %}{% endblock %}
 
 {% block page %}
-<!-- Error banner + retry -->
+{# Error banner + retry #}
 {% if collection.status == "error" %}
 <div class="rounded-2xl border border-fail/30 bg-fail/5 p-5 space-y-3">
     <div class="flex items-start gap-3">
@@ -45,9 +45,9 @@
 {% endif %}
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-    <!-- Search, points, usage -->
+    {# Search, points, usage #}
     <div class="lg:col-span-2 space-y-5 min-w-0">
-        <!-- Search -->
+        {# Search #}
         {% if collection.status == "ready" %}
         <section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
             <div>
@@ -88,7 +88,7 @@
             {% endif %}
         </section>
 
-        <!-- Browse -->
+        {# Browse #}
         <section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
             <div>
                 <h2 class="text-sm font-medium text-text">Points</h2>
@@ -123,7 +123,7 @@
         </section>
         {% endif %}
 
-        <!-- Usage -->
+        {# Usage #}
         <section class="rounded-2xl border border-line bg-panel p-5">
             <h2 class="text-sm font-medium text-text mb-2">Using this collection in a script</h2>
             <code class="block px-3 py-3 bg-ink border border-line-soft rounded-lg text-sm font-mono text-text whitespace-pre overflow-x-auto">from pyrunner_vectors import get_collection
@@ -139,9 +139,9 @@ hits = col.search_vector([...], k=5, filter={"tier": "public"})
         </section>
     </div>
 
-    <!-- Collection + danger zone -->
+    {# Collection + danger zone #}
     <aside class="space-y-5 min-w-0">
-        <!-- Stats -->
+        {# Stats #}
         <section class="rounded-2xl border border-line bg-panel p-5 space-y-4">
             <h2 class="text-sm font-medium text-text">Collection</h2>
             <dl class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -198,7 +198,7 @@ hits = col.search_vector([...], k=5, filter={"tier": "public"})
             {% endif %}
         </section>
 
-        <!-- Danger zone -->
+        {# Danger zone #}
         <section class="rounded-2xl border border-fail/30 bg-panel p-5 space-y-3">
             <div>
                 <h2 class="text-sm font-medium text-fail">Danger zone</h2>

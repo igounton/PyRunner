@@ -10,7 +10,7 @@
 
 {% block page %}
 {% if last_invite_url %}
-<!-- Recently created invite link -->
+{# Recently created invite link #}
 <div class="rounded-2xl border border-ok/30 bg-ok/10 p-6">
     <div class="flex items-start gap-3">
         <svg class="w-5 h-5 text-ok mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -26,7 +26,7 @@
 </div>
 {% endif %}
 
-<!-- Registration policy -->
+{# Registration policy #}
 <div class="rounded-2xl border border-line bg-panel p-6">
     <div class="flex items-center gap-4">
         <div>
@@ -36,7 +36,7 @@
     </div>
 </div>
 
-<!-- Pending invites -->
+{# Pending invites #}
 {% if pending_invites %}
 <div class="rounded-2xl border border-line bg-panel p-6">
     <h3 class="text-base font-semibold text-text mb-4">Pending invites</h3>
@@ -68,7 +68,7 @@
 </div>
 {% endif %}
 
-<!-- Users list -->
+{# Users list #}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-line-soft">
         <h3 class="text-base font-semibold text-text">All users <span class="text-faint font-mono tnum text-sm font-normal">{{ users|length }}</span></h3>
@@ -142,7 +142,7 @@ document.getElementById('user-filter').addEventListener('input', function () {
 });
 </script>
 
-<!-- Invite Modal -->
+{# Invite Modal #}
 <div id="invite-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 flex">
     <div class="bg-panel border border-line rounded-2xl p-6 max-w-md w-full mx-4">
         <div class="flex items-center justify-between mb-4">

@@ -29,7 +29,7 @@
 {% endblock %}
 
 {% block page %}
-<!-- Diff vs current -->
+{# Diff vs current #}
 {% if not is_head %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="flex items-center justify-between px-5 py-4 border-b border-line-soft">
@@ -62,7 +62,7 @@
 </section>
 {% endif %}
 
-<!-- Full content at this version -->
+{# Full content at this version #}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="flex items-center justify-between px-5 py-4 border-b border-line-soft">
         <h3 class="text-sm font-semibold">Modules at v{{ revision.version }}</h3>

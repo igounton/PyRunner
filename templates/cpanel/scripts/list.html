@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block page %}
-<!-- Filters: status tabs, search, tag and owner all live in the URL and combine -->
+{# Filters: status tabs, search, tag and owner all live in the URL and combine #}
 <div class="flex items-center flex-wrap gap-3 justify-between">
     <div class="inline-flex flex-wrap max-w-full items-center gap-1 p-1 rounded-lg border border-line bg-panel" role="group" aria-label="Status">
         <a href="{% url 'cpanel:script_list' %}{% if querystring_without_status %}?{{ querystring_without_status }}{% endif %}"
@@ -32,7 +32,7 @@
     </div>
 
     <div class="flex items-center flex-wrap gap-3 min-w-0 w-full sm:w-auto">
-        <!-- Search: name + description, server-side so it covers every page -->
+        {# Search: name + description, server-side so it covers every page #}
         <form method="get" action="{% url 'cpanel:script_list' %}" role="search" class="flex items-center gap-2 min-w-0 w-full sm:w-auto">
             {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
             {% if selected_tag %}<input type="hidden" name="tag" value="{{ selected_tag.pk }}">{% endif %}
@@ -79,7 +79,7 @@ function filterByTag(tagId) {
 }
 </script>
 
-<!-- Scripts table -->
+{# Scripts table #}
 {% if scripts %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">

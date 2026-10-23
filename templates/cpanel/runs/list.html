@@ -7,7 +7,7 @@
 {% block subtitle %}Execution history across all scripts{% endblock %}
 
 {% block page %}
-<!-- Filters -->
+{# Filters #}
 <div class="flex items-center flex-wrap gap-3 justify-between">
     <div class="inline-flex items-center flex-wrap gap-1 p-1 rounded-lg border border-line bg-panel">
         <a href="{% url 'cpanel:run_list' %}{% if querystring_without_status %}?{{ querystring_without_status }}{% endif %}"
@@ -19,7 +19,7 @@
     </div>
 
     <div class="flex items-center flex-wrap gap-3 min-w-0 w-full sm:w-auto">
-        <!-- Text search: script name + error output; stdout on request -->
+        {# Text search: script name + error output; stdout on request #}
         <form method="get" action="{% url 'cpanel:run_list' %}" class="flex items-center flex-wrap gap-2 min-w-0 w-full sm:w-auto">
             {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
             {% if script_filter %}<input type="hidden" name="script" value="{{ script_filter }}">{% endif %}
@@ -50,7 +50,7 @@
     </div>
 </div>
 
-<!-- Runs table -->
+{# Runs table #}
 {% if runs %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">

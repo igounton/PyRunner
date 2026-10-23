@@ -30,7 +30,7 @@
 {% endblock %}
 
 {% block page %}
-<!-- System Health Alerts -->
+{# System Health Alerts #}
 {% if system_health.worker_status == 'stopped' %}
 <div class="p-4 rounded-xl bg-fail/10 border border-fail/30 flex items-center gap-3">
     <svg class="w-5 h-5 text-fail flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -62,9 +62,9 @@
 </div>
 {% endif %}
 
-<!-- ============ RUN PULSE (signature) ============ -->
+{# ============ RUN PULSE (signature) ============ #}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-    <!-- run pulse ribbon -->
+    {# run pulse ribbon #}
     <div class="px-6 py-5 bg-panel-hi/40">
         <div class="flex items-center justify-between mb-3">
             <span class="eyebrow text-faint">Run pulse · last {{ run_pulse|length }} run{{ run_pulse|length|pluralize }}</span>
@@ -91,7 +91,7 @@
     </div>
 </section>
 
-<!-- ============ KPI INSTRUMENT STRIP ============ -->
+{# ============ KPI INSTRUMENT STRIP ============ #}
 <section class="rounded-2xl border border-line bg-panel grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y md:divide-y-0 md:divide-x divide-line-soft">
     <a href="{% url 'cpanel:script_list' %}" class="px-6 py-5 hover:bg-panel-hi/50 transition-colors">
         <div class="eyebrow text-faint">Scripts</div>
@@ -121,10 +121,10 @@
     </a>
 </section>
 
-<!-- ============ BODY: ACTIVITY FEED + STATUS RAIL ============ -->
+{# ============ BODY: ACTIVITY FEED + STATUS RAIL ============ #}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-    <!-- LEFT: primary activity feed -->
+    {# LEFT: primary activity feed #}
     <section class="lg:col-span-2 rounded-2xl border border-line bg-panel flex flex-col">
         <div class="flex items-center justify-between px-6 py-4 border-b border-line-soft">
             <h2 class="text-sm font-semibold flex items-center gap-2"><span class="eyebrow text-faint">Live</span> Recent runs</h2>
@@ -137,7 +137,7 @@
                 <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 {% if run.status == 'success' %}bg-ok{% elif run.status == 'failed' or run.status == 'timeout' %}bg-fail{% elif run.status == 'running' %}bg-warn animate-pulse{% else %}bg-faint{% endif %}"></span>
                 <span class="flex-1 min-w-0">
                     <span class="block text-[13.5px] font-medium truncate text-text">{{ run.script.name }}</span>
-                    <!-- Phones: status + time under the name, so the name keeps the row width -->
+                    {# Phones: status + time under the name, so the name keeps the row width #}
                     <span class="sm:hidden block text-xs mt-0.5 whitespace-nowrap"><span class="font-mono {% if run.status == 'success' %}text-ok{% elif run.status == 'failed' or run.status == 'timeout' %}text-fail{% elif run.status == 'running' %}text-warn{% else %}text-faint{% endif %}">{{ run.get_status_display|lower }}</span> <span class="text-faint">· {{ run.created_at|ago }}</span></span>
                 </span>
                 <span class="hidden sm:block flex-shrink-0 text-xs font-mono w-20 {% if run.status == 'success' %}text-ok{% elif run.status == 'failed' or run.status == 'timeout' %}text-fail{% elif run.status == 'running' %}text-warn{% else %}text-faint{% endif %}">{{ run.get_status_display|lower }}</span>
@@ -163,10 +163,10 @@
         {% endif %}
     </section>
 
-    <!-- RIGHT: status rail -->
+    {# RIGHT: status rail #}
     <div class="space-y-5">
 
-        <!-- System resources (superusers only) -->
+        {# System resources (superusers only) #}
         {% if system_resources %}
         <section class="rounded-2xl border border-line bg-panel">
             <div class="flex items-center justify-between px-6 py-4 border-b border-line-soft">
@@ -176,7 +176,7 @@
                 </button>
             </div>
             <div id="systemResourcesContainer" class="px-6 py-5 space-y-5">
-                <!-- CPU -->
+                {# CPU #}
                 <div>
                     <div class="flex items-baseline justify-between mb-2">
                         <span class="text-[13px] text-muted">CPU</span>
@@ -192,7 +192,7 @@
                     </div>
                     {% endif %}
                 </div>
-                <!-- RAM -->
+                {# RAM #}
                 <div>
                     <div class="flex items-baseline justify-between mb-2">
                         <span class="text-[13px] text-muted">Memory <span id="ramDetails" class="text-faint font-mono">{{ system_resources.memory.used_display }} / {{ system_resources.memory.total_display }}{% if system_resources.memory.is_limit %} limit{% endif %}</span></span>
@@ -208,7 +208,7 @@
                     </div>
                     {% endif %}
                 </div>
-                <!-- Disk -->
+                {# Disk #}
                 <div>
                     <div class="flex items-baseline justify-between mb-2">
                         <span class="text-[13px] text-muted">Storage <span id="diskDetails" class="text-faint font-mono">{{ system_resources.disk.used_display }} / {{ system_resources.disk.total_display }}</span></span>
@@ -222,7 +222,7 @@
         </section>
         {% endif %}
 
-        <!-- Needs attention -->
+        {# Needs attention #}
         <section class="rounded-2xl border border-line bg-panel">
             <div class="flex items-center justify-between px-6 py-4 border-b border-line-soft">
                 <h2 class="text-sm font-semibold flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-fail"></span> Needs attention</h2>
@@ -251,7 +251,7 @@
             {% endif %}
         </section>
 
-        <!-- Upcoming runs -->
+        {# Upcoming runs #}
         <section class="rounded-2xl border border-line bg-panel">
             <div class="flex items-center justify-between px-6 py-4 border-b border-line-soft">
                 <h2 class="text-sm font-semibold">Upcoming runs</h2>

@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block page %}
-<!-- Filters -->
+{# Filters #}
 <div class="rounded-2xl border border-line bg-panel p-4">
     <form method="get" class="flex flex-wrap items-end gap-4">
         <div>
@@ -49,7 +49,7 @@
     </form>
 </div>
 
-<!-- Results info -->
+{# Results info #}
 <div class="flex items-center justify-between">
     <p class="text-sm text-muted" id="log-count">Showing {{ entries|length }} of {{ total_count }} entries <span class="text-faint">· click a message to read all of it</span></p>
     <label class="flex items-center gap-2 text-sm text-muted cursor-pointer">
@@ -58,7 +58,7 @@
     </label>
 </div>
 
-<!-- Log entries -->
+{# Log entries #}
 {% if entries %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="max-h-[600px] overflow-auto" id="log-container">
@@ -100,7 +100,7 @@
     </div>
 </section>
 
-<!-- Pagination -->
+{# Pagination #}
 {% if total_pages > 1 %}
 <div class="flex items-center justify-center gap-2">
     {% if page > 1 %}

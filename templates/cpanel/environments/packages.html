@@ -17,7 +17,7 @@
 {% endblock %}
 
 {% block page %}
-<!-- Recent operations (live) -->
+{# Recent operations (live) #}
 {% if operations %}
 <section id="operations-panel" class="rounded-2xl border border-line bg-panel p-5">
     <div class="flex items-center justify-between gap-3 mb-4">
@@ -59,7 +59,7 @@
 {% endif %}
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-    <!-- Left: package list -->
+    {# Left: package list #}
     <div class="lg:col-span-2 space-y-5">
         <form method="get" class="flex items-center gap-2.5">
             <div class="relative flex-1">
@@ -117,10 +117,10 @@
         </section>
     </div>
 
-    <!-- Right: install forms -->
+    {# Right: install forms #}
     <div class="space-y-5">
         {% if user.is_superuser %}
-        <!-- Install single -->
+        {# Install single #}
         <section class="rounded-2xl border border-line bg-panel p-5">
             <h3 class="eyebrow text-faint mb-4">Install package</h3>
             <form method="post" action="{% url 'cpanel:package_install' pk=environment.pk %}" class="space-y-3" data-loading-form>
@@ -131,7 +131,7 @@
             </form>
         </section>
 
-        <!-- Bulk install -->
+        {# Bulk install #}
         <section class="rounded-2xl border border-line bg-panel p-5">
             <h3 class="eyebrow text-faint mb-4">Bulk install</h3>
             <form method="post" action="{% url 'cpanel:bulk_install' pk=environment.pk %}" enctype="multipart/form-data" class="space-y-3" data-loading-form>

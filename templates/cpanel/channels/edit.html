@@ -11,9 +11,9 @@
 
 {% block page %}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-    <!-- Channel settings -->
+    {# Channel settings #}
     <div class="lg:col-span-2 space-y-5 min-w-0">
-        <!-- Tools: test + find chat id -->
+        {# Tools: test + find chat id #}
         <div class="rounded-2xl border border-line bg-panel p-6 space-y-4">
             <div class="flex flex-wrap items-center gap-2.5">
                 <button id="test-btn" type="button" class="text-[13px] font-medium px-3.5 py-2 rounded-lg border border-line text-text hover:border-faint transition-colors">Test connection</button>
@@ -67,9 +67,9 @@
         </form>
     </div>
 
-    <!-- Inbound + approval inbox -->
+    {# Inbound + approval inbox #}
     <aside class="space-y-5 min-w-0">
-        <!-- Inbound -->
+        {# Inbound #}
         <div class="rounded-2xl border border-line bg-panel p-6 space-y-5">
             <div>
                 <h2 class="text-base font-semibold">Inbound</h2>
@@ -120,7 +120,7 @@
             {% endif %}
         </div>
 
-        <!-- Members / approval inbox -->
+        {# Members / approval inbox #}
         {% if supports_inbound %}
         <div class="rounded-2xl border border-line bg-panel p-6 space-y-4">
             <div>

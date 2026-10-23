@@ -10,7 +10,7 @@
 {% block subtitle %}Members &amp; roles{% endblock %}
 
 {% block page %}
-<!-- Add member -->
+{# Add member #}
 <div class="rounded-2xl border border-line bg-panel p-6">
     <h3 class="text-base font-semibold text-text mb-4">Add member</h3>
     <form method="post" action="{% url 'cpanel:workspace_member_add' pk=workspace.id %}" class="flex flex-col sm:flex-row gap-3">

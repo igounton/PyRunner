@@ -7,7 +7,7 @@
 <form method="post">
     {% csrf_token %}
 
-    <!-- Sticky action header -->
+    {# Sticky action header #}
     <div class="sticky top-16 z-20 bg-ink/85 backdrop-blur border-b border-line">
         <div class="px-5 lg:px-8 py-3.5 max-w-[1440px] mx-auto flex items-center justify-between gap-4">
             <div class="min-w-0">
@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    <!-- Body -->
+    {# Body #}
     <div class="px-5 lg:px-8 py-6 max-w-[1440px] mx-auto">
         {% if form.errors or schedule_form.errors %}
         <div id="form-error-summary" role="alert" tabindex="-1" class="mb-5 p-4 rounded-xl border border-fail/30 bg-fail/10 text-sm">

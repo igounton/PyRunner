@@ -18,7 +18,7 @@
 
         <div class="bg-panel border border-line rounded-2xl p-8">
             {% if setup_complete %}
-                <!-- Setup Complete -->
+                {# Setup Complete #}
                 <div class="text-center">
                     <div class="w-16 h-16 bg-ok/10 rounded-full grid place-items-center mx-auto mb-6">
                         <svg class="w-8 h-8 text-ok" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -64,11 +64,11 @@
                 </div>
 
             {% elif results %}
-                <!-- Setup Results -->
+                {# Setup Results #}
                 <h2 class="text-xl font-semibold text-text mb-6 text-center">Setup Progress</h2>
 
                 <div class="space-y-4 mb-6">
-                    <!-- Migrations -->
+                    {# Migrations #}
                     <div class="flex items-center justify-between p-4 bg-ink rounded-lg border border-line">
                         <div class="flex items-center space-x-3">
                             {% if results.migrations.success %}
@@ -91,7 +91,7 @@
                         </span>
                     </div>
 
-                    <!-- Default Environment -->
+                    {# Default Environment #}
                     <div class="flex items-center justify-between p-4 bg-ink rounded-lg border border-line">
                         <div class="flex items-center space-x-3">
                             {% if results.default_env.success %}
@@ -116,7 +116,7 @@
                 </div>
 
                 {% if not results.completed %}
-                    <!-- Error Messages -->
+                    {# Error Messages #}
                     {% if not results.migrations.success %}
                         <div class="p-4 bg-fail/10 border border-fail/30 rounded-lg mb-4">
                             <p class="text-sm text-fail">Migration error: {{ results.migrations.message }}</p>
@@ -137,7 +137,7 @@
                 {% endif %}
 
             {% else %}
-                <!-- Initial State - Run Setup -->
+                {# Initial State - Run Setup #}
                 <h2 class="text-xl font-semibold text-text mb-6 text-center">Welcome to PyRun</h2>
 
                 <div class="space-y-4 mb-6">

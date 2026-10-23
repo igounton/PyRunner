@@ -19,7 +19,7 @@
 </div>
 {% endif %}
 
-<!-- Summary tiles -->
+{# Summary tiles #}
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
     <div class="rounded-2xl border border-line bg-panel p-4">
         <p class="eyebrow text-faint">Active queries</p>
@@ -39,7 +39,7 @@
     </div>
 </div>
 
-<!-- Databases overview -->
+{# Databases overview #}
 {% if databases %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="px-5 pt-4 pb-1"><h2 class="text-sm font-medium text-text">Databases</h2></div>
@@ -68,7 +68,7 @@
 </section>
 {% endif %}
 
-<!-- Live sessions -->
+{# Live sessions #}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="px-5 pt-4 pb-1 flex items-center justify-between">
         <h2 class="text-sm font-medium text-text">Live sessions</h2>
@@ -116,7 +116,7 @@
     {% endif %}
 </section>
 
-<!-- Slow queries -->
+{# Slow queries #}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="px-5 pt-4 pb-1"><h2 class="text-sm font-medium text-text">Slow queries <span class="text-xs text-faint font-normal">(pg_stat_statements, by total time)</span></h2></div>
     {% if not slow.available %}

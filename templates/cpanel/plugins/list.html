@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block page %}
-<!-- Restart-required banner -->
+{# Restart-required banner #}
 {% if pending_restart %}
 <div class="rounded-xl border border-warn/30 bg-warn/10 p-4 flex items-center justify-between gap-4">
     <div class="flex items-start gap-3">
@@ -30,7 +30,7 @@
 </div>
 {% endif %}
 
-<!-- Boot loader errors (rare; preflight normally quarantines first) -->
+{# Boot loader errors (rare; preflight normally quarantines first) #}
 {% if load_errors %}
 <div class="rounded-xl border border-fail/30 bg-fail/10 p-4 text-sm">
     <p class="font-medium text-fail">Some plugins were skipped at boot:</p>
@@ -129,7 +129,7 @@
     </a>
 </section>
 {% endif %}
-<!-- Delete confirmation modal (shared; populated per-row via data attributes) -->
+{# Delete confirmation modal (shared; populated per-row via data attributes) #}
 <div id="delete-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[60] p-4">
     <div class="bg-panel border border-line rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-base font-semibold text-text mb-2">Delete plugin</h3>

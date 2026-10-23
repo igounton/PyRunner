@@ -7,7 +7,7 @@
 {% block subtitle %}Configure external service integrations{% endblock %}
 
 {% block page %}
-<!-- Section index (UX5): the page is long, so jump straight to a service -->
+{# Section index (UX5): the page is long, so jump straight to a service #}
 <nav aria-label="Services on this page" class="sticky top-16 z-10 -mx-1 px-1 py-2 bg-ink/85 backdrop-blur">
     <div class="inline-flex flex-wrap max-w-full gap-1 p-1 rounded-lg border border-line bg-panel">
         <a href="#storage" class="px-3 py-1.5 text-sm rounded-md text-muted hover:text-text hover:bg-panel-hi/50 transition-colors">Storage</a>
@@ -18,7 +18,7 @@
     </div>
 </nav>
 
-<!-- Object Storage Service Card -->
+{# Object Storage Service Card #}
 <div id="storage" class="scroll-mt-32 rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="p-6 border-b border-line-soft">
         <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
@@ -76,7 +76,7 @@
     <div id="s3-config" class="hidden">
         <div class="p-6 space-y-6">
 
-            <!-- Saved connections -->
+            {# Saved connections #}
             <div>
                 <div class="flex items-center justify-between gap-3 mb-3">
                     <p class="text-[13px] font-medium text-text">Saved connections</p>
@@ -151,7 +151,7 @@
                 {% endif %}
             </div>
 
-            <!-- Add / edit connection form -->
+            {# Add / edit connection form #}
             <div id="storage-form-wrap" class="{% if not storage_form_open %}hidden {% endif %}border border-line-soft rounded-lg p-5 bg-panel-hi/30">
                 <p id="storage-form-title" class="text-[13px] font-medium text-text mb-4">{% if storage_form_open and storage_form.instance %}Edit connection{% else %}Add connection{% endif %}</p>
                 {% if storage_form.errors %}
@@ -229,7 +229,7 @@
                 </form>
             </div>
 
-            <!-- Plugin assets selector -->
+            {# Plugin assets selector #}
             <form method="post" action="{% url 'cpanel:assets_storage' %}" class="flex flex-wrap items-end gap-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
                 {% csrf_token %}
                 <div class="min-w-[280px]">
@@ -240,7 +240,7 @@
                 <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition mb-1">Save</button>
             </form>
 
-            <!-- Usage help -->
+            {# Usage help #}
             <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
                 <p class="text-text font-medium mb-2">How plugins use storage</p>
                 <p class="mb-2">A plugin reads and writes through the SDK, confined to its own prefix:</p>
@@ -261,7 +261,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
 {{ storage_connections_json|json_script:"storage-connections-data" }}
 {{ storage_presets_json|json_script:"storage-presets-data" }}
 
-<!-- AI Provider Service Card -->
+{# AI Provider Service Card #}
 <div id="ai" class="scroll-mt-32 rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="p-6 border-b border-line-soft">
         <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
@@ -339,7 +339,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
     <div id="claude-config" class="hidden">
         <div class="p-6 space-y-6">
 
-            <!-- Saved providers -->
+            {# Saved providers #}
             <div id="ai-saved-providers">
                 <div class="flex items-center justify-between gap-3 mb-3">
                     <p class="text-[13px] font-medium text-text">Saved providers</p>
@@ -400,7 +400,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
                 {% endif %}
             </div>
 
-            <!-- Add / edit provider form -->
+            {# Add / edit provider form #}
             <div id="ai-provider-form-wrap" class="{% if not ai_form_open %}hidden {% endif %}border border-line-soft rounded-lg p-5 bg-panel-hi/30">
                 <p id="ai-provider-form-title" class="text-[13px] font-medium text-text mb-4">{% if ai_provider_editing %}Edit provider &mdash; {{ ai_provider_form.instance.name }}{% else %}Add provider{% endif %}</p>
                 <form method="post" action="{% url 'cpanel:ai_provider_save' %}" id="ai-provider-form">
@@ -460,7 +460,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
                 </form>
             </div>
 
-            <!-- Master settings -->
+            {# Master settings #}
             <form method="post" action="{% url 'cpanel:claude_settings' %}" class="flex flex-wrap items-end gap-5 p-4 bg-panel-hi/40 border border-line-soft rounded-lg">
                 {% csrf_token %}
                 <div class="min-w-[220px]">
@@ -473,7 +473,7 @@ url = storage.url("avatars/abc.jpg")</code></pre>
                 <button type="submit" class="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-ok text-ink hover:opacity-90 transition mb-1">Save settings</button>
             </form>
 
-            <!-- Usage help -->
+            {# Usage help #}
             <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
                 <p class="text-text font-medium mb-2">How to use in a script</p>
                 <p class="mb-2">Install <span class="font-mono text-text">claude-agent-sdk</span> in the script's Environment, then:</p>
@@ -495,7 +495,7 @@ print(answer)</code></pre>
 {{ ai_providers_json|json_script:"ai-providers-data" }}
 {{ ai_presets_json|json_script:"ai-presets-data" }}
 
-<!-- Secret Providers Service Card -->
+{# Secret Providers Service Card #}
 <div id="secret-providers" class="scroll-mt-32 rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="p-6 border-b border-line-soft">
         <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
@@ -529,7 +529,7 @@ print(answer)</code></pre>
     <div id="sp-config" class="hidden">
         <div class="p-6 space-y-6">
 
-            <!-- Saved providers -->
+            {# Saved providers #}
             <div>
                 <div class="flex items-center justify-between gap-3 mb-3">
                     <p class="text-[13px] font-medium text-text">Saved providers</p>
@@ -579,7 +579,7 @@ print(answer)</code></pre>
                 {% endif %}
             </div>
 
-            <!-- Add / edit provider form -->
+            {# Add / edit provider form #}
             <div id="sp-provider-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
                 <p id="sp-provider-form-title" class="text-[13px] font-medium text-text mb-4">Add provider</p>
                 <form method="post" action="{% url 'cpanel:secret_provider_save' %}" id="sp-provider-form">
@@ -596,7 +596,7 @@ print(answer)</code></pre>
                             {{ secret_provider_form.name }}
                         </div>
 
-                        <!-- Adapter-specific fields, rendered from the registry -->
+                        {# Adapter-specific fields, rendered from the registry #}
                         <div id="sp-dynamic-fields" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5"></div>
 
                         <div>
@@ -621,7 +621,7 @@ print(answer)</code></pre>
                 </form>
             </div>
 
-            <!-- Usage help -->
+            {# Usage help #}
             <div class="p-4 bg-panel-hi/40 border border-line-soft rounded-lg text-sm text-muted">
                 <p class="text-text font-medium mb-2">How it works</p>
                 <p class="mb-2">A secret with source <span class="text-text">External provider</span> stores only a reference (e.g. <span class="font-mono text-text">kv/myapp#API_KEY</span>). Its value is fetched from the provider when a run starts, injected and masked exactly like a stored secret, and cached in-process for the provider's TTL.</p>
@@ -637,7 +637,7 @@ print(answer)</code></pre>
 {{ secret_providers_json|json_script:"secret-providers-data" }}
 {{ secret_backends_json|json_script:"secret-backends-data" }}
 
-<!-- Embedding Providers Service Card -->
+{# Embedding Providers Service Card #}
 <div id="embeddings" class="scroll-mt-32 rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="p-6 border-b border-line-soft">
         <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
@@ -721,7 +721,7 @@ print(answer)</code></pre>
                 {% endif %}
             </div>
 
-            <!-- Add / edit provider form -->
+            {# Add / edit provider form #}
             <div id="emb-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
                 <p id="emb-form-title" class="text-[13px] font-medium text-text mb-4">Add provider</p>
                 <form method="post" action="{% url 'cpanel:embedding_provider_save' %}" id="emb-form">
@@ -782,7 +782,7 @@ print(answer)</code></pre>
 {{ embedding_providers_json|json_script:"embedding-providers-data" }}
 {{ embedding_presets_json|json_script:"embedding-presets-data" }}
 
-<!-- Vector Stores Service Card -->
+{# Vector Stores Service Card #}
 <div id="vector-stores" class="scroll-mt-32 rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="p-6 border-b border-line-soft">
         <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
@@ -872,7 +872,7 @@ print(answer)</code></pre>
                 {% endif %}
             </div>
 
-            <!-- Add / edit connection form -->
+            {# Add / edit connection form #}
             <div id="vec-form-wrap" class="hidden border border-line-soft rounded-lg p-5 bg-panel-hi/30">
                 <p id="vec-form-title" class="text-[13px] font-medium text-text mb-4">Add connection</p>
                 <form method="post" action="{% url 'cpanel:vector_connection_save' %}" id="vec-form">
@@ -927,7 +927,7 @@ print(answer)</code></pre>
 
 {{ vector_connections_json|json_script:"vector-connections-data" }}
 
-<!-- Future services placeholder -->
+{# Future services placeholder #}
 <div class="rounded-2xl border border-dashed border-line bg-panel/50 p-8 text-center">
     <div class="w-12 h-12 rounded-lg bg-panel-hi grid place-items-center mx-auto mb-4">
         <svg class="w-6 h-6 text-faint" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>

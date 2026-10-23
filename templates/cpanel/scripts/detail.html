@@ -75,9 +75,9 @@
 {% endblock %}
 
 {% block page %}
-<!-- Code + meta -->
+{# Code + meta #}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-    <!-- Code viewer -->
+    {# Code viewer #}
     <div class="lg:col-span-2">
         <section class="rounded-2xl border border-line bg-panel overflow-hidden">
             <div class="flex items-center gap-1.5 px-3 h-9 border-b border-line-soft bg-panel-hi/50">
@@ -92,9 +92,9 @@
         </section>
     </div>
 
-    <!-- Right column -->
+    {# Right column #}
     <div class="space-y-5">
-        <!-- Script info -->
+        {# Script info #}
         <section class="rounded-2xl border border-line bg-panel p-5">
             <h3 class="eyebrow text-faint mb-4">Script info</h3>
             <dl class="space-y-3.5 text-sm">
@@ -139,7 +139,7 @@
             </dl>
         </section>
 
-        <!-- Stats -->
+        {# Stats #}
         <section class="rounded-2xl border border-line bg-panel p-5">
             <h3 class="eyebrow text-faint mb-4">Statistics</h3>
             <div class="grid grid-cols-2 gap-3">
@@ -155,7 +155,7 @@
                 </div>
             </div>
 
-            <!-- Duration chart: last N finished runs, oldest → newest, server-rendered -->
+            {# Duration chart: last N finished runs, oldest → newest, server-rendered #}
             <div class="mt-5 pt-4 border-t border-line-soft">
                 <div class="flex items-center justify-between mb-3">
                     <span class="eyebrow text-faint">Duration · last {{ duration_chart.count }} run{{ duration_chart.count|pluralize }}</span>
@@ -188,9 +188,9 @@
     </div>
 </div>
 
-<!-- Schedule / Webhook / Notifications -->
+{# Schedule / Webhook / Notifications #}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-    <!-- Schedule -->
+    {# Schedule #}
     <section class="rounded-2xl border border-line bg-panel p-5">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold">Schedule</h3>
@@ -231,7 +231,7 @@
         </div>
     </section>
 
-    <!-- Webhook -->
+    {# Webhook #}
     <section class="rounded-2xl border border-line bg-panel p-5">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold">Webhook</h3>
@@ -286,7 +286,7 @@
         {% endif %}
     </section>
 
-    <!-- Notifications -->
+    {# Notifications #}
     <section class="rounded-2xl border border-line bg-panel p-5">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold">Notifications</h3>
@@ -326,7 +326,7 @@
     </section>
 </div>
 
-<!-- Recent runs -->
+{# Recent runs #}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="flex items-center justify-between px-6 py-4 border-b border-line-soft">
         <h2 class="text-sm font-semibold">Recent runs</h2>

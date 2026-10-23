@@ -25,7 +25,7 @@
 </div>
 {% endif %}
 
-<!-- Stats: one compact strip, three columns on every width -->
+{# Stats: one compact strip, three columns on every width #}
 <div class="rounded-2xl border border-line bg-panel grid grid-cols-3 divide-x divide-line-soft">
     <div class="px-4 sm:px-5 py-3 min-w-0">
         <p class="eyebrow text-faint truncate">Entries</p>
@@ -41,7 +41,7 @@
     </div>
 </div>
 
-<!-- Entries table -->
+{# Entries table #}
 {% if entries %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="px-6 py-3 border-b border-line-soft flex items-center justify-between">
@@ -99,7 +99,7 @@
 </section>
 {% endif %}
 
-<!-- Usage info (collapsed: the same snippet on every store) -->
+{# Usage info (collapsed: the same snippet on every store) #}
 <details class="rounded-2xl border border-line bg-panel p-5 group">
     <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm font-medium text-text">
         How to use this data store in scripts
@@ -130,7 +130,7 @@ for key in store.keys():
     </div>
 </details>
 
-<!-- REST API access -->
+{# REST API access #}
 <div class="rounded-2xl border border-line bg-panel p-5">
     <div class="flex items-center justify-between mb-2">
         <h3 class="text-sm font-medium text-text">REST API access</h3>
@@ -140,7 +140,7 @@ for key in store.keys():
     <p class="text-sm text-muted">Access this datastore via the REST API using an <a href="{% url 'cpanel:api_token_list' %}" class="text-info hover:underline">API token</a>.</p>
 
     <div id="api-examples" class="hidden mt-4 space-y-4">
-        <!-- Authentication -->
+        {# Authentication #}
         <div>
             <h4 class="eyebrow text-faint mb-2">Authentication</h4>
             <p class="text-sm text-muted mb-2">Include your token in the request header:</p>
@@ -149,7 +149,7 @@ for key in store.keys():
 X-API-Key: YOUR_API_TOKEN</code>
         </div>
 
-        <!-- Get datastore info -->
+        {# Get datastore info #}
         <div>
             <div class="flex items-center justify-between mb-1">
                 <h4 class="eyebrow text-faint">Get datastore info</h4>
@@ -169,7 +169,7 @@ X-API-Key: YOUR_API_TOKEN</code>
             </details>
         </div>
 
-        <!-- List entries -->
+        {# List entries #}
         <div>
             <div class="flex items-center justify-between mb-1">
                 <h4 class="eyebrow text-faint">List entries (paginated)</h4>
@@ -196,7 +196,7 @@ X-API-Key: YOUR_API_TOKEN</code>
             </details>
         </div>
 
-        <!-- Get single entry -->
+        {# Get single entry #}
         <div>
             <div class="flex items-center justify-between mb-1">
                 <h4 class="eyebrow text-faint">Get single entry</h4>
@@ -215,7 +215,7 @@ X-API-Key: YOUR_API_TOKEN</code>
             </details>
         </div>
 
-        <!-- List all datastores -->
+        {# List all datastores #}
         <div>
             <div class="flex items-center justify-between mb-1">
                 <h4 class="eyebrow text-faint">List all datastores</h4>
@@ -238,7 +238,7 @@ X-API-Key: YOUR_API_TOKEN</code>
             </details>
         </div>
 
-        <!-- Rate limits -->
+        {# Rate limits #}
         <div class="pt-3 border-t border-line-soft">
             <h4 class="eyebrow text-faint mb-2">Rate limits &amp; pagination</h4>
             <ul class="text-xs text-muted space-y-1">

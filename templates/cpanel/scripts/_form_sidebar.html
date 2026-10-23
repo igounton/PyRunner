@@ -1,8 +1,8 @@
 {% load icon_tags %}
-<!-- Sidebar: properties and settings -->
+{# Sidebar: properties and settings #}
 <div class="space-y-4">
 
-    <!-- Execution -->
+    {# Execution #}
     <section class="rounded-2xl border border-line bg-panel">
         <div class="flex items-center gap-2 px-5 py-4 border-b border-line-soft">
             <svg class="w-4 h-4 text-faint" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -37,7 +37,7 @@
         </div>
     </section>
 
-    <!-- Tags -->
+    {# Tags #}
     <section class="rounded-2xl border border-line bg-panel">
         <div class="flex items-center gap-2 px-5 py-4 border-b border-line-soft">
             {% icon "tag" class="w-4 h-4 text-faint" %}
@@ -59,7 +59,7 @@
         </div>
     </section>
 
-    <!-- Libraries (shared code attached to this script) -->
+    {# Libraries (shared code attached to this script) #}
     <section class="rounded-2xl border border-line bg-panel">
         <div class="flex items-center gap-2 px-5 py-4 border-b border-line-soft">
             {% icon "library-big" class="w-4 h-4 text-faint" %}
@@ -87,7 +87,7 @@
         </div>
     </section>
 
-    <!-- Secrets (injection scope + per-script attach) -->
+    {# Secrets (injection scope + per-script attach) #}
     <section class="rounded-2xl border border-line bg-panel"
              data-picker-url="{% url 'cpanel:secret_picker' %}"
              data-scan-url="{% url 'cpanel:scan_env_refs' %}"
@@ -97,7 +97,7 @@
             <h3 class="text-sm font-semibold">Secrets</h3>
         </div>
         <div class="p-5 space-y-4">
-            <!-- Injection-mode pills (styled like the status-filter pills) -->
+            {# Injection-mode pills (styled like the status-filter pills) #}
             <div class="inline-flex rounded-lg border border-line p-0.5 bg-ink">
                 {% with mode=form.injection_mode.value|default:"all" %}
                 <label class="cursor-pointer">
@@ -111,10 +111,10 @@
                 {% endwith %}
             </div>
 
-            <!-- All mode: calm, do-nothing note -->
+            {# All mode: calm, do-nothing note #}
             <p id="injection-all-note" class="text-xs text-faint">All workspace secrets are injected — the default. Existing scripts are unaffected.</p>
 
-            <!-- Selected mode: per-script attach -->
+            {# Selected mode: per-script attach #}
             <div id="injection-selected-panel" class="space-y-3 hidden">
                 {% if form.instance.owner_plugin %}
                 <p class="text-xs text-faint">Only the secrets attached here are injected, plus the secrets owned by this script's plugin. Other workspace secrets are not.</p>
@@ -153,7 +153,7 @@
     </section>
 
     {% if schedule_form %}
-    <!-- Schedule (collapsible) -->
+    {# Schedule (collapsible) #}
     <section class="rounded-2xl border border-line bg-panel overflow-hidden">
         <button type="button" onclick="toggleSection('schedule')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-panel-hi/50 transition-colors">
             <h3 class="text-sm font-semibold flex items-center gap-2">
@@ -163,7 +163,7 @@
             <svg id="schedule-chevron" class="w-4 h-4 text-faint transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div id="schedule-content" class="px-5 pb-5 space-y-4 border-t border-line-soft pt-4">
-            <!-- Run mode -->
+            {# Run mode #}
             <div>
                 <label class="block text-[13px] font-medium text-text mb-2">Run mode</label>
                 <div class="space-y-2">
@@ -180,11 +180,11 @@
                 {% include "cpanel/_field_errors.html" with field=schedule_form.run_mode %}
             </div>
 
-            <!-- Interval -->
+            {# Interval #}
             <div id="interval-options" class="{% if schedule_form.instance.run_mode != 'interval' %}hidden{% endif %}">
                 <label for="id_interval_minutes" class="block text-[13px] font-medium text-text mb-1.5">{{ schedule_form.interval_minutes.label }}</label>
                 {{ schedule_form.interval_minutes }}
-                <!-- Quick picks fill the number input; any value in range is valid. -->
+                {# Quick picks fill the number input; any value in range is valid. #}
                 <div class="mt-2 flex flex-wrap gap-1.5">
                     {% for minutes, label in schedule_form.interval_presets %}
                     <button type="button" data-interval-preset="{{ minutes }}"
@@ -195,7 +195,7 @@
                 {% include "cpanel/_field_errors.html" with field=schedule_form.interval_minutes %}
             </div>
 
-            <!-- Daily -->
+            {# Daily #}
             <div id="daily-options" class="space-y-4 {% if schedule_form.instance.run_mode != 'daily' %}hidden{% endif %}">
                 <div>
                     <label for="id_daily_times_input" class="block text-[13px] font-medium text-text mb-1.5">{{ schedule_form.daily_times_input.label }}</label>
@@ -205,7 +205,7 @@
                 </div>
             </div>
 
-            <!-- Weekly -->
+            {# Weekly #}
             <div id="weekly-options" class="space-y-4 {% if schedule_form.instance.run_mode != 'weekly' %}hidden{% endif %}">
                 <div>
                     <label class="block text-[13px] font-medium text-text mb-2">Days of week</label>
@@ -227,7 +227,7 @@
                 </div>
             </div>
 
-            <!-- Monthly -->
+            {# Monthly #}
             <div id="monthly-options" class="space-y-4 {% if schedule_form.instance.run_mode != 'monthly' %}hidden{% endif %}">
                 <div>
                     <label class="block text-[13px] font-medium text-text mb-2">Days of month</label>
@@ -249,7 +249,7 @@
                 </div>
             </div>
 
-            <!-- Yearly -->
+            {# Yearly #}
             <div id="yearly-options" class="space-y-4 {% if schedule_form.instance.run_mode != 'yearly' %}hidden{% endif %}">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -283,7 +283,7 @@
                 {% include "cpanel/_field_errors.html" with field=schedule_form.timezone %}
             </div>
 
-            <!-- Cron -->
+            {# Cron #}
             <div id="cron-options" data-preview-url="{% url 'cpanel:cron_preview' %}" class="space-y-4 {% if schedule_form.instance.run_mode != 'cron' %}hidden{% endif %}">
                 <div>
                     <label for="id_cron_expression" class="block text-[13px] font-medium text-text mb-1.5">{{ schedule_form.cron_expression.label }}</label>
@@ -294,7 +294,7 @@
                         <a href="https://crontab.guru" target="_blank" rel="noopener" class="text-info hover:underline">crontab.guru</a>.
                     </p>
                     {% include "cpanel/_field_errors.html" with field=schedule_form.cron_expression %}
-                    <!-- Live preview populated by script_form.js -->
+                    {# Live preview populated by script_form.js #}
                     <div id="cron-preview" class="mt-2 text-xs hidden">
                         <span id="cron-preview-status" class="font-medium"></span>
                         <ul id="cron-preview-runs" class="mt-1 space-y-0.5 font-mono text-faint"></ul>
@@ -314,7 +314,7 @@
     </section>
     {% endif %}
 
-    <!-- Notifications (collapsible) -->
+    {# Notifications (collapsible) #}
     <section class="rounded-2xl border border-line bg-panel overflow-hidden">
         <button type="button" onclick="toggleSection('notifications')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-panel-hi/50 transition-colors">
             <h3 class="text-sm font-semibold flex items-center gap-2">

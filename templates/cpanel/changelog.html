@@ -13,18 +13,18 @@
 {% endblock %}
 
 {% block page %}
-<!-- Release timeline (reading column) -->
+{# Release timeline (reading column) #}
 <div class="relative max-w-[72ch]">
-    <!-- vertical rail -->
+    {# vertical rail #}
     <div class="absolute left-[7px] top-2 bottom-2 w-px bg-line" aria-hidden="true"></div>
 
     <div class="space-y-10">
         {% for release in releases %}
         <article class="relative pl-8">
-            <!-- timeline node -->
+            {# timeline node #}
             <span class="absolute left-0 top-[5px] w-[15px] h-[15px] rounded-full ring-4 ring-ink z-10 {% if forloop.first %}bg-ok{% else %}bg-panel border border-faint{% endif %}" aria-hidden="true"></span>
 
-            <!-- release header -->
+            {# release header #}
             <header class="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <h2 class="font-mono text-[17px] font-semibold tracking-tight text-text">v{{ release.version }}</h2>
                 {% if forloop.first %}
@@ -37,7 +37,7 @@
             <p class="text-[15px] text-muted leading-relaxed mt-3 max-w-[62ch]">{{ release.headline }}</p>
             {% endif %}
 
-            <!-- changes -->
+            {# changes #}
             <ul class="mt-4 rounded-2xl border border-line bg-panel divide-y divide-line-soft overflow-hidden">
                 {% for change in release.changes %}
                 <li class="px-5 py-4 flex flex-col sm:flex-row items-start gap-1.5 sm:gap-4 hover:bg-panel-hi/30 transition-colors">

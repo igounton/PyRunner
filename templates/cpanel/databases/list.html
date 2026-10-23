@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block page %}
-<!-- Data server card -->
+{# Data server card #}
 {% if server.configured %}
 <div class="rounded-2xl border border-line bg-panel p-4 flex flex-wrap items-center justify-between gap-4">
     <div class="flex items-center gap-3">
@@ -46,7 +46,7 @@
 {% endif %}
 
 {% if databases %}
-<!-- Databases table -->
+{# Databases table #}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="overflow-x-auto">
     <table class="table-cards w-full sm:min-w-[860px]">
@@ -97,7 +97,7 @@
     </div>
 </section>
 
-<!-- Usage info -->
+{# Usage info #}
 <div class="rounded-2xl border border-line bg-panel p-5">
     <h3 class="text-sm font-medium text-text mb-2">Using databases in scripts</h3>
     <p class="text-sm text-muted mb-3">Grant a database to a script on the database's page, then connect with the <code class="font-mono text-info">pyrunner_db</code> helper — a real PostgreSQL connection, scoped to this database only. Requires <code class="font-mono text-info">psycopg[binary]</code> in the script's environment.</p>

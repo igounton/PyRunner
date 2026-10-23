@@ -16,10 +16,10 @@
 {% endblock %}
 
 {% block page %}
-<!-- Tokens table -->
+{# Tokens table #}
 {% if tokens %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
-    <!-- Phones: one card per token — the table would scroll Status and actions off-screen. -->
+    {# Phones: one card per token — the table would scroll Status and actions off-screen. #}
     <ul class="sm:hidden divide-y divide-line-soft">
         {% for token in tokens %}
         <li class="p-4 space-y-2.5">
@@ -68,7 +68,7 @@
     </div>
 </section>
 
-<!-- Usage info -->
+{# Usage info #}
 <div class="rounded-2xl border border-line bg-panel p-5">
     <h3 class="text-sm font-medium text-text mb-2">Using the API</h3>
     <p class="text-sm text-muted mb-3">Unified API tokens discover their permitted endpoints at <code>/api/v1/_catalog</code>. They do not grant datastore or plugin API access.</p>
@@ -89,7 +89,7 @@
 </section>
 {% endif %}
 
-<!-- Public pages (oversight: shared from plugin dashboards) -->
+{# Public pages (oversight: shared from plugin dashboards) #}
 {% if public_pages %}
 <section class="rounded-2xl border border-line bg-panel overflow-hidden">
     <div class="px-6 pt-5 pb-3">

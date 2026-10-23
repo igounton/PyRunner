@@ -60,7 +60,7 @@
         {% endfor %}
     </div>
 </div>
-<!-- Create Modal (superuser only) -->
+{# Create Modal (superuser only) #}
 {% if can_create %}
 <div id="create-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 flex">
     <div class="bg-panel border border-line rounded-2xl p-6 max-w-md w-full mx-4">
@@ -85,7 +85,7 @@
 </div>
 {% endif %}
 
-<!-- Rename Modal -->
+{# Rename Modal #}
 <div id="rename-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 flex">
     <div class="bg-panel border border-line rounded-2xl p-6 max-w-md w-full mx-4">
         <div class="flex items-center justify-between mb-4">

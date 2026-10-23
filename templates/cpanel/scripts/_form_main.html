@@ -1,26 +1,26 @@
-<!-- Main form content: Name, Description, Code editor -->
+{# Main form content: Name, Description, Code editor #}
 <div class="rounded-2xl border border-line bg-panel p-6 space-y-5">
-    <!-- Name -->
+    {# Name #}
     <div>
         <label for="id_name" class="block text-[13px] font-medium text-text mb-1.5">{{ form.name.label }}</label>
         {{ form.name }}
         {% include "cpanel/_field_errors.html" with field=form.name %}
     </div>
 
-    <!-- Description -->
+    {# Description #}
     <div>
         <label for="id_description" class="block text-[13px] font-medium text-text mb-1.5">{{ form.description.label }}</label>
         {{ form.description }}
         {% include "cpanel/_field_errors.html" with field=form.description %}
     </div>
 
-    <!-- Code editor -->
+    {# Code editor #}
     <div>
         <div class="flex items-center justify-between mb-1.5">
             <label for="id_code" class="block text-[13px] font-medium text-text">{{ form.code.label }}</label>
             <span class="eyebrow text-faint">Python 3</span>
         </div>
-        <!-- Hidden textarea backs the Django field; Monaco renders into the container -->
+        {# Hidden textarea backs the Django field; Monaco renders into the container #}
         {{ form.code }}
         <div class="rounded-lg border border-line overflow-hidden bg-ink">
             <div class="flex items-center gap-1.5 px-3 h-8 border-b border-line-soft bg-panel-hi/50">

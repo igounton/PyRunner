@@ -19,6 +19,9 @@ services:
     # (slow-query stats); harmless when unused.
     command: postgres -c shared_preload_libraries=pg_stat_statements
     environment:
+      # CHANGE THESE: the defaults (pyrunner / pyrunner-data) are public. Set
+      # POSTGRES_PASSWORD and DATA_DB_PASSWORD in .env before the FIRST boot;
+      # the passwords are fixed when the volume is created.
       - POSTGRES_USER=${POSTGRES_USER:-pyrunner}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pyrunner}
       - POSTGRES_DB=${POSTGRES_DB:-pyrunner}

@@ -371,6 +371,36 @@ begins tracking at the current release; earlier history is in the git log.
   Settings → System. Plugin pages keep their own layout for now.
 
 ### Security
+- **The Brain reader can no longer read files outside its snapshot.** Its file
+  guard did not treat a leading `~` the way the Claude CLI does, so a prompt that
+  reached `brain.assemble-context` could make the reader open files in the
+  server's home directory or `/proc`. `~` paths and escaping Glob/Grep patterns
+  are refused, and every AI agent PyRun starts (Brain, Py AI, provider tests)
+  now runs without the instance's own secrets (`SECRET_KEY`, `ENCRYPTION_KEY`,
+  `DATABASE_URL`, `PYRUNNER_DATA_DB_URL`, `REDIS_URL`, `RESEND_API_KEY` and
+  `PYRUNNER_RUN_ENV_DENYLIST`) in its environment. Py AI gets no built-in tools,
+  only its own read-only ones.
+- **A user removed from every workspace no longer sees across workspaces.** Such
+  a user could still open the console, create and run a script with no
+  workspace, and that run received every workspace's secrets. The console and
+  plugin pages now show "You're not in any workspace" (403) to them; a run with
+  no workspace gets only unassigned secrets; and the internal data-store,
+  database, vector and channel lookups no longer treat "no workspace" as the
+  default workspace. Superusers and upgraded single-workspace instances are
+  unaffected (the tenancy backfill assigned every existing row).
+- **Outbound fetches are pinned to the address that was checked.** Brain URL
+  imports, GitHub import and sync, and plugin answer completion now connect
+  only to the IP address the SSRF guard approved, on every redirect, so a
+  DNS-rebinding name cannot switch to a private address after the check.
+- **Console escaping and page hygiene.** The console's HTML-escaping helpers
+  now escape quotes too; developer notes and internal ticket numbers are no
+  longer sent in page source; anonymous pages no longer show the version;
+  the pinned Monaco loader and Chart.js are loaded with Subresource Integrity;
+  secret values are masked until you click Show. `docker-compose.postgres.yml`
+  now states that its default database passwords must be changed, and the
+  Docker build context excludes every private plugin folder and `node_modules`.
+- **Brand Tracker 1.1.2** escapes scraped titles, links and snippets in its email
+  digest and keeps its public report share in the workspace its data lives in.
 - **External secret providers can no longer reach private hosts.** The custom,
   Vault and Infisical secret backends fetched whatever endpoint their config
   named with no SSRF check, so one pointed at the cloud-metadata address

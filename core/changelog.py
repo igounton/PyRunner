@@ -258,6 +258,22 @@ CHANGELOG = [
             },
             {
                 "tag": "Security",
+                "title": "Pre-release security review",
+                "body": (
+                    "The Brain reader can no longer be talked into reading files "
+                    "outside its snapshot, and AI agents PyRun starts never hold the "
+                    "instance's own secrets; Py AI has no built-in tools. A user "
+                    "removed from every workspace sees a \"not in any workspace\" "
+                    "page instead of the console, and a run with no workspace no "
+                    "longer receives other workspaces' secrets. Outbound fetches "
+                    "connect only to the address the SSRF check approved. Escaping "
+                    "helpers cover quotes, page source carries no developer notes, "
+                    "CDN scripts use Subresource Integrity, and secret values are "
+                    "masked until you click Show."
+                ),
+            },
+            {
+                "tag": "Security",
                 "title": "Hardening from the 2.0 release test",
                 "body": (
                     "External secret providers (custom, Vault, Infisical) now apply "

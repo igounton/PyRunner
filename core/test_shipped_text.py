@@ -150,3 +150,47 @@ class ExternalScriptsHaveSriTests(SimpleTestCase):
                 if 'integrity="sha384-' not in match or 'crossorigin="anonymous"' not in match:
                     hits.append(f"{path.relative_to(ROOT)}: {match[:90]}")
         self.assertEqual(hits, [])
+
+
+class SecretValueMaskedTests(TestCase):
+    # F141: the secret value textarea showed what was typed (and echoed it in
+    # clear after a refused save).
+    def setUp(self):
+        from unittest import mock
+
+        for target in (
+            "core.services.setup_service.SetupService.is_setup_needed",
+            "core.services.setup_service.SetupService.needs_admin_setup",
+        ):
+            patcher = mock.patch(target, return_value=False)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        from core.models import User
+
+        self.client.force_login(
+            User.objects.create_superuser(username="m", email="m@x.test", password="pw-12345678!")
+        )
+
+    def _value_field(self, html):
+        match = re.search(r"<textarea[^>]*id=\"id_value\"[^>]*>", html)
+        self.assertIsNotNone(match)
+        return match.group(0)
+
+    def test_create_form_masks_the_value_with_a_show_toggle(self):
+        from django.urls import reverse
+
+        html = self.client.get(reverse("cpanel:secret_create")).content.decode()
+        field = self._value_field(html)
+        self.assertIn('data-masked="1"', field)
+        self.assertIn("-webkit-text-security: disc", field)
+        self.assertIn('data-secret-toggle="id_value"', html)
+        self.assertIn("js/secret_value_toggle", html)
+
+    def test_refused_create_keeps_the_value_masked(self):
+        from django.urls import reverse
+
+        response = self.client.post(
+            reverse("cpanel:secret_create"), {"key": "", "value": "typed-secret", "source": "local"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('data-masked="1"', self._value_field(response.content.decode()))

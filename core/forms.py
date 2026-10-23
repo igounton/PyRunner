@@ -802,6 +802,10 @@ class SecretCreateForm(forms.Form):
                 "rows": 3,
                 "placeholder": "sk-your-secret-value-here",
                 "autocomplete": "off",
+                # Masked until "Show" (static/js/secret_value_toggle.js).
+                "data-masked": "1",
+                "style": "-webkit-text-security: disc",
+                "spellcheck": "false",
             }
         ),
         label="Secret Value",
@@ -956,6 +960,10 @@ class SecretEditForm(forms.Form):
                 "rows": 3,
                 "placeholder": "Leave blank to keep current value",
                 "autocomplete": "off",
+                # Masked until "Show" (static/js/secret_value_toggle.js).
+                "data-masked": "1",
+                "style": "-webkit-text-security: disc",
+                "spellcheck": "false",
             }
         ),
         label="New Secret Value",

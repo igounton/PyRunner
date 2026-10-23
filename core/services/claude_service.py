@@ -75,6 +75,27 @@ def _describe_result_error(message) -> str:
     return "; ".join(parts) or "The provider returned an error (no details provided)"
 
 
+# Instance secrets the agent CLI must never hold. claude-agent-sdk starts the
+# CLI with os.environ merged under options.env, so each name is set to "" there
+# (a value in options.env wins). PYRUNNER_RUN_ENV_DENYLIST adds the operator's own.
+_INSTANCE_SECRET_ENV = (
+    "SECRET_KEY",
+    "ENCRYPTION_KEY",
+    "DATABASE_URL",
+    "PYRUNNER_DATA_DB_URL",
+    "REDIS_URL",
+    "RESEND_API_KEY",
+)
+
+
+def agent_env(env: dict) -> dict:
+    """Return ``env`` for a claude-agent-sdk launch with instance secrets blanked."""
+    names = set(_INSTANCE_SECRET_ENV) | set(django_settings.PYRUNNER_RUN_ENV_DENYLIST)
+    blanked = {name: "" for name in names}
+    blanked.update({k: v for k, v in env.items() if k not in names})
+    return blanked
+
+
 class ClaudeServiceError(Exception):
     """Raised when AI provider operations fail."""
 
@@ -437,7 +458,7 @@ class ClaudeService:
                 "permission_mode": "dontAsk",
                 "setting_sources": [],
                 "max_turns": 10,
-                "env": env,
+                "env": agent_env(env),
             }
             kwargs.update(kwargs_extra)
             if model:

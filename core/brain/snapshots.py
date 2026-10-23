@@ -93,13 +93,28 @@ def reader_hooks(root, read_paths):
     root = root.resolve()
 
     def allowed(raw):
-        if not isinstance(raw, str) or "\x00" in raw:
+        # Resolve the way the CLI will: it expands a leading "~" / "~user" to a
+        # home directory (Python's Path does not), so such values are refused
+        # outright. Relative paths resolve against the snapshot (the agent's
+        # cwd); resolve() follows symlinks, so a link that points out is refused.
+        if not isinstance(raw, str) or "\x00" in raw or raw.strip().startswith("~"):
             return False
         try:
             path = Path(raw)
             return (root / path).resolve().is_relative_to(root)
         except (OSError, ValueError, RuntimeError):
             return False
+
+    def pattern_allowed(pattern):
+        # Glob "pattern" and Grep "glob" match below their search root; refuse
+        # anything that names another root, a home directory or climbs out.
+        return (
+            isinstance(pattern, str)
+            and "\x00" not in pattern
+            and not pattern.strip().startswith(("/", "\\", "~"))
+            and not PureWindowsPath(pattern).drive
+            and ".." not in pattern.replace("\\", "/").split("/")
+        )
 
     async def guard(data, tool_id, context):
         inputs = data.get("tool_input") or {}
@@ -109,14 +124,11 @@ def reader_hooks(root, read_paths):
             raw = inputs.get(key)
             if raw is not None and not allowed(raw):
                 return _deny()
-        if data.get("tool_name") == "Glob":
-            pattern = inputs.get("pattern", "")
-            if (
-                not isinstance(pattern, str)
-                or pattern.startswith(("/", "\\"))
-                or PureWindowsPath(pattern).drive
-                or ".." in pattern.replace("\\", "/").split("/")
-            ):
+        tool = data.get("tool_name")
+        if tool == "Glob" and not pattern_allowed(inputs.get("pattern", "")):
+            return _deny()
+        if tool == "Grep" and inputs.get("glob") is not None:
+            if not pattern_allowed(inputs.get("glob")):
                 return _deny()
         return {}
 

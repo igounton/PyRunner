@@ -11,7 +11,7 @@ import logging
 from dataclasses import dataclass, field
 
 from core.models import GlobalSettings
-from core.services.claude_service import ClaudeService
+from core.services.claude_service import ClaudeService, agent_env
 
 from .tools import SERVER_NAME, build_tools
 
@@ -183,7 +183,9 @@ class PyAIService:
             "permission_mode": "dontAsk",
             "setting_sources": [],
             "max_turns": _MAX_TURNS,
-            "env": env,
+            "env": agent_env(env),
+            # No built-in toolset (Bash, Read, WebFetch, ...): only the MCP tools above.
+            "tools": [],
         }
         if model:
             kwargs["model"] = model

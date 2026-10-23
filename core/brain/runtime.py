@@ -15,7 +15,7 @@ from django.utils import timezone
 
 from core.api.exceptions import ApiError
 from core.models import ClaudeUsage, GlobalSettings
-from core.services.claude_service import ClaudeService, ClaudeServiceError
+from core.services.claude_service import ClaudeService, ClaudeServiceError, agent_env
 from .intake import safe_url
 from .service import BrainService
 
@@ -212,7 +212,7 @@ def run_agent(
                 strict_mcp_config=True,
                 system_prompt=system,
                 disallowed_tools=DENIED_TOOLS,
-                env=env,
+                env=agent_env(env),
                 max_turns=12,
                 include_partial_messages=True,
                 output_format={"type": "json_schema", "schema": schema},

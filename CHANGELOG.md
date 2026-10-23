@@ -8,6 +8,8 @@ begins tracking at the current release; earlier history is in the git log.
 
 ## [Unreleased]
 
+## [2.0.0] — October 23, 2026
+
 ### Upgrade notes (from 1.x)
 - **Selected secret injection is now exact.** A user script in *Selected* mode
   receives only the secrets attached to it on the script form. Before 2.0 it also
@@ -307,7 +309,7 @@ begins tracking at the current release; earlier history is in the git log.
   data and the "fresh" boot silently reused it. The launcher now removes the
   three named volumes explicitly and refuses to continue if any survive.
 
-### Improved (2.0 release-test polish)
+### Improved
 - **Console icons.** The sidebar, section cards and empty states use Lucide
   icons (ISC, vendored in `core/icons/lucide/`, rendered inline by the
   `{% icon %}` template tag: no CDN or JavaScript). Plugin nav icons are unchanged.

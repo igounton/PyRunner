@@ -9,7 +9,7 @@ When you cut a release, bump ``pyrunner/version.py`` and add an entry here.
 CHANGELOG = [
     {
         "version": "2.0.0",
-        "date": "Release candidate",
+        "date": "October 23, 2026",
         "headline": (
             "A versioned Brain for your workspace, one API for your AI clients, "
             "and vector search for scripts and plugins."

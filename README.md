@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/hasanaboulhasan/pyrun)
-[![Version](https://img.shields.io/badge/Version-1.16.0-green.svg)](https://github.com/hassancs91/PyRun/releases)
+[![Version](https://img.shields.io/badge/Version-2.0.0-green.svg)](https://github.com/hassancs91/PyRun/releases)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white)](https://discord.gg/BjkmTn7XSd)
 
 A self-hosted Python script automation platform. Upload a script, schedule it, monitor it — nothing else to configure.
@@ -19,6 +19,10 @@ A self-hosted Python script automation platform. Upload a script, schedule it, m
 - **Run History & Logs** — Track every execution with stdout/stderr capture
 - **Secrets Management** — Store encrypted environment variables and secrets
 - **AI for Scripts** — Call AI from your scripts using your Claude subscription, an Anthropic API key, or other providers (Z.AI GLM, OpenRouter, local Ollama, any Anthropic-compatible endpoint) — with saved provider profiles and one-click switching
+- **Workspace Brains** — Versioned knowledge with file browsing, tiered grants, reviewed AI proposals, cited context and optional semantic search ([Brain guide](docs/brain.md))
+- **Unified REST and MCP** — Connect AI clients over MCP or call the same permission-scoped tools from REST, scripts and plugins; discover them from Connect and OpenAPI ([API guide](docs/api.md))
+- **Vector collections** — Embedding providers, Local and Qdrant storage, shared filters and a credential-free script helper
+- **Reviewed GitHub sync** — Pull repository changes into a Brain's inbox for review and export a revision to a dedicated branch
 - **Notifications** — Get alerts via email, webhook, or Telegram on script completion/failure
 - **Invite-Only Auth** — Admin-invited accounts with email + password login and email-based reset (no open registration)
 - **Single Container** — Deploy with one Docker command

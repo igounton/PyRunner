@@ -132,7 +132,7 @@ class DurationChartPageTests(TestCase):
         Run.objects.create(script=self.script, workspace=self.ws, status=Run.Status.RUNNING)
         body = self._page().content.decode()
         self.assertIn("No finished runs yet", body)
-        self.assertNotIn("<rect", body)
+        self.assertNotRegex(body, r'<rect x="[^"]*" y=')  # no chart bars (Lucide icons draw other <rect>s, D14)
 
     def test_bars_link_to_runs_and_colour_by_status(self):
         ok = self._run(5)

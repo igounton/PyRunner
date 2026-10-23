@@ -55,9 +55,13 @@ dist/
 landing/
 design-preview/
 .ruff_cache/
-plugins/gmail_agent/
-plugins/youtube_scout/
-plugins/rag_chatbot/
+# plugins/ is the private-dev workspace: nothing in it ships except the
+# tracked package marker and README (a new private plugin is excluded by default).
+plugins/*
+!plugins/__init__.py
+!plugins/README.md
+# Local JS tooling (Tailwind's node_modules etc.) never enters the image.
+**/node_modules/
 # Private-overlay tooling (see docs/PRIVATE_OVERLAY.md) — local only.
 .privateignore
 private.ps1

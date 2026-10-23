@@ -44,9 +44,10 @@ class DockerignoreTests(SimpleTestCase):
         "landing/",
         "client_secret.json",
         "token.json",
-        "plugins/gmail_agent/",
-        "plugins/youtube_scout/",
-        "plugins/rag_chatbot/",
+        "plugins/*",
+        "!plugins/__init__.py",
+        "!plugins/README.md",
+        "**/node_modules/",
         # Docker's ignore grammar only matches bare patterns at the context
         # root; caches need the recursive form.
         "**/__pycache__",
@@ -67,3 +68,21 @@ class DockerignoreTests(SimpleTestCase):
                 bare, rules,
                 f"'{bare}' only matches at the context root; use '**/{bare}'",
             )
+
+
+class DockerignorePluginsTests(SimpleTestCase):
+    # F139: a per-plugin private list let any new private plugin into the image.
+    def test_only_tracked_plugin_files_are_re_included(self):
+        import subprocess
+
+        try:
+            tracked = subprocess.run(
+                ["git", "ls-files", "plugins/"], cwd=REPO_ROOT, capture_output=True,
+                text=True, check=True,
+            ).stdout.split()
+        except (OSError, subprocess.CalledProcessError):
+            self.skipTest("not a git checkout")
+        rules = _dockerignore_rules()
+        reincluded = {rule[1:] for rule in rules if rule.startswith("!plugins/")}
+        self.assertEqual(set(tracked), reincluded)
+        self.assertIn("plugins/*", rules)

@@ -1,5 +1,5 @@
 {% extends "cpanel/layout.html" %}
-{% load static %}
+{% load static workspace_tags %}
 
 {% block title %}Py AI - {{ instance_name }}{% endblock %}
 
@@ -45,6 +45,10 @@
             {% else %}
             <span class="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-panel-hi text-muted text-[11px] font-medium px-2 py-0.5 leading-none"><span class="w-1.5 h-1.5 rounded-full bg-faint"></span>Off</span>
             {% endif %}
+            <a href="{% ws_url 'cpanel:brain_list' %}" id="pyai-brains-link" class="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-line text-muted hover:text-text text-[11px] font-medium px-2 py-0.5 leading-none transition-colors"
+               title="{% if readable_brains %}Reads: {% for row in readable_brains %}{{ row.brain.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}No brain grants{% endif %}">
+                {% if readable_brains %}{{ readable_brains|length }} brain{{ readable_brains|length|pluralize }}{% else %}No brains{% endif %}
+            </a>
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0">
             <button id="pyai-clear" type="button" title="Clear chat" aria-label="Clear chat"
@@ -78,6 +82,26 @@
                     <button type="button" data-suggest="What schedules are active and when do they run next?" class="pyai-suggest rounded-xl border border-line bg-panel px-3.5 py-2.5 text-[13px] text-muted hover:text-text hover:border-faint transition-colors text-left">What's scheduled next?</button>
                     <button type="button" data-suggest="List my datastores and describe what each one holds." class="pyai-suggest rounded-xl border border-line bg-panel px-3.5 py-2.5 text-[13px] text-muted hover:text-text hover:border-faint transition-colors text-left">What's in my datastores?</button>
                 </div>
+                <section id="pyai-brains" aria-labelledby="pyai-brains-heading" class="mt-5 rounded-xl border border-line bg-panel px-3.5 py-3 text-left">
+                    <h3 id="pyai-brains-heading" class="eyebrow text-faint">Brains Py AI can read</h3>
+                    {% if readable_brains %}
+                    <ul class="mt-2 space-y-1.5">
+                        {% for row in readable_brains %}
+                        <li class="flex items-center justify-between gap-3 text-[13px] min-w-0">
+                            <span class="min-w-0 truncate text-text">{{ row.brain.name }}</span>
+                            <span class="flex items-center gap-2 flex-shrink-0">
+                                <span class="text-xs text-muted">{{ row.tier }}{% if row.can_propose %} · can propose{% endif %}</span>
+                                <a href="{% ws_url 'cpanel:brain_grants' row.brain.pk %}" class="text-xs text-info hover:underline" aria-label="Grants for {{ row.brain.name }}">Grants</a>
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <p class="mt-2 text-xs text-faint">Py AI on a channel has its own grants. <a href="{% ws_url 'cpanel:brain_list' %}" class="text-info hover:underline">Grant another brain</a></p>
+                    {% else %}
+                    <p class="mt-1.5 text-xs text-muted">None yet. To let Py AI read a brain, open the brain's Grants page and add <span class="text-text">Agent → Py AI (console)</span>.</p>
+                    <a href="{% ws_url 'cpanel:brain_list' %}" class="mt-2 inline-block text-xs font-medium text-info hover:underline">Grant access to a brain &rarr;</a>
+                    {% endif %}
+                </section>
             </div>
         </div>
     </div>

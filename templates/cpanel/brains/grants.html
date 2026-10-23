@@ -41,8 +41,21 @@
     const original = document.getElementById('id_subject_id');
     const inputClass = original.className;
     const initialValue = original.value;
-    const nouns = {script: 'script', token: 'API token'};
-    const articles = {script: 'a', token: 'an'};
+    const nouns = {script: 'script', token: 'API token', plugin: 'plugin', agent: 'agent'};
+    const articles = {script: 'a', token: 'an', plugin: 'a', agent: 'an'};
+    const labels = {script: 'Script', token: 'API token', plugin: 'Plugin', agent: 'Agent'};
+    const emptyHelp = {
+        script: 'No scripts in this workspace. Create a script first.',
+        token: 'No Unified API tokens in this workspace. Create one in API Tokens first.',
+        plugin: 'No plugins are installed. Install one on the Plugins page first.',
+        agent: 'No agents available.',
+    };
+    const kindHelp = {
+        script: 'The script reads this brain with pyrunner_brain while it runs.',
+        token: 'Requests made with this Unified API or MCP token can read this brain, within the token\'s own tier.',
+        plugin: 'The plugin reads this brain through the plugin SDK. Plugins are installed for the whole instance.',
+        agent: 'Py AI in the console, or Py AI answering on a channel bound to it (Channels → handler “Ask Py AI”).',
+    };
 
     function filterChoices(selected) {
         const control = document.getElementById('id_subject_id');
@@ -54,13 +67,11 @@
         for (const item of matches) control.add(new Option(item.label, item.id));
         control.value = matches.some(item => item.id === selected) ? selected : '';
         if (!all.length) {
-            help.textContent = kind.value === 'script'
-                ? 'No scripts in this workspace. Create a script first.'
-                : 'No Unified API tokens in this workspace. Create one in API Tokens first.';
+            help.textContent = emptyHelp[kind.value];
         } else if (!matches.length) {
             help.textContent = `No ${noun}s match your search.`;
         } else {
-            help.textContent = `Choose the ${noun} that should have access. Select it again to update an existing grant.`;
+            help.textContent = `${kindHelp[kind.value]} Select it again to update an existing grant.`;
         }
     }
 
@@ -76,20 +87,15 @@
         control.setAttribute('aria-describedby', 'grant-subject-help');
         container.replaceChildren(control);
         if (hasChoices) {
-            label.textContent = kind.value === 'script' ? 'Script' : 'API token';
+            label.textContent = labels[kind.value];
             search.placeholder = `Filter ${nouns[kind.value]}s by name…`;
             search.setAttribute('aria-label', `Filter ${nouns[kind.value]}s by name`);
             filterChoices(value);
         } else {
-            const isPlugin = kind.value === 'plugin';
-            label.textContent = isPlugin ? 'Plugin slug' : 'Agent identifier';
             control.type = 'text';
             control.maxLength = 200;
             control.value = value;
-            control.placeholder = isPlugin ? 'e.g. rag_chatbot' : 'e.g. pyai';
-            help.textContent = isPlugin
-                ? 'Enter the plugin slug used by its configuration.'
-                : 'Enter the identifier used by the agent.';
+            help.textContent = 'Enter the recipient identifier.';
         }
     }
 

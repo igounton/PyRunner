@@ -143,13 +143,60 @@ class BrainReaderForm(StyledForm, forms.Form):
     lens = forms.CharField(max_length=100, required=False, help_text="Optional lens name, such as building-in-public.")
 
 
+PYAI_CONSOLE_AGENT = "pyai"
+
+
+def plugin_subject_choices():
+    """Installed plugins (instance-wide) as grant recipients, by display name.
+
+    The id is the slug: a plugin's brain calls carry ``principal_id=<slug>``.
+    """
+    from core.models import Plugin
+    from core.plugins import all_plugins
+
+    rows = {p.slug: (p.name or p.slug, p.is_active) for p in Plugin.objects.order_by("name", "slug")}
+    for plugin in all_plugins():  # Dev-mode plugins have no Plugin row.
+        rows.setdefault(plugin.slug, (getattr(plugin, "name", "") or plugin.slug, True))
+    items = sorted(rows.items(), key=lambda kv: (kv[1][0].lower(), kv[0]))
+    counts = Counter(name for _, (name, _active) in items)
+    return [
+        {
+            "id": slug,
+            "label": (name if counts[name] == 1 else f"{name} ({slug})") + ("" if active else " · inactive"),
+        }
+        for slug, (name, active) in items
+    ]
+
+
+def agent_subject_choices(workspace, *, every_channel=False):
+    """Py AI as grant recipients: the console assistant and each Py AI channel.
+
+    Ids match the principals Py AI uses: ``pyai`` in the console and
+    ``<provider>:<channel pk>`` on a channel (core/services/channels/handlers.py).
+    ``every_channel`` also labels channels no longer bound to Py AI, so an
+    existing grant keeps a readable name.
+    """
+    from core.models import Channel
+
+    channels = Channel.objects.for_workspace(workspace).order_by("name", "pk")
+    if not every_channel:
+        channels = channels.filter(inbound_handler=Channel.InboundHandler.PYAI)
+    choices = [{"id": PYAI_CONSOLE_AGENT, "label": "Py AI (console)"}]
+    for channel in channels:
+        choices.append({
+            "id": f"{channel.provider}:{channel.pk}",
+            "label": f"Py AI on {channel.name} ({channel.get_provider_display()})",
+        })
+    return choices
+
+
 class BrainGrantForm(StyledForm, forms.ModelForm):
     class Meta:
         model = BrainGrant
         fields = ["subject_kind", "subject_id", "max_tier", "can_propose"]
         labels = {"subject_kind": "Access for", "subject_id": "Recipient"}
         help_texts = {
-            "subject_id": "Script or Unified API token UUID, plugin slug, or agent identifier.",
+            "subject_id": "Choose who gets access.",
             "can_propose": "Allows proposals at agents-only or private tier. Every feed still needs approval.",
         }
 
@@ -176,6 +223,8 @@ class BrainGrantForm(StyledForm, forms.ModelForm):
                 {"id": str(pk), "label": name if counts[name] == 1 else f"{name} ({str(pk)[:8]})"}
                 for pk, name in rows
             ]
+        self.subject_choices["plugin"] = plugin_subject_choices()
+        self.subject_choices["agent"] = agent_subject_choices(workspace)
 
     def clean(self):
         data = super().clean()
@@ -529,6 +578,9 @@ def brain_grants_view(request, brain_id):
         for kind, items in form.subject_choices.items()
         for item in items
     }
+    # A channel moved off Py AI keeps its name on an existing grant.
+    for item in agent_subject_choices(brain.workspace, every_channel=True):
+        labels.setdefault(("agent", item["id"]), item["label"])
     grants = list(brain.grants.filter(brain__workspace=request.workspace).order_by(
         "subject_kind", "subject_id"
     ))

@@ -38,6 +38,27 @@ def _allowed(request) -> bool:
     ).exists()
 
 
+def _readable_brains(workspace):
+    """Brains console Py AI may read (its ``agent:pyai`` grants), with tier and
+    propose right — the same check its brain tools make at call time."""
+    from core.api.errors import ApiError
+    from core.brain.access import access_for, accessible_brains, principal_context
+    from core.models.brain import TIERS
+
+    if workspace is None:
+        return []
+    labels = dict(TIERS)
+    ctx = principal_context(workspace, "agent", "pyai")
+    rows = []
+    for brain in accessible_brains(ctx).order_by("name"):
+        try:
+            access = access_for(ctx, brain)
+        except ApiError:
+            continue
+        rows.append({"brain": brain, "tier": labels.get(access.tier, access.tier), "can_propose": access.can_propose})
+    return rows
+
+
 @login_required
 def pyai_view(request: HttpRequest) -> HttpResponse:
     if not _allowed(request):
@@ -52,6 +73,7 @@ def pyai_view(request: HttpRequest) -> HttpResponse:
             "claude_configured": settings.claude_enabled and ClaudeService.is_configured(),
             "pyai_enabled": settings.pyai_enabled,
             "history": request.session.get(_HISTORY_KEY, []),
+            "readable_brains": _readable_brains(request.workspace),
             "is_superuser": request.user.is_superuser,
             "settings_form": PyAISettingsForm(instance=settings) if request.user.is_superuser else None,
         },

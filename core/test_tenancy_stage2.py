@@ -80,9 +80,13 @@ class ResolveForWorkspaceTests(TestCase):
         with self.assertRaises(DataStore.DoesNotExist):
             DataStore.resolve_for_workspace("shared", self.default.id)
 
-    def test_none_defaults_to_default_workspace(self):
-        d = DataStore.objects.create(name="cfg", workspace=self.default)
-        self.assertEqual(DataStore.resolve_for_workspace("cfg", None), d)
+    def test_none_never_resolves_the_default_workspace(self):
+        # F129: no workspace sees only unassigned stores.
+        DataStore.objects.create(name="cfg", workspace=self.default)
+        with self.assertRaises(DataStore.DoesNotExist):
+            DataStore.resolve_for_workspace("cfg", None)
+        legacy = DataStore.objects.create(name="cfg", workspace=None)
+        self.assertEqual(DataStore.resolve_for_workspace("cfg", None), legacy)
 
     def test_null_store_fallback(self):
         legacy = DataStore.objects.create(name="legacy", workspace=None)
@@ -180,11 +184,13 @@ class ExecutorWorkspaceInjectionTests(TestCase):
         env = _build_script_environment(run=run)
         self.assertEqual(env["PYRUNNER_WORKSPACE_ID"], self.ws_a.id.hex)
 
-    def test_null_workspace_run_injects_default(self):
+    def test_null_workspace_run_gets_no_workspace_id(self):
+        # F129: an unscoped run is not the default workspace (fail closed); the
+        # SQLite helper then resolves only unassigned stores.
         script = Script.objects.create(name="s", code="x", environment=self.env)
         run = Run.objects.create(script=script)  # workspace NULL
         env = _build_script_environment(run=run)
-        self.assertEqual(env["PYRUNNER_WORKSPACE_ID"], self.default.id.hex)
+        self.assertNotIn("PYRUNNER_WORKSPACE_ID", env)
 
 
 class DatastoreCpanelScopingTests(TestCase):

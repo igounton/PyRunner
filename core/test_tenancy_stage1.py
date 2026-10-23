@@ -53,17 +53,17 @@ class ResolveSecretsForRunTests(TestCase):
         self.assertEqual(out.get("NULL_KEY"), "nval")  # unassigned still injects
         self.assertNotIn("B_KEY", out)  # WS-B secret never reaches a WS-A run
 
-    def test_null_workspace_run_gets_all(self):
+    def test_null_workspace_run_gets_only_unscoped(self):
         # Un-scoped = a pre-tenancy script with no workspace. A run of a scoped
         # script always takes the script's workspace (F82).
         legacy = Script.objects.create(name="legacy", code="x", environment=self.env, workspace=None)
         run_null = Run.objects.create(script=legacy, workspace=None)
         self.assertIsNone(run_null.workspace_id)
         out = resolve_secrets_for_run(run_null)
-        self.assertEqual(set(out), {"A_KEY", "B_KEY", "NULL_KEY"})
+        self.assertEqual(set(out), {"NULL_KEY"})  # F129: fail closed
 
-    def test_none_run_gets_all(self):
-        self.assertEqual(set(resolve_secrets_for_run(None)), {"A_KEY", "B_KEY", "NULL_KEY"})
+    def test_none_run_gets_only_unscoped(self):
+        self.assertEqual(set(resolve_secrets_for_run(None)), {"NULL_KEY"})
 
     def test_injection_env_is_scoped(self):
         env = _build_script_environment(run=self.run_a)

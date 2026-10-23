@@ -1,5 +1,5 @@
 """
-Plugin API — token generalization + dispatcher tests (docs/PLAN_plugin_api.md).
+Plugin API — token generalization + dispatcher tests (docs/plugins.md).
 
 Stage 1 (this file's MUST-PASS core): the ``DataStoreAPIToken`` → ``APIToken``
 generalization must leave ``/api/v1/datastores/…`` byte-for-byte unchanged, and
@@ -138,13 +138,17 @@ class DatastoreApiRegressionTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["value"], "a-value")
 
-    def test_null_workspace_token_falls_back_to_default_workspace(self):
-        # Pre-tenancy legacy fallback for datastore-scoped tokens stays.
+    def test_null_workspace_token_lists_only_unassigned_stores(self):
+        # F129: a NULL-workspace token is not the default workspace (the 0035
+        # backfill gave every pre-tenancy token one).
         store_d = DataStore.objects.create(name="dstore", workspace=self.default)
+        legacy = DataStore.objects.create(name="legacy", workspace=None)
         bare = APIToken.objects.create(name="bare", token=APIToken.generate_token())
         resp = self.client.get("/api/v1/datastores/", **_auth(bare.raw_token))
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(store_d.name, {d["name"] for d in resp.json()["datastores"]})
+        names = {d["name"] for d in resp.json()["datastores"]}
+        self.assertNotIn(store_d.name, names)
+        self.assertIn(legacy.name, names)
 
     # -- auth ----------------------------------------------------------------
 

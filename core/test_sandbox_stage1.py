@@ -193,6 +193,9 @@ class NormalRunUnaffectedTests(TestCase):
 
         _set_limits(memory_mb=512, fsize_mb=8)
         run = _make_run("pass")
+        from core.models import Workspace
+
+        run.workspace = Workspace.get_default()  # a scoped run (F129: unscoped gets none)
         env = _build_script_environment(run=run)
         # script_helpers on PYTHONPATH (so `import pyrunner_datastore` works) and
         # the per-run workspace scope are still injected, exactly as before.

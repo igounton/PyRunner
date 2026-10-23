@@ -78,9 +78,9 @@ class RunTakesScriptWorkspaceTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["value"], "ws2")
 
-    def test_pre_tenancy_script_without_workspace_stays_unscoped(self):
-        # Back-compat: a script with no workspace still runs un-scoped (all secrets).
+    def test_script_without_workspace_gets_only_unscoped_secrets(self):
+        # F129: an unscoped run sees only unscoped secrets, never every workspace's.
         legacy = Script.objects.create(name="old", code="x", environment=self.env, workspace=None)
         run = Run.objects.create(script=legacy)
         self.assertIsNone(run.workspace_id)
-        self.assertEqual(set(resolve_secrets_for_run(run)), {"DEFAULT_KEY", "WS2_KEY", "NULL_KEY"})
+        self.assertEqual(set(resolve_secrets_for_run(run)), {"NULL_KEY"})

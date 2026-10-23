@@ -102,3 +102,37 @@ class NoPrivateDocLinksTests(SimpleTestCase):
                 continue
             hits += [f"{name}: {ref}" for ref in reference.findall(text) if ref not in published]
         self.assertEqual(hits, [])
+
+
+class AnonymousPagesHideVersionTests(TestCase):
+    # F138: forgot/reset password, invite, 404 and CSRF pages showed vX.Y.Z.
+    def setUp(self):
+        from unittest import mock
+
+        for target in (
+            "core.services.setup_service.SetupService.is_setup_needed",
+            "core.services.setup_service.SetupService.needs_admin_setup",
+        ):
+            patcher = mock.patch(target, return_value=False)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_anonymous_pages_do_not_show_the_version(self):
+        from django.urls import reverse
+
+        from pyrunner.version import __version__
+
+        for url in (reverse("auth:forgot_password"), reverse("auth:login"), "/no-such-page/"):
+            with self.subTest(url=url):
+                self.assertNotIn(f"v{__version__}", self.client.get(url).content.decode())
+
+    def test_signed_in_pages_keep_it(self):
+        from django.urls import reverse
+
+        from core.models import User
+        from pyrunner.version import __version__
+
+        self.client.force_login(
+            User.objects.create_superuser(username="v", email="v@x.test", password="pw-12345678!")
+        )
+        self.assertIn(f"v{__version__}", self.client.get(reverse("cpanel:dashboard")).content.decode())

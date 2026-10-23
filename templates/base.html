@@ -69,11 +69,9 @@
                     {% if user.is_authenticated %}
                     <a href="{% url 'cpanel:changelog' %}" title="What's new in PyRun"
                        class="text-xs font-mono text-faint hover:text-text transition-colors hidden md:inline whitespace-nowrap">v{{ pyrunner_version }}</a>
-                    {% else %}
-                    <span class="text-xs font-mono text-faint hidden md:inline whitespace-nowrap">v{{ pyrunner_version }}</span>
-                    {% endif %}
+                    {% endif %}{# Anonymous pages never show the version. #}
                     {# Update-available pill — rendered when the server-side update check finds a newer release tag on GitHub #}
-                    {% if update_available %}
+                    {% if update_available and user.is_authenticated %}
                     <a href="https://github.com/hassancs91/PyRun/tags"
                        target="_blank" rel="noopener noreferrer"
                        title="PyRun {{ update_latest_version }} is available — you are running v{{ pyrunner_version }}"
